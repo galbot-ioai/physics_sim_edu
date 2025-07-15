@@ -55,7 +55,7 @@ class SimpleStateMachine:
         if callback is not None:
             self.state_callbacks[state_idx] = callback
             
-    def get_current_state_name(self):
+    def get_state_name(self):
         """
         Get the name of current state
         

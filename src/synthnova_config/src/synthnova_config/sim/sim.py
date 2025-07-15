@@ -22,7 +22,7 @@
 #####################################################################################
 #
 # Module: Simulator Configuration
-# Description: Core configuration classes for SynthNova simulator
+# Description: Core configuration classes for Synthnova simulator
 # Author: Herman Ye@Galbot
 # Date: 2025-03-06
 #
@@ -37,7 +37,7 @@ from ..cloud import CloudStreamingConfig
 
 class SimConfig(BaseModel):
     """
-    Central configuration class for SynthNova simulation environment.
+    Central configuration class for Synthnova simulation environment.
 
     This class serves as the primary configuration container for the simulation
     environment, integrating settings for both physics and rendering subsystems.

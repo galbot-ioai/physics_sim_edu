@@ -20,7 +20,7 @@
 #                |___/
 #
 #####################################################################################
-"""IO utility functions for SynthNova configuration files.
+"""IO utility functions for Synthnova configuration files.
 
 This module provides convenient functions for handling configuration files,
 including creating temporary files, saving, loading, and deleting configurations.

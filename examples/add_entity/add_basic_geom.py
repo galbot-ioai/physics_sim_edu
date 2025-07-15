@@ -57,6 +57,7 @@ def main():
         orientation=[0, 0, 0, 1],
         scale=[1, 1, 1],
         color=[0.0, 1.0, 0.0],
+        interaction_type="static",
     )
     cube_2_path = synthnova_physics_simulator.add_object(cube_2_config)
 

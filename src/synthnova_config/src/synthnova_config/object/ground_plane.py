@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: SynthNova Ground Plane Config
+# Description: Synthnova Ground Plane Config
 # Author: Herman Ye@Galbot
 # Date: 2025-05-10
 #
@@ -36,7 +36,7 @@ import numpy as np
 class GroundPlaneConfig(BaseModel):
     """Configuration for ground plane objects in the simulation environment.
 
-    This class defines the essential properties of ground planes in the SynthNova
+    This class defines the essential properties of ground planes in the Synthnova
     simulation environment. The ground plane is a fundamental component that provides
     a stable surface for objects to interact with.
 

@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: SynthNova Object Config
+# Description: Synthnova Object Config
 # Author: Herman Ye@Galbot
 # Date: 2025-05-10
 #
@@ -30,7 +30,7 @@
 from typing import Optional, Dict, Any, List, Tuple, Literal
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 import numpy as np
-from pathlib import PosixPath, WindowsPath
+from pathlib import PosixPath
 from numpydantic import NDArray, Shape
 from enum import Enum
 import uuid
@@ -40,7 +40,7 @@ from typing_extensions import Self
 class ObjType(str, Enum):
     """Object type enumeration class.
 
-    Defines all object types supported in SynthNova:
+    Defines all object types supported in Synthnova:
     - MESH: Mesh model for loading custom 3D models
     - MJCF: MuJoCo physics engine XML configuration file
     - CAPSULE: Basic primitive capsule
@@ -122,18 +122,18 @@ class InteractionType(str, Enum):
 class ObjectConfig(BaseModel):
     """Base configuration class for Synthnova objects.
 
-    This class serves as the foundation for configuring objects in the SynthNova simulation environment.
+    This class serves as the foundation for configuring objects in the Synthnova simulation environment.
     It defines common properties and behaviors shared across different object types.
 
     Attributes:
-        prim_path (str | PosixPath | WindowsPath): The unique primitive path in the scene graph hierarchy.
+        prim_path (str | PosixPath): The unique primitive path in the scene graph hierarchy.
         type (ObjType | None): The type of object (mesh, mjcf, capsule, cone, cuboid, cylinder, or sphere).
         name (str | None): A human-readable identifier for the entity instance.
         uuid (str | None): A unique identifier for the entity instance.
-        usd_path (str | PosixPath | WindowsPath | None): Path to the USD (Universal Scene Description) file.
-        obj_path (str | PosixPath | WindowsPath | None): Path to the Wavefront OBJ mesh file.
-        mjcf_path (str | PosixPath | WindowsPath | None): Path to the MuJoCo XML configuration file.
-        urdf_path (str | PosixPath | WindowsPath | None): Path to the URDF file for articulated objects.
+        usd_path (str | PosixPath | None): Path to the USD (Universal Scene Description) file.
+        obj_path (str | PosixPath | None): Path to the Wavefront OBJ mesh file.
+        mjcf_path (str | PosixPath | None): Path to the MuJoCo XML configuration file.
+        urdf_path (str | PosixPath | None): Path to the URDF file for articulated objects.
         position (NDArray[Shape["3"], np.float64] | None): Global position vector [x, y, z] in world coordinates.
         orientation (NDArray[Shape["4"], np.float64] | None): Global orientation quaternion [x, y, z, w] in world coordinates.
         translation (NDArray[Shape["3"], np.float64] | None): Local position vector [x, y, z] relative to parent.
@@ -150,16 +150,16 @@ class ObjectConfig(BaseModel):
         but not both simultaneously.
     """
 
-    prim_path: str | PosixPath | WindowsPath
+    prim_path: str | PosixPath
     type: ObjType | None = None
     name: str | None = None
     uuid: str | None = Field(
         default_factory=lambda: str(uuid.uuid4()).replace("-", "_")
     )
-    usd_path: str | PosixPath | WindowsPath | None = None
-    obj_path: str | PosixPath | WindowsPath | None = None
-    mjcf_path: str | PosixPath | WindowsPath | None = None
-    urdf_path: str | PosixPath | WindowsPath | None = None
+    usd_path: str | PosixPath | None = None
+    obj_path: str | PosixPath | None = None
+    mjcf_path: str | PosixPath | None = None
+    urdf_path: str | PosixPath | None = None
     position: NDArray[Shape["3"], np.float64] | None = None
     orientation: NDArray[Shape["4"], np.float64] | None = None
     translation: NDArray[Shape["3"], np.float64] | None = None
@@ -197,7 +197,7 @@ class ObjectConfig(BaseModel):
     )
     @classmethod
     def process_object_config_different_input_path(
-        cls, value: str | PosixPath | WindowsPath | None
+        cls, value: str | PosixPath | None
     ) -> str | None:
         """Convert paths to absolute string paths."""
         return convert_to_abs_str_path(value)
@@ -305,7 +305,7 @@ class ObjectConfig(BaseModel):
 
 
 class MeshConfig(ObjectConfig):
-    """Configuration class for mesh-based objects in SynthNova.
+    """Configuration class for mesh-based objects in Synthnova.
 
     This class extends ObjectConfig with mesh-specific properties and validation rules.
     It supports loading geometry from USD or OBJ files with physics simulation options.
@@ -354,7 +354,7 @@ class MeshConfig(ObjectConfig):
 
 
 class CapsuleConfig(ObjectConfig):
-    """Configuration class for capsule-shaped primitive objects in SynthNova.
+    """Configuration class for capsule-shaped primitive objects in Synthnova.
 
     This class extends ObjectConfig with capsule-specific properties including dimensions
     and visual appearance settings.
@@ -409,7 +409,7 @@ class CapsuleConfig(ObjectConfig):
 
 
 class ConeConfig(ObjectConfig):
-    """Configuration class for cone-shaped primitive objects in SynthNova.
+    """Configuration class for cone-shaped primitive objects in Synthnova.
 
     This class extends ObjectConfig with cone-specific properties including dimensions
     and visual appearance settings.
@@ -453,7 +453,7 @@ class ConeConfig(ObjectConfig):
 
 
 class CuboidConfig(ObjectConfig):
-    """Configuration class for cuboid-shaped primitive objects in SynthNova.
+    """Configuration class for cuboid-shaped primitive objects in Synthnova.
 
     This class extends ObjectConfig with cuboid-specific properties including dimensions
     and visual appearance settings.
@@ -495,7 +495,7 @@ class CuboidConfig(ObjectConfig):
 
 
 class CylinderConfig(ObjectConfig):
-    """Configuration class for cylinder-shaped primitive objects in SynthNova.
+    """Configuration class for cylinder-shaped primitive objects in Synthnova.
 
     This class extends ObjectConfig with cylinder-specific properties including dimensions
     and visual appearance settings.
@@ -539,7 +539,7 @@ class CylinderConfig(ObjectConfig):
 
 
 class   SphereConfig(ObjectConfig):
-    """Configuration class for sphere-shaped primitive objects in SynthNova.
+    """Configuration class for sphere-shaped primitive objects in Synthnova.
 
     This class extends ObjectConfig with sphere-specific properties including dimensions
     and visual appearance settings.
@@ -580,11 +580,11 @@ class   SphereConfig(ObjectConfig):
         return value
 
 
-def convert_to_abs_str_path(value: str | PosixPath | WindowsPath | None) -> str | None:
+def convert_to_abs_str_path(value: str | PosixPath | None) -> str | None:
     """Convert paths to absolute string paths.
 
     Args:
-        value: Path to convert, can be string, PosixPath, WindowsPath, or None
+        value: Path to convert, can be string, PosixPath, or None
 
     Returns:
         str | None: Absolute path as string, or None if input is None
@@ -599,8 +599,6 @@ def convert_to_abs_str_path(value: str | PosixPath | WindowsPath | None) -> str 
             raise ValueError("Path cannot be empty")
         return value
     elif isinstance(value, PosixPath):
-        return str(value.absolute())
-    elif isinstance(value, WindowsPath):
         return str(value.absolute())
     else:
         raise ValueError(f"Invalid path type: {type(value)}")

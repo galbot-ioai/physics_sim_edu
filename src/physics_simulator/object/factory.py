@@ -92,8 +92,8 @@ class MujocoObjectFactory:
         # Determine object name
         name = config.name if hasattr(config, "name") and config.name else config.prim_path.split("/")[-1]
         
-        # Get joints configuration
-        joints = getattr(config, "joints", "default")
+        # Set joints configuration based on interaction_type
+        joints = MujocoObjectFactory._get_joints_from_interaction_type(config)
         
         # Create MujocoXMLObject instance
         obj = MujocoXMLObject(
@@ -128,8 +128,8 @@ class MujocoObjectFactory:
         # Determine object name
         name = config.name if hasattr(config, "name") and config.name else config.prim_path.split("/")[-1]
         
-        # Get joints configuration
-        joints = getattr(config, "joints", "default")
+        # Set joints configuration based on interaction_type
+        joints = MujocoObjectFactory._get_joints_from_interaction_type(config)
         
         # Map color to rgba (adding alpha channel)
         rgba = None
@@ -152,6 +152,46 @@ class MujocoObjectFactory:
         return obj
     
     @staticmethod
+    def _get_joints_from_interaction_type(config):
+        """
+        Determine joints configuration based on interaction_type.
+        
+        Args:
+            config: Object configuration containing interaction_type
+            
+        Returns:
+            str or None: Joints configuration ("default" for movable, None for fixed)
+        """
+        # Check if config has joints attribute already set
+        if hasattr(config, "joints"):
+            return getattr(config, "joints")
+        
+        # TODO@Chenyu Cao: implement more iteraction type
+        # Set joints configuration based on interaction_type
+        if hasattr(config, 'interaction_type'):
+            if config.interaction_type.value == "dynamic":
+                # Dynamic objects can move freely, use default free joint
+                return "default"
+            elif config.interaction_type.value == "static":
+                # Static objects are fixed in space, no joints
+                return None
+            elif config.interaction_type.value == "kinematic":
+                # Kinematic objects are controlled externally, use default for now
+                return "default"
+            elif config.interaction_type.value == "ghost":
+                # Ghost objects are visible but no collision, use default joint
+                return "default"
+            elif config.interaction_type.value == "invisible":
+                # Invisible objects, use default joint for physics consistency
+                return "default"
+            else:
+                # Fallback to default for unknown interaction types
+                return "default"
+        else:
+            # If no interaction_type specified, use default (backward compatibility)
+            return "default"
+    
+    @staticmethod
     def _set_object_pose(obj, config):
         """
         Set position and orientation for an object based on config.
@@ -169,44 +209,12 @@ class MujocoObjectFactory:
             
         # Set object orientation
         if hasattr(config, "orientation") and config.orientation is not None and len(config.orientation) == 4:
-            # Convert quaternion to Euler angles
-            euler = MujocoObjectFactory._quaternion_to_euler(config.orientation)
-            obj.set_euler(euler)
+            # Convert quaternion from xyzw to wxyz format (MuJoCo XML expects wxyz)
+            from auro_utils import xyzw_to_wxyz
+            quat_wxyz = xyzw_to_wxyz(config.orientation)
+            obj.set_quat(quat_wxyz)
         # elif hasattr(config, "rotation") and config.rotation is not None and len(config.rotation) == 4:
-        #     # Convert quaternion to Euler angles
-        #     euler = MujocoObjectFactory._quaternion_to_euler(config.rotation)
-        #     obj.set_euler(euler)
-    
-    @staticmethod
-    def _quaternion_to_euler(quaternion: List[float]) -> List[float]:
-        """
-        Convert quaternion [x,y,z,w] to Euler angles [roll,pitch,yaw]
-        
-        Args:
-            quaternion: Quaternion [x,y,z,w]
-            
-        Returns:
-            List[float]: Euler angles [roll,pitch,yaw] (in radians)
-        """
-        # Extract quaternion components
-        x, y, z, w = quaternion
-        
-        # Calculate Euler angles
-        # Rotation around x-axis (roll)
-        sinr_cosp = 2 * (w * x + y * z)
-        cosr_cosp = 1 - 2 * (x * x + y * y)
-        roll = np.arctan2(sinr_cosp, cosr_cosp)
-        
-        # Rotation around y-axis (pitch)
-        sinp = 2 * (w * y - z * x)
-        if abs(sinp) >= 1:
-            pitch = np.copysign(np.pi / 2, sinp)  # Use 90 degrees if sinp is out of range
-        else:
-            pitch = np.arcsin(sinp)
-            
-        # Rotation around z-axis (yaw)
-        siny_cosp = 2 * (w * z + x * y)
-        cosy_cosp = 1 - 2 * (y * y + z * z)
-        yaw = np.arctan2(siny_cosp, cosy_cosp)
-        
-        return [roll, pitch, yaw]
+        #     # Convert quaternion from xyzw to wxyz format (MuJoCo XML expects wxyz)
+        #     from auro_utils import xyzw_to_wxyz
+        #     quat_wxyz = xyzw_to_wxyz(config.rotation)
+        #     obj.set_quat(quat_wxyz)

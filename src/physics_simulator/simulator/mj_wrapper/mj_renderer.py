@@ -42,6 +42,7 @@ if os.environ.get("MUJOCO_GL", None) not in ["osmesa", "glx"]:
         os.environ["MUJOCO_GL"] = "wgl"
     else:
         os.environ["MUJOCO_GL"] = "egl"
+
 _MUJOCO_GL = os.environ.get("MUJOCO_GL", "").lower().strip()
 
 

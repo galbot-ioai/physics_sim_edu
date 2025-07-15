@@ -25,6 +25,10 @@ class MujocoWorld(MujocoXML):
             root=self.root, tags="size", attribs=None, return_first=True
         )
 
+    def __str__(self):
+        """Return the XML string representation of the world."""
+        return self.get_xml()
+
     def update_attribute(self, key, value, tag="option"):
         """Update a specific attribute in the world configuration.
         

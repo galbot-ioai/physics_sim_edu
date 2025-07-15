@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: Isaac Sim config of SynthNova
+# Description: Isaac Sim config of Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-03-06
 #

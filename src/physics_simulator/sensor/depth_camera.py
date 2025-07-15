@@ -1,3 +1,32 @@
+#####################################################################################
+# Copyright (c) 2023-2025 Galbot. All Rights Reserved.
+#
+# This software contains confidential and proprietary information of Galbot, Inc.
+# ("Confidential Information"). You shall not disclose such Confidential Information
+# and shall use it only in accordance with the terms of the license agreement you
+# entered into with Galbot, Inc.
+#
+# UNAUTHORIZED COPYING, USE, OR DISTRIBUTION OF THIS SOFTWARE, OR ANY PORTION OR
+# DERIVATIVE THEREOF, IS STRICTLY PROHIBITED. IF YOU HAVE RECEIVED THIS SOFTWARE IN
+# ERROR, PLEASE NOTIFY GALBOT, INC. IMMEDIATELY AND DELETE IT FROM YOUR SYSTEM.
+#####################################################################################
+#          _____             _   _       _   _
+#         / ____|           | | | |     | \ | |
+#        | (___  _   _ _ __ | |_| |__   |  \| | _____   ____ _
+#         \___ \| | | | '_ \| __| '_ \  | . ` |/ _ \ \ / / _` |
+#         ____) | |_| | | | | |_| | | | | |\  | (_) \ V / (_| |
+#        |_____/ \__, |_| |_|\__|_| |_| |_| \_|\___/ \_/ \__,_|
+#                 __/ |
+#                |___/
+#
+#####################################################################################
+#
+# Description: Depth camera for SynthNova Physics Simulator
+# Author: Chenyu Cao, Herman Ye@Galbot
+# Date: 2025-03-06
+#
+#####################################################################################
+
 import numpy as np
 from .rgb_camera import MujocoRgbCamera
 from physics_simulator.simulator import MujocoSimulator as PhysicsSimulator
@@ -40,6 +69,11 @@ class MujocoDepthCamera(MujocoRgbCamera):
         from physics_simulator.utils.camera_utils import get_real_depth_map
 
         depth = get_real_depth_map(self.simulator, depth)
+        
+        # Apply horizontal flip for ROS camera axes to correct mirroring
+        if self.camera_axes == "ros":
+            depth = np.fliplr(depth)
+            
         return depth
     
     def get_point_cloud(self) -> np.ndarray:
@@ -121,6 +155,10 @@ class MujocoDepthCamera(MujocoRgbCamera):
         _, depth_map = self.render(depth=True, segmentation=False)
         from physics_simulator.utils.camera_utils import get_real_depth_map
         depth_map = get_real_depth_map(self.simulator, depth_map)
+        
+        # Apply horizontal flip for ROS camera axes to correct mirroring
+        if self.camera_axes == "ros":
+            depth_map = np.fliplr(depth_map)
         
         # Downsample for performance if requested
         if downsample_factor > 1:

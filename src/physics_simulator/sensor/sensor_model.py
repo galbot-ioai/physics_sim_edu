@@ -44,8 +44,7 @@ from physics_simulator.utils.mjcf_utils import (
 import numpy as np
 import xml.etree.ElementTree as ET
 from physics_simulator.object import MujocoObject
-import gc
-from physics_simulator.simulator import MujocoSimulator as PhysicsSimulator
+from auro_utils import Logger
 
 
 class MujocoSensorModel(MujocoObject):
@@ -88,9 +87,16 @@ class MujocoSensorModel(MujocoObject):
             self.position = np.zeros(3)
             self.orientation = np.array([0, 0, 0, 1])  # Identity quaternion
             
-        self.fov = fov if fov is not None else 45.0  # Default FOV
-        self.width = width if width is not None else 640  # Default width
-        self.height = height if height is not None else 480  # Default height
+        # Import constants for default values
+        from physics_simulator.utils.constants import (
+            DEFAULT_CAMERA_FOV, 
+            DEFAULT_CAMERA_WIDTH, 
+            DEFAULT_CAMERA_HEIGHT
+        )
+        
+        self.fov = fov if fov is not None else DEFAULT_CAMERA_FOV
+        self.width = width if width is not None else DEFAULT_CAMERA_WIDTH
+        self.height = height if height is not None else DEFAULT_CAMERA_HEIGHT
         
         # Create a minimal object representation
         self._obj = self._get_object_subtree()
@@ -225,65 +231,39 @@ class MujocoSensorModel(MujocoObject):
     def get_position(self):
         """Get the position of the object in world frame.
         
+        Note: This returns stored position. For runtime position queries,
+        use simulator.get_sensor_state() instead.
+        
         Returns:
             np.ndarray: 3D position [x, y, z]
         """
-        # Get the camera position from MuJoCo if simulation is running
-        # First check if the simulator and data are available
-        sim = None
+        # Return stored position - actual position should be queried through simulator
+        # This method is kept for API compatibility but should not be used for runtime queries
         
-        # Try to get simulator reference
-        try:
-            for obj in gc.get_objects():
-                if isinstance(obj, PhysicsSimulator):
-                    if hasattr(obj, 'data') and obj.data is not None:
-                        sim = obj
-                        break
-        except:
-            pass
-        
-        if sim is not None and sim.data is not None:
-            try:
-                # Try to get camera position from MuJoCo data
-                return sim.data.get_camera_xpos(self.camera_name)
-            except:
-                # Fall back to stored position if that fails
-                return self.position
-        else:
-            # Return stored position if simulator is not running
-            return self.position
+        # Create a temporary logger for deprecation warning
+        logger = Logger()
+        logger.log_warning(
+            "get_position() called on sensor - this returns stored position only. "
+            "Use simulator.get_sensor_state() for runtime position."
+        )
+        return self.position
         
     def get_orientation(self):
         """Get the orientation of the object in world frame.
         
+        Note: This returns stored orientation. For runtime orientation queries,
+        use simulator.get_sensor_state() instead.
+        
         Returns:
             np.ndarray: Quaternion in xyzw format
         """
-        # Get the camera orientation from MuJoCo if simulation is running
-        # First check if the simulator and data are available
-        sim = None
+        # Return stored orientation - actual orientation should be queried through simulator  
+        # This method is kept for API compatibility but should not be used for runtime queries
         
-        # Try to get simulator reference
-        try:
-            for obj in gc.get_objects():
-                if isinstance(obj, PhysicsSimulator):
-                    if hasattr(obj, 'data') and obj.data is not None:
-                        sim = obj
-                        break
-        except:
-            pass
-        
-        if sim is not None and sim.data is not None:
-            try:
-                # Get rotation matrix
-                rot_mat = sim.data.get_camera_xmat(self.camera_name)
-                # Convert to quaternion (xyzw)
-                from scipy.spatial.transform import Rotation as R
-                quat = R.from_matrix(rot_mat).as_quat()  # Returns xyzw format
-                return quat
-            except:
-                # Fall back to stored orientation if that fails
-                return wxyz_to_xyzw(self.orientation) if self.orientation is not None else np.array([0.0, 0.0, 0.0, 1.0])
-        else:
-            # Return stored orientation if simulator is not running
-            return wxyz_to_xyzw(self.orientation) if self.orientation is not None else np.array([0.0, 0.0, 0.0, 1.0])
+        # Create a temporary logger for deprecation warning
+        logger = Logger()
+        logger.log_warning(
+            "get_orientation() called on sensor - this returns stored orientation only. "
+            "Use simulator.get_sensor_state() for runtime orientation."
+        )
+        return wxyz_to_xyzw(self.orientation) if self.orientation is not None else np.array([0.0, 0.0, 0.0, 1.0])

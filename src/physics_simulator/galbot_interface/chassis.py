@@ -43,3 +43,7 @@ class Chassis(BasicLimb):
     ):
         super().__init__(galbot_interface_config, simulator)
         self.module_name = "chassis"
+
+    # Same as set_joint_positions
+    def set_joint_velocities(self, joint_velocities: List[float], immediate=False):
+        return super().set_joint_positions(joint_velocities, immediate)

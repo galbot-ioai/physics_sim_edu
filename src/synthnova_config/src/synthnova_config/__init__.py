@@ -16,6 +16,9 @@ from .robot import *
 # Sensor
 from .sensor import *
 
+# Light
+from .light import *
+
 # Logger
 from .logger import *
 
@@ -29,4 +32,4 @@ from .render_simulator_config import RenderSimulatorConfig
 from .physics_simulator_config import PhysicsSimulatorConfig
 
 __version__ = "0.1.0"
-__author__ = "Galbot SynthNova Team"
+__author__ = "Galbot Synthnova Team"

@@ -52,7 +52,7 @@ def interpolate_joint_positions(start_positions, end_positions, steps):
 class IoaiGraspEnv:
     def __init__(self, headless=False):
         """
-        Initialize the Ioai environment.
+        Initialize the Olympic environment.
         
         Args:
             headless: Whether to run in headless mode (without visualization)
@@ -88,13 +88,13 @@ class IoaiGraspEnv:
         # Add robot
         robot_config = RobotConfig(
             prim_path="/World/Galbot",
-            name="galbot_one_charlie",
+            name="galbot_one_foxtrot",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("robot")
-            .joinpath("galbot_one_charlie_description")
-            .joinpath("galbot_one_charlie.xml"),
+            .joinpath("robots")
+            .joinpath("galbot_one_foxtrot_description")
+            .joinpath("galbot_one_foxtrot.xml"),
             position=[0, 0, 0],
             orientation=[0, 0, 0, 1]
         )
@@ -107,9 +107,7 @@ class IoaiGraspEnv:
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("default_assets")
-            .joinpath("example")
-            .joinpath("ioai")
+            .joinpath("objects")
             .joinpath("table")
             .joinpath("table.xml"),
             position=[0.65, 0, 0],
@@ -124,17 +122,14 @@ class IoaiGraspEnv:
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("default_assets")
-            .joinpath("example")
-            .joinpath("ioai")
+            .joinpath("objects")
             .joinpath("closet")
             .joinpath("closet.xml"),
             position=[0.65, -0.1, 0.55],
-            orientation=[0, 0, 0.70711, 0.70711],
+            orientation=[0, 0, 0.70711, -0.70711],
             scale=[0.2, 0.2, 0.2]
         )
         self.simulator.add_object(closet_config)
-        self.closet_position = self.simulator.get_object("/World/Closet").get_position().copy()
 
         # Add cube
         cube_config = CuboidConfig(
@@ -145,10 +140,13 @@ class IoaiGraspEnv:
             color=[0, 1, 0],
         )
         self.simulator.add_object(cube_config)
-        self.cube_position = self.simulator.get_object("/World/Cube").get_position().copy()
 
         # Initialize the simulator
         self.simulator.initialize()
+
+        closet_state = self.simulator.get_object_state("/World/Closet")
+        self.closet_position = closet_state["position"]
+        self.closet_orientation = closet_state["orientation"]
 
 
     def _setup_interface(self):
@@ -162,7 +160,7 @@ class IoaiGraspEnv:
         galbot_interface_config.modules_manager.enabled_modules.append("left_arm")
         galbot_interface_config.modules_manager.enabled_modules.append("leg")
         galbot_interface_config.modules_manager.enabled_modules.append("head")
-        galbot_interface_config.modules_manager.enabled_modules.append("chassis")
+        # galbot_interface_config.modules_manager.enabled_modules.append("chassis")
         galbot_interface_config.modules_manager.enabled_modules.append("left_gripper")
         galbot_interface_config.modules_manager.enabled_modules.append("right_gripper")
 
@@ -198,18 +196,18 @@ class IoaiGraspEnv:
             f"{robot_name}/head_joint2"
         ]
 
-        galbot_interface_config.chassis.joint_names = [
-            f"{robot_name}/mobile_forward_joint",
-            f"{robot_name}/mobile_side_joint",
-            f"{robot_name}/mobile_yaw_joint",
-        ]
+        # galbot_interface_config.chassis.joint_names = [
+        #     f"{robot_name}/mobile_forward_joint",
+        #     f"{robot_name}/mobile_side_joint",
+        #     f"{robot_name}/mobile_yaw_joint",
+        # ]
 
         galbot_interface_config.left_gripper.joint_names = [
-            f"{robot_name}/left_gripper_robotiq_85_right_knuckle_joint",
+            f"{robot_name}/left_gripper_r_knuckle_joint",
         ]
 
         galbot_interface_config.right_gripper.joint_names = [
-            f"{robot_name}/right_gripper_robotiq_85_left_knuckle_joint",
+            f"{robot_name}/right_gripper_r_knuckle_joint",
         ]
 
         galbot_interface = GalbotInterface(
@@ -248,14 +246,14 @@ class IoaiGraspEnv:
         # Create arm tasks
         self.arm_tasks = {
             "left": mink.FrameTask(
-                frame_name=self.robot.namespace + "left_gripper",
+                frame_name=self.robot.namespace + "left_gripper_tcp",
                 frame_type="site",
                 position_cost=50.0,
                 orientation_cost=50.0,
                 lm_damping=1.0,
             ),
             "right": mink.FrameTask(
-                frame_name=self.robot.namespace + "right_gripper",
+                frame_name=self.robot.namespace + "right_gripper_tcp",
                 frame_type="site",
                 position_cost=50.0,
                 orientation_cost=50.0,
@@ -392,8 +390,8 @@ class IoaiGraspEnv:
 
     def get_left_gripper_pose(self):
         tmat = np.eye(4)
-        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "left_gripper").xmat.reshape((3,3))
-        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "left_gripper").xpos
+        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp").xmat.reshape((3,3))
+        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp").xpos
         
         # Extract position
         position = tmat[:3, 3]
@@ -407,8 +405,8 @@ class IoaiGraspEnv:
     
     def get_right_gripper_pose(self):
         tmat = np.eye(4)
-        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "right_gripper").xmat.reshape((3,3))
-        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "right_gripper").xpos
+        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp").xmat.reshape((3,3))
+        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp").xpos
         
         # Extract position
         position = tmat[:3, 3]
@@ -425,7 +423,7 @@ class IoaiGraspEnv:
         Callback function for pick and place task using state machine
         
         Args:
-            env: NoaiGraspEnv instance
+            env: IoaiGraspEnv instance
         """
 
         def init_state():
@@ -463,8 +461,9 @@ class IoaiGraspEnv:
         def move_to_pre_pick_state():
             """Move to pre-pick position"""
             if self.state_first_entry:
-                cube = self.simulator.get_object("/World/Cube")
-                self.cube_position = cube.get_position().copy()
+                cube_state = self.simulator.get_object_state("/World/Cube")
+                self.cube_position = cube_state["position"].copy()
+                self.cube_orientation = cube_state["orientation"].copy()
                 self.state_first_entry = False
             left_target_position = self.cube_position + np.array([0, 0, 0.15])
             left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
@@ -497,9 +496,9 @@ class IoaiGraspEnv:
         def move_to_pick_state():
             """Move to pick position"""
             if self.state_first_entry:
-                cube = self.simulator.get_object("/World/Cube")
-                self.cube_position = cube.get_position().copy()
-                # self.robot_position
+                cube_state = self.simulator.get_object_state("/World/Cube")
+                self.cube_position = cube_state["position"].copy()
+                self.cube_orientation = cube_state["orientation"].copy()
 
                 self.state_first_entry = False
             left_target_position = self.cube_position + np.array([0, 0, 0.03])
@@ -538,6 +537,7 @@ class IoaiGraspEnv:
 
         def move_to_pre_place_state():
             """Move to place position"""
+
             left_target_position = self.cube_position + np.array([0, 0, 0.4])
             left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
             right_target_position = np.array([0.4, -0.3, 0.7])
@@ -569,8 +569,8 @@ class IoaiGraspEnv:
         def move_to_place_state():
             """Move to place position"""
             if self.state_first_entry:
-                closet = self.simulator.get_object("/World/Closet")
-                self.closet_position = closet.get_position().copy()
+                closet_state = self.simulator.get_object_state("/World/Closet")
+                self.closet_position = closet_state["position"].copy()
                 self.state_first_entry = False
 
             left_target_position = self.closet_position + np.array([0, 0, 0.3])
@@ -624,7 +624,7 @@ class IoaiGraspEnv:
         # Execute current state
         if self.state_machine.trigger():
             self.state_first_entry = True
-            print(f"Current state: {self.state_machine.get_current_state_name()}")
+            print(f"Current state: {self.state_machine.get_state_name()}")
         
         # Check if current state is complete and move to next state
         if self.state_machine.execute_current_state():

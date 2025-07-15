@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: RGB camera config of SynthNova
+# Description: RGB camera config of Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-03-06
 #
@@ -127,7 +127,7 @@ class RgbSensorConfig(BaseModel):
         | None
     ) = Field(default=None, description="Camera projection type")
     clipping_range: List[float] | None = Field(
-        default_factory=lambda: np.array([0.05, 30.0]),
+        default_factory=lambda: [0.05, 30.0],
         description="Near and far clipping distances [near, far]",
     )
     horizontal_fov: float | None = Field(

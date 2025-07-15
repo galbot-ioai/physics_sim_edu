@@ -21,8 +21,8 @@
 #
 #####################################################################################
 #
-# Module: SynthNova physics simulator configuration
-# Description: Top-level configuration management for SynthNova physics simulator
+# Module: Synthnova physics simulator configuration
+# Description: Top-level configuration management for Synthnova physics simulator
 # Author: Herman Ye@Galbot
 # Date: 2025-04-16
 #
@@ -37,7 +37,7 @@ from .scenario import ScenarioConfig
 
 class PhysicsSimulatorConfig(BaseModel):
     """
-    Central configuration class for the SynthNova physics simulator.
+    Central configuration class for the Synthnova physics simulator.
 
     This class serves as the root configuration container that orchestrates all
     components of the simulation system. It integrates and manages configurations
@@ -67,7 +67,7 @@ class PhysicsSimulatorConfig(BaseModel):
     Example:
         ```python
         # Create a complete simulation configuration
-        config = SynthNovaConfig(
+        config = PhysicsSimulatorConfig(
             logger_config=LoggerConfig(
                 log_level="INFO",
                 log_file="simulation.log",

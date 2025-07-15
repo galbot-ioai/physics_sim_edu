@@ -19,7 +19,7 @@ dynamic = ["version"]
 # Specify the README file and its format.
 readme = { file = "README.md", content-type = "text/markdown" }
 # Define the minimum supported Python version.
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 # Specify the project's license identifier.
 # license = "LicenseRef-Galbot-Proprietary"
 # Include additional license files.

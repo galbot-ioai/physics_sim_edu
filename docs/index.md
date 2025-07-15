@@ -28,9 +28,8 @@ sim.loop()
 ## Documentation
 
 * [📄 Overview](overview.md)
-* [🛠️ Installation](installation.md)
-* [⚙️ Configuration](configuration.md)
+* [🛠️ Installation and Configuration](installation_and_configuration.md)
 * [💡 Examples](examples.md)
-* [🖥️ API Documentation](api.md)
+* [🖥️ API Reference](api.md)
 * [🔧 Troubleshooting](troubleshooting.md)
 * [📜 License](license.md)

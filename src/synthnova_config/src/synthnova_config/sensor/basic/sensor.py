@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: Base sensor configuration for SynthNova
+# Description: Base sensor configuration for Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-04-02
 #

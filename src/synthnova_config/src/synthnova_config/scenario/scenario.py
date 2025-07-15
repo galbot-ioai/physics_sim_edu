@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: Scenario configuration module for SynthNova
+# Description: Scenario configuration module for Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-05-11
 #

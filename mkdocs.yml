@@ -1,42 +1,64 @@
-# Herman Ye@Galbot Created on 2025-06-14
+# Physics Simulator Documentation Configuration
 
 ########################### Edit these lines for your project #######################
-site_name: Synthnova Physics Simulator
-site_url: https://synthnova.galbot.com/physics_simulator
-repo_name: Physics Simulator
-repo_url: https://git.galbot.com/synth_nova/physics_simulator
+site_name: Physics Simulator Documentation
+site_url: https://galbot-ioai.github.io/physics_sim_edu/
+repo_name: physics_sim_edu
+repo_url: https://github.com/galbot-ioai/physics_sim_edu
 
 ########################### Do not modify below this line ###########################
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - Installation and Configuration: installation_and_configuration.md
+  - Examples: examples.md
+  - API Reference: api.md
+  - Troubleshooting: troubleshooting.md
+  - License: license.md
+
 theme:
+  language: en
   name: material
-  logo: images/synthnova_logo.svg
+  logo: image/galbot_white_logo.png
+  favicon: image/galbot_white_logo.png
   icon:
-    repo: fontawesome/brands/git-alt
+    repo: fontawesome/brands/github
   font:
-    code: Fira Code
-    text: Fira Sans
+    code: JetBrains Mono
+    text: Inter
   palette:
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
-      scheme: synthnova_light
+      scheme: default
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
-      scheme: synthnova_light
+      scheme: default
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
-      scheme: synthnova_dark
+      scheme: slate
       toggle:
         icon: material/weather-night
         name: Switch to system preference
   features:
     - content.code.copy
     - content.code.annotate
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    - navigation.top
+    - toc.follow
+    - toc.integrate
+    - search.highlight
+    - search.share
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -82,32 +104,15 @@ plugins:
             show_signature: true
             extra:
               show_signature_return_annotation: true
+          # Add Python path configuration
+          paths: [src]
 
 extra:
-  alternate:
-    - name: English
-      link: /en/
-      lang: en
-    - name: 中文
-      link: /zh/
-      lang: zh
   generator: false
-  features:
-    - navigation.tracking
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.sections
-    - navigation.path
-    - navigation.top
-    - toc.follow
-    - toc.integrate
-    - search.highlight
-    - search.share
   social:
-    - icon: fontawesome/brands/gitlab
-      link: https://git.galbot.com/synth_nova
-      name: Synthnova Simulation Toolchain
     - icon: fontawesome/brands/github
-      link: https://github.com/GalaxyGeneralRobotics
-    - icon: fontawesome/brands/bilibili
-      link: https://space.bilibili.com/3546595559737798?spm_id_from=333.337.search-card.all.click
+      link: https://github.com/galbot-ioai/physics_sim_edu
+      name: Physics Simulator on GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/physics-simulator/
+      name: PyPI Package

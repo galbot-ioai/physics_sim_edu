@@ -19,7 +19,7 @@ dynamic = ["version"]
 # Specify the README file and its format.
 readme = { file = "README.md", content-type = "text/markdown" }
 # Define the minimum supported Python version.
-requires-python = ">=3.8, <3.13"
+requires-python = ">=3.10, <3.13"
 # Specify the project's license identifier.
 # license = "LicenseRef-Galbot-Proprietary"
 # Include additional license files.
@@ -40,8 +40,11 @@ dependencies = [
     "open3d",
     "tifffile",
     "opencv-python",
+    # For ik using mink
     "mink",
     "loop_rate_limiters",
+    # For object detection
+    "ultralytics",
 ]
 
 [project.optional-dependencies]

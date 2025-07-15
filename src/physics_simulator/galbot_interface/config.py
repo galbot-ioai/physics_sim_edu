@@ -99,37 +99,37 @@ class RightGripperConfig(BaseModel):
 
 
 class LeftWristCameraConfig(BaseModel):
-    prim_path_rgb: str = Field(
-        default="/World/my_robot/left_arm_link7/left_arm_end_effector_mount_link/left_wrist_rgb_camera",
+    prim_path_rgb: Optional[str] = Field(
+        default=None,
         description="The prim path of the left wrist rgb camera",
     )
 
-    prim_path_depth: str = Field(
-        default="/World/my_robot/left_arm_link7/left_arm_end_effector_mount_link/left_wrist_depth_camera",
+    prim_path_depth: Optional[str] = Field(
+        default=None,
         description="The prim path of the left wrist depth camera",
     )
 
 
 class RightWristCameraConfig(BaseModel):
-    prim_path_rgb: str = Field(
-        default="/World/my_robot/right_arm_link7/right_arm_end_effector_mount_link/right_wrist_rgb_camera",
+    prim_path_rgb: Optional[str] = Field(
+        default=None,
         description="The prim path of the right wrist rgb camera",
     )
 
-    prim_path_depth: str = Field(
-        default="/World/my_robot/right_arm_link7/right_arm_end_effector_mount_link/right_wrist_depth_camera",
+    prim_path_depth: Optional[str] = Field(
+        default=None,
         description="The prim path of the right wrist depth camera",
     )
 
 
 class FrontHeadCameraConfig(BaseModel):
-    prim_path_rgb: str = Field(
-        default="/World/my_robot/head_link/front_head_rgb_camera",
+    prim_path_rgb: Optional[str] = Field(
+        default=None,
         description="The prim path of the front head rgb camera",
     )
 
-    prim_path_depth: str = Field(
-        default="/World/my_robot/head_link/front_head_depth_camera",
+    prim_path_depth: Optional[str] = Field(
+        default=None,
         description="The prim path of the front head depth camera",
     )
 

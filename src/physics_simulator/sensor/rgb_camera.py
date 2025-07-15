@@ -21,15 +21,15 @@
 #
 #####################################################################################
 #
-# Description: RGB camera for Galbot Education Sim
-# Author: Herman Ye@Galbot
+# Description: RGB camera for SynthNova Physics Simulator
+# Author: Chenyu Cao, Herman Ye@Galbot
 # Date: 2025-03-06
 #
 #####################################################################################
 
 from typing import TYPE_CHECKING
 
-from physics_simulator.simulator import MujocoSimulator as PhysicsSimulator
+from physics_simulator import PhysicsSimulator as GalbotEduSim
 from synthnova_config import RgbCameraConfig
 import numpy as np
 
@@ -56,6 +56,10 @@ W_U_TRANSFORM = np.array([[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 
 # from World camera convention to USD camera convention
 U_W_TRANSFORM = np.array([[0, -1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, 0], [0, 0, 0, 1]])
 
+# ROS camera convention transformation matrix (for image coordinate correction)
+# ROS uses standard computer vision convention where Y points down and Z points forward
+ROS_IMAGE_FLIP_TRANSFORM = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]])
+
 
 class MujocoRgbCamera:
     """RGB camera sensor for MuJoCo simulation.
@@ -65,7 +69,7 @@ class MujocoRgbCamera:
     parameters, and coordinate transformations between different conventions.
     """
 
-    def __init__(self, simulator: PhysicsSimulator, camera_config: RgbCameraConfig):
+    def __init__(self, simulator: GalbotEduSim, camera_config: RgbCameraConfig):
         """Initialize an RGB camera in the MuJoCo simulation.
         
         Args:
@@ -170,6 +174,60 @@ class MujocoRgbCamera:
                 )
                 # Apply the transformation
                 self.rotation = np.dot(rotation_matrix, U_W_TRANSFORM[:3, :3].T)
+                # Convert rotation matrix to quaternion
+                self.rotation = self.rotation_matrix_to_quaternion(self.rotation)
+        elif self.camera_axes == "ros":
+            # ROS camera convention: apply transformation to match MuJoCo coordinate system
+            if self.orientation is not None:
+                # Convert orientation to rotation matrix
+                w, x, y, z = self.orientation
+                rotation_matrix = np.array(
+                    [
+                        [
+                            1 - 2 * (y**2 + z**2),
+                            2 * (x * y - w * z),
+                            2 * (x * z + w * y),
+                        ],
+                        [
+                            2 * (x * y + w * z),
+                            1 - 2 * (x**2 + z**2),
+                            2 * (y * z - w * x),
+                        ],
+                        [
+                            2 * (x * z - w * y),
+                            2 * (y * z + w * x),
+                            1 - 2 * (x**2 + y**2),
+                        ],
+                    ]
+                )
+                # Apply ROS to MuJoCo transformation
+                self.orientation = np.dot(rotation_matrix, R_U_TRANSFORM[:3, :3].T)
+                # Convert rotation matrix to quaternion
+                self.orientation = self.rotation_matrix_to_quaternion(self.orientation)
+            if self.rotation is not None:
+                # Convert rotation to rotation matrix
+                w, x, y, z = self.rotation
+                rotation_matrix = np.array(
+                    [
+                        [
+                            1 - 2 * (y**2 + z**2),
+                            2 * (x * y - w * z),
+                            2 * (x * z + w * y),
+                        ],
+                        [
+                            2 * (x * y + w * z),
+                            1 - 2 * (x**2 + z**2),
+                            2 * (y * z - w * x),
+                        ],
+                        [
+                            2 * (x * z - w * y),
+                            2 * (y * z + w * x),
+                            1 - 2 * (x**2 + y**2),
+                        ],
+                    ]
+                )
+                # Apply ROS to MuJoCo transformation
+                self.rotation = np.dot(rotation_matrix, R_U_TRANSFORM[:3, :3].T)
                 # Convert rotation matrix to quaternion
                 self.rotation = self.rotation_matrix_to_quaternion(self.rotation)
 
@@ -287,27 +345,15 @@ class MujocoRgbCamera:
         return np.array([w, x, y, z])
 
     def get_parameters(self) -> dict:
-        """Get all camera parameters as a dictionary.
-        
+        """Retrieves the camera's parameters.
+
+        This method returns a dictionary containing all the camera's parameters,
+        including intrinsic parameters, distortion coefficients, and other configuration
+        settings.
+
         Returns:
-            dict: Camera parameters including intrinsics, extrinsics, and other settings
+            dict: A dictionary containing all camera parameters.
         """
-        # Try to get the latest position and orientation from the sensor model
-        if hasattr(self.sensor_model, "get_position") and hasattr(
-            self.sensor_model, "get_orientation"
-        ):
-            try:
-                real_position = self.sensor_model.get_position()
-                real_orientation = self.sensor_model.get_orientation()
-
-                # Update params with real-time data
-                self.params["position"] = real_position
-                self.params["orientation"] = real_orientation
-            except Exception as e:
-                self.simulator.logger.log_warning(
-                    f"Failed to get real-time camera parameters: {e}"
-                )
-
         return self.params
 
     def render(self, depth=False, segmentation=False):
@@ -358,10 +404,14 @@ class MujocoRgbCamera:
             if reshaped_data.size == 0:
                 return None
 
+            # Apply horizontal flip for ROS camera axes to correct mirroring
+            if self.camera_axes == "ros":
+                reshaped_data = np.fliplr(reshaped_data)
+
             return reshaped_data
 
         except (ValueError, AttributeError) as e:
-            print(f"Error processing camera data: {e}")
+            self.logger.log_error(f"Error processing camera data: {e}")
             return None
 
     def get_segmentation(self):

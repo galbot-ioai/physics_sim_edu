@@ -31,7 +31,7 @@
 
 
 import mujoco
-from auro_utils.math.transform import xyzw_to_wxyz
+from auro_utils.math.transform import xyzw_to_wxyz, wxyz_to_xyzw
 from physics_simulator.object import MujocoXMLModel
 # from physics_simulator.robot.gripper_model import GripperModel
 from physics_simulator.utils.mjcf_utils import (
@@ -58,6 +58,7 @@ class MujocoRobotModel(MujocoXMLModel):
         self._mujoco_model = None
         self._mujoco_data = None
         self._root_body = None  # Use private attribute with property
+        self._bottom_offset = np.array([0.0, 0.0, 0.0])  # Default bottom offset
     
     @property
     def actuators(self):
@@ -73,6 +74,16 @@ class MujocoRobotModel(MujocoXMLModel):
     def root_body(self, value):
         """Set root body name"""
         self._root_body = value
+    
+    @property
+    def bottom_offset(self):
+        """Get bottom offset for robot base positioning"""
+        return self._bottom_offset
+    
+    @bottom_offset.setter
+    def bottom_offset(self, value):
+        """Set bottom offset for robot base positioning"""
+        self._bottom_offset = np.array(value)
         
     def initialize(self, model, data):
         """
@@ -131,8 +142,9 @@ class MujocoRobotModel(MujocoXMLModel):
             self._root_body = self.links_name[0]
 
     @property
-    def contact_geom_rgba(self) -> np.array:
-        return MOUNT_COLLISION_COLOR
+    def contact_geom_rgba(self) -> np.ndarray:
+        """Get contact geometry RGBA color as numpy array"""
+        return np.array(MOUNT_COLLISION_COLOR)
 
     @property
     def naming_prefix(self) -> str:
@@ -162,6 +174,50 @@ class MujocoRobotModel(MujocoXMLModel):
         self._elements["root_body"].set(
             "quat", array_to_string(rot)
         )
+
+    def get_body_world_pose(self, link_name: str):
+        """Get the world pose of a specific robot body.
+        
+        Args:
+            link_name: Name of the body/link
+            
+        Returns:
+            dict: World pose dictionary with:
+                - position: numpy.ndarray [x, y, z] - 3D position
+                - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
+        """
+        body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link_name)
+        if body_id < 0:
+            raise ValueError(f"Link {link_name} not found in model")
+            
+        link_pos = self._mujoco_data.xpos[body_id].copy()
+        link_quat = self._mujoco_data.xquat[body_id].copy()
+        link_quat = wxyz_to_xyzw(link_quat)
+        
+        return {
+            "position": link_pos,
+            "orientation": link_quat
+        }
+    
+    def get_all_body_world_poses(self):
+        """Get the world poses of all robot bodies.
+        
+        Returns:
+            Dict[str, dict]: Dictionary mapping body names to their world pose dictionaries.
+                Each pose dictionary contains:
+                - position: numpy.ndarray [x, y, z] - 3D position
+                - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
+                Body names in the dictionary keys have the naming prefix removed.
+        """
+        body_poses = {}
+        for link_name in self.links_name:
+            # Remove naming prefix from the key while keeping full name for pose retrieval
+            clean_link_name = link_name
+            if self.naming_prefix and link_name.startswith(self.naming_prefix):
+                clean_link_name = link_name[len(self.naming_prefix):]
+            body_poses[clean_link_name] = self.get_body_world_pose(link_name)
+        
+        return body_poses
     
     def fk_link(self, q: np.ndarray, link: str) -> Tuple[np.ndarray, np.ndarray]:
         """

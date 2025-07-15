@@ -1,20 +1,46 @@
 #####################################################################################
+# Copyright (c) 2023-2025 Galbot. All Rights Reserved.
 #
-# Description: Mujoco simulator wrapper for SynthNova physics simulator
+# This software contains confidential and proprietary information of Galbot, Inc.
+# ("Confidential Information"). You shall not disclose such Confidential Information
+# and shall use it only in accordance with the terms of the license agreement you
+# entered into with Galbot, Inc.
+#
+# UNAUTHORIZED COPYING, USE, OR DISTRIBUTION OF THIS SOFTWARE, OR ANY PORTION OR
+# DERIVATIVE THEREOF, IS STRICTLY PROHIBITED. IF YOU HAVE RECEIVED THIS SOFTWARE IN
+# ERROR, PLEASE NOTIFY GALBOT, INC. IMMEDIATELY AND DELETE IT FROM YOUR SYSTEM.
+#####################################################################################
+#          _____             _   _       _   _
+#         / ____|           | | | |     | \ | |
+#        | (___  _   _ _ __ | |_| |__   |  \| | _____   ____ _
+#         \___ \| | | | '_ \| __| '_ \  | . ` |/ _ \ \ / / _` |
+#         ____) | |_| | | | | |_| | | | | |\  | (_) \ V / (_| |
+#        |_____/ \__, |_| |_|\__|_| |_| |_| \_|\___/ \_/ \__,_|
+#                 __/ |
+#                |___/
+#
+#####################################################################################
+#
+# Description: Mujoco simulator for SynthNova physics simulator
 # Date: 2025-04-27
 # Author: Chenyu Cao@Galbot
 #
 #####################################################################################
 
 import traceback
-
 import time
 import os
-
 import gc
-from typing import List
-from auro_utils import xyzw_to_wxyz
-from auro_utils import Logger
+import signal
+from typing import List, Dict
+from typing import Callable, Any
+
+# MuJoCo imports
+import mujoco
+from mujoco import viewer
+
+# Third-party imports
+from auro_utils import xyzw_to_wxyz, wxyz_to_xyzw, Logger
 from threading import RLock
 
 import pathlib
@@ -34,7 +60,6 @@ from synthnova_config import (
 )
 
 from pathlib import Path
-from auro_utils import wxyz_to_xyzw
 
 from physics_simulator.utils.path_manager import PathManager
 
@@ -45,8 +70,6 @@ class MujocoSimulator(BaseSim):
         Args:
             physics_simulator_config: Configuration object containing all simulator settings
         """
-        from mujoco import viewer
-
         super().__init__(physics_simulator_config)
         self.root_directory = PathManager.get_root_path()
         self.synthnova_assets_directory = self.get_synthnova_assets_directory()
@@ -67,8 +90,6 @@ class MujocoSimulator(BaseSim):
         self._render_context_offscreen = None
 
         # Add signal handler for graceful shutdown
-        import signal
-
         signal.signal(signal.SIGINT, self._signal_handler)
 
         try:
@@ -85,7 +106,13 @@ class MujocoSimulator(BaseSim):
             ):
                 self.import_scenario(self.config.scenario_config)
         except Exception as e:
-            print(f"Physics Simulator initialization failed: {e}")
+            # If logger is not initialized yet, create a temporary one
+            if self.logger is None:
+                from auro_utils import Logger
+                temp_logger = Logger()
+                temp_logger.log_error(f"Physics Simulator initialization failed: {e}")
+            else:
+                self.logger.log_error(f"Physics Simulator initialization failed: {e}")
             raise e
 
         else:
@@ -110,8 +137,6 @@ class MujocoSimulator(BaseSim):
         Args:
             xml: String containing MuJoCo model XML
         """
-        import mujoco
-
         # from physics_simulator.simulator import MjModel, MjData
         self.model = mujoco.MjModel.from_xml_string(xml)
 
@@ -121,15 +146,12 @@ class MujocoSimulator(BaseSim):
         Args:
             xml_file: Path to the XML file
         """
-        import mujoco
-
         # from physics_simulator.simulator import MjModel, MjData
         self.model = mujoco.MjModel.from_xml_file(xml_file)
 
     def initialize(self):
         """Initialize the simulator by setting up the MuJoCo model, data structures, and viewer.
         Must be called before stepping the simulation."""
-        import mujoco
         from physics_simulator.simulator.mj_wrapper import (
             MjRenderContextOffscreen,
             MjModel,
@@ -180,22 +202,22 @@ class MujocoSimulator(BaseSim):
     def forward(self):
         """Run forward dynamics to synchronize derived quantities in MuJoCo.
         This updates all computed quantities in the simulation without advancing time."""
-        import mujoco
-
         with self.lock:
             mujoco.mj_forward(self.model._model, self.data._data)
 
     def step(self, num_steps: int = 1, render: bool = True):
         """Step simulation and execute physics callbacks."""
-        import mujoco
-
-        if self._running:
-            if not render:
-                self.logger.log_warning("Render parameter is ignored in Mujoco")
+        
+        # Check if model is available
+        if self.model is None:
+            self.logger.log_error("Simulator model is not available. The simulator may have been closed.")
+            raise RuntimeError("Simulator model is not available. The simulator may have been closed.")
+        
+        if self.is_running():
             for _ in range(num_steps):
                 mujoco.mj_step(self.model._model, self.data._data)
 
-            if self.viewer is not None:
+            if render and self.viewer is not None:
                 self.viewer.sync()
 
         else:
@@ -203,21 +225,52 @@ class MujocoSimulator(BaseSim):
                 "Simulator is not running, please call initialize() first"
             )
 
-    def step1(self):
-        """Execute the first part of a simulation step (before control inputs).
-        This computes forward dynamics without integrating positions."""
-        import mujoco
+    def step1(self, num_steps: int = 1):
+        """Execute the first part of simulation steps (before control inputs).
+        This computes forward dynamics without integrating positions.
+        
+        Args:
+            num_steps: Number of simulation step1 operations to execute
+        """
+        # Check if model is available
+        if self.model is None:
+            self.logger.log_error("Simulator model is not available. The simulator may have been closed.")
+            raise RuntimeError("Simulator model is not available. The simulator may have been closed.")
+        
+        if self.is_running():
+            with self.lock:
+                for _ in range(num_steps):
+                    mujoco.mj_step1(self.model._model, self.data._data)
+        else:
+            raise RuntimeError(
+                "Simulator is not running, please call initialize() first"
+            )
 
-        with self.lock:
-            mujoco.mj_step1(self.model._model, self.data._data)
-
-    def step2(self):
-        """Execute the second part of a simulation step (after control inputs).
-        This integrates positions and updates the simulation state."""
-        import mujoco
-
-        with self.lock:
-            mujoco.mj_step2(self.model._model, self.data._data)
+    def step2(self, num_steps: int = 1, render: bool = True):
+        """Execute the second part of simulation steps (after control inputs).
+        This integrates positions and updates the simulation state.
+        
+        Args:
+            num_steps: Number of simulation step2 operations to execute
+            render: Whether to update viewer after stepping
+        """
+        # Check if model is available
+        if self.model is None:
+            self.logger.log_error("Simulator model is not available. The simulator may have been closed.")
+            raise RuntimeError("Simulator model is not available. The simulator may have been closed.")
+        
+        if self.is_running():
+            with self.lock:
+                for _ in range(num_steps):
+                    mujoco.mj_step2(self.model._model, self.data._data)
+            
+            # Update viewer after all step2 operations are completed
+            if render and self.viewer is not None:
+                self.viewer.sync()
+        else:
+            raise RuntimeError(
+                "Simulator is not running, please call initialize() first"
+            )
 
     def render(
         self,
@@ -244,6 +297,11 @@ class MujocoSimulator(BaseSim):
         Returns:
             numpy.ndarray: The rendered image
         """
+        # Check if model is available
+        if self.model is None:
+            self.logger.log_error("Simulator model is not available. The simulator may have been closed.")
+            raise RuntimeError("Simulator model is not available. The simulator may have been closed.")
+            
         if camera_name is None:
             camera_id = None
         else:
@@ -305,10 +363,8 @@ class MujocoSimulator(BaseSim):
 
     def reset(self):
         """Reset the simulation to its initial state."""
-        import mujoco
-
         with self.lock:
-            mujoco.mj_resetData(self.model, self.data)
+            mujoco.mj_resetData(self.model._model, self.data._data)
 
     def close(self):
         """Clean up and close the simulator, releasing all resources."""
@@ -328,11 +384,90 @@ class MujocoSimulator(BaseSim):
     def free(self):
         """Clean up resources and prevent memory leaks."""
         with self.lock:
+            # Properly clean up MuJoCo resources
             if hasattr(self, 'data') and self.data is not None:
-                del self.data
+                # Set to None to release reference, let Python's garbage collector handle cleanup
+                self.data = None
             if hasattr(self, 'model') and self.model is not None:
-                del self.model
-            gc.collect()
+                # Set to None to release reference, let Python's garbage collector handle cleanup
+                self.model = None
+            
+            # Clear other collections
+            self._robots.clear()
+            self._objects.clear()
+            self._sensors.clear()
+            self._ground_planes.clear()
+            
+            # Python's garbage collector will handle the rest automatically
+            # Explicit gc.collect() calls can be expensive and are usually unnecessary
+
+    def _convert_to_absolute_path(self, path):
+        """Convert a relative path to an absolute path using synthnova_assets_directory as base.
+
+        Args:
+            path: The path to convert
+
+        Returns:
+            str: The absolute path if input was relative, otherwise returns the original path
+        """
+        if path is None:
+            return None
+        if not os.path.isabs(path):
+            return os.path.join(self.synthnova_assets_directory, path)
+        return path
+
+    def _convert_config_paths_to_absolute(self, config):
+        """Convert relative paths in a config object to absolute paths.
+
+        Args:
+            config: The config object to process
+
+        Returns:
+            The processed config object with absolute paths
+        """
+        if hasattr(config, "usd_path"):
+            config.usd_path = self._convert_to_absolute_path(config.usd_path)
+        if hasattr(config, "mjcf_path"):
+            config.mjcf_path = self._convert_to_absolute_path(config.mjcf_path)
+        if hasattr(config, "obj_path"):
+            config.obj_path = self._convert_to_absolute_path(config.obj_path)
+        if hasattr(config, "srdf_path"):
+            config.srdf_path = self._convert_to_absolute_path(config.srdf_path)
+        return config
+
+    def _convert_to_relative_path(self, path: str) -> str:
+        """Convert an absolute path to a relative path if it's under synthnova_assets_directory.
+
+        Args:
+            path (str): The absolute path to convert
+
+        Returns:
+            str: The relative path if the input path is under synthnova_assets_directory,
+                 otherwise returns the original path
+        """
+        if path is None:
+            return path
+        if path.startswith(self.synthnova_assets_directory):
+            return path[len(self.synthnova_assets_directory) :].lstrip("/")
+        return path
+
+    def _convert_config_paths(self, config):
+        """Convert absolute paths in a config object to relative paths.
+
+        Args:
+            config: The config object to process
+
+        Returns:
+            The processed config object with relative paths
+        """
+        # paths need to be converted to relative paths
+        path_keys = ["usd_path", "mjcf_path", "srdf_path", "obj_path"]
+        for key in path_keys:
+            if hasattr(config, key):
+                setattr(
+                    config, key, self._convert_to_relative_path(getattr(config, key))
+                )
+        return config
 
     def add_default_scene(self, ground_plane_config: GroundPlaneConfig=None):
         """Add a default scene with ground plane to the simulation.
@@ -353,8 +488,6 @@ class MujocoSimulator(BaseSim):
             Path()
             .joinpath(self.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("default_assets")
-            .joinpath("default_ground_plane")
             .joinpath(f"default_ground_plane.xml")
         ).as_posix()
 
@@ -439,12 +572,8 @@ class MujocoSimulator(BaseSim):
 
         # Create object using factory
         try:
-            # xyzw to wxyz
+            # No quaternion conversion needed - factory expects xyzw format
             object_config_copy = object_config.model_copy()
-            if object_config_copy.orientation is not None:
-                object_config_copy.orientation = xyzw_to_wxyz(object_config_copy.orientation)
-            if object_config_copy.rotation is not None:
-                object_config_copy.rotation = xyzw_to_wxyz(object_config_copy.rotation)
             obj = MujocoObjectFactory.create_from_config(object_config_copy)
             self.world.merge_objects([obj])
 
@@ -672,8 +801,12 @@ class MujocoSimulator(BaseSim):
     def import_scenario(self, scenario_config: ScenarioConfig):
         """Import a complete scenario into the simulation.
         
-        Loads all elements defined in the scenario configuration including ground planes,
-        robots, objects, and sensors into the current simulation environment.
+        This method imports a scenario configuration and creates the corresponding
+        scene elements in the simulation world. It handles the creation of:
+        - Ground planes
+        - Robots
+        - Objects
+        - Sensors
         
         Args:
             scenario_config: Configuration object containing all scenario elements
@@ -684,20 +817,38 @@ class MujocoSimulator(BaseSim):
         try:
             self.logger.log_info(f"Importing scenario: {scenario_config.name}")
 
+            # Convert relative paths to absolute paths in configs
+            ground_planes = [
+                self._convert_config_paths_to_absolute(ground_plane)
+                for ground_plane in scenario_config.ground_planes
+            ]
+            robots = [
+                self._convert_config_paths_to_absolute(robot)
+                for robot in scenario_config.robots
+            ]
+            objects = [
+                self._convert_config_paths_to_absolute(obj)
+                for obj in scenario_config.objects
+            ]
+            sensors = [
+                self._convert_config_paths_to_absolute(sensor)
+                for sensor in scenario_config.sensors
+            ]
+
             # Add ground planes
-            for ground_plane_config in scenario_config.ground_planes:
+            for ground_plane_config in ground_planes:
                 self.add_default_scene(ground_plane_config)
 
             # Add robots
-            for robot_config in scenario_config.robots:
+            for robot_config in robots:
                 self.add_robot(robot_config)
 
             # Add objects
-            for object_config in scenario_config.objects:
+            for object_config in objects:
                 self.add_object(object_config)
 
             # Add sensors
-            for sensor_config in scenario_config.sensors:
+            for sensor_config in sensors:
                 self.add_sensor(sensor_config)
 
             self.logger.log_success(
@@ -747,7 +898,7 @@ class MujocoSimulator(BaseSim):
         """
         return robot.get_joint_positions(joint_names=joint_names)
 
-    def add_physics_callback(self, name: str, callback_fn: callable) -> None:
+    def add_physics_callback(self, name: str, callback_fn: Callable[..., Any]) -> None:
         """Register a callback function to be called during physics simulation.
         
         Args:
@@ -884,24 +1035,65 @@ class MujocoSimulator(BaseSim):
                 self.logger.log_error(f"Object type: {type(obj)}")
             raise
 
+    def get_robot_body_world_poses(self, prim_path: str) -> Dict[str, Any]:
+        """Get the world poses of all robot body parts.
+        
+        Args:
+            prim_path: Path to the robot
+            
+        Returns:
+            Dict[str, dict]: Dictionary mapping body names to their world pose dictionaries.
+                Each pose dictionary contains:
+                - position: numpy.ndarray [x, y, z] - 3D position  
+                - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
+            
+        Raises:
+            KeyError: If robot does not exist at the specified path
+        """
+        with self.lock:
+            robot = self._robots.get(prim_path)["instance"]
+
+            if robot is None:
+                self.logger.log_error(
+                    f"Robot with key '{prim_path}' not found in robots dictionary."
+                )
+                self.logger.log_debug(
+                    f"Available keys types: {[type(k) for k in self._robots.keys()]}"
+                )
+                raise KeyError(f"Robot with key '{prim_path}' not found")
+
+            # Get all body world poses from the robot
+            body_poses = robot.get_all_body_world_poses()
+
+            return body_poses
+
+
     @classmethod
     def get_synthnova_assets_directory(cls) -> str:
-        """Retrieves the SynthNova assets directory path.
+        # """Retrieves the SynthNova assets directory path.
 
-        This method retrieves the SynthNova assets directory path from the environment variable SYNTHNOVA_ASSETS.
-        If the environment variable is not set, it raises a ValueError.
-        If the environment variable is set, it returns the path.
+        # This method retrieves the SynthNova assets directory path from the environment variable SYNTHNOVA_ASSETS.
+        # If the environment variable is not set, it raises a ValueError.
+        # If the environment variable is set, it returns the path.
+
+        # Returns:
+        #     str: The path to the SynthNova assets directory.
+        # """
+        # synthnova_assets_directory = os.getenv("SYNTHNOVA_ASSETS")
+        # if synthnova_assets_directory is None:
+        #     raise ValueError(
+        #         "SYNTHNOVA_ASSETS environment variable is not set. Have you run the asset pull script in README?"
+        #     )
+
+        """
+        This method retrieves the SynthNova assets directory path from the root directory of the SynthNova Physics Simulator project.
+        It returns the path to the assets directory.
 
         Returns:
             str: The path to the SynthNova assets directory.
         """
-        # synthnova_assets_directory = os.getenv("SYNTHNOVA_ASSETS")
+
         synthnova_assets_directory = cls.get_root_directory() + "/assets"
-        if synthnova_assets_directory is None:
-            # raise ValueError(
-            #     "SYNTHNOVA_ASSETS environment variable is not set. Have you run the asset pull script in README?"
-            # )
-            raise ValueError("assets directory not found")
         return synthnova_assets_directory
 
     @classmethod
@@ -925,33 +1117,49 @@ class MujocoSimulator(BaseSim):
     ):
         """Export the current simulation state as a scenario configuration file.
         
-        Creates a scenario configuration file from the current state of all entities
-        in the simulation, including robots, objects, and sensors.
+        This method exports the current state of the simulation scenario to a file.
+        It includes all robots, objects, sensors, and ground planes in the scene.
         
         Args:
-            file_path: Path where the scenario file will be saved
-            scenario_name: Name for the scenario (defaults to file name)
-            scenario_description: Description of the scenario (optional)
-            
-        Returns:
-            str: Path to the saved scenario file
+            file_path (str): Path where the configuration file will be saved
+            scenario_name (str, optional): Name of the scenario. Defaults to file name without extension
+            scenario_description (str, optional): Description of the scenario. Defaults to "Exported scenario from SynthNova Physics Simulator"
             
         Raises:
-            ValueError: If there is an error during export
+            ValueError: If there's an error during file writing
         """
         try:
+            # Ensure the target directory exists
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            # Convert absolute paths to relative paths in configs
+            ground_planes = [
+                self._convert_config_paths(ground_plane["config"])
+                for ground_plane in self._ground_planes.values()
+            ]
+            robots = [
+                self._convert_config_paths(robot["config"])
+                for robot in self._robots.values()
+            ]
+            objects = [
+                self._convert_config_paths(obj["config"])
+                for obj in self._objects.values()
+                if isinstance(obj, dict) and "config" in obj
+            ]
+            sensors = [
+                self._convert_config_paths(sensor["config"])
+                for sensor in self._sensors.values()
+            ]
+
             # Create scenario config with proper initialization
             scenario_config = ScenarioConfig(
                 name=scenario_name or pathlib.Path(file_path).stem,
                 description=scenario_description
-                or "Exported scenario from SynthNova Render Simulator",
-                ground_planes=[
-                    ground_plane["config"]
-                    for ground_plane in self._ground_planes.values()
-                ],
-                robots=[robot["config"] for robot in self._robots.values()],
-                objects=[obj["config"] for obj in self._objects.values() if isinstance(obj, dict) and "config" in obj],
-                sensors=[sensor["config"] for sensor in self._sensors.values()],
+                or "Exported scenario from SynthNova Physics Simulator",
+                ground_planes=ground_planes,
+                robots=robots,
+                objects=objects,
+                sensors=sensors,
             )
             # Export to file
             scenario_config.export_to_file(file_path)
@@ -961,54 +1169,49 @@ class MujocoSimulator(BaseSim):
             self.logger.log_error(f"Error exporting scenario: {str(e)}")
             raise ValueError(f"Error exporting scenario: {str(e)}")
 
-    def get_current_state(self) -> dict:
-        """Get a complete snapshot of the current simulation state.
+    def get_state(self) -> dict:
+        """Get a comprehensive snapshot of the current simulation state.
         
-        Returns a dictionary containing the state of all robots and objects in the simulation,
-        along with current physics parameters and simulation time.
+        Includes robot states, body world poses, object states, and timing information.
+        Performance-oriented for immediate use.
         
         Returns:
-            dict: Dictionary containing:
-                - robots: State of each robot (positions, orientations, joint states)
-                - objects: State of each object (positions, orientations)
-                - physics_params: Current physics parameters
+            dict: Dictionary containing current simulation state data with:
+                - robots: Robot states including joint positions, velocities, and body world poses
+                - objects: Object states including positions and orientations
+                - timestep: Physics simulation timestep
                 - time: Current simulation time
         """
         with self.lock:
-            state = {
-                "robots": {},
-                "objects": {},
-                "physics_params": {},
+            # Build robot state data with body world poses
+            robot_data = {}
+            for prim_path in self._robots.keys():
+                robot_state = self.get_robot_state(prim_path)
+                robot_body_poses = self.get_robot_body_world_poses(prim_path)
+                
+                robot_data[prim_path] = {
+                    **{k: v.tolist() if hasattr(v, 'tolist') else v for k, v in robot_state.items()},
+                    "body_world_poses": {
+                        body_name: {
+                            "position": pose["position"].tolist(),
+                            "orientation": pose["orientation"].tolist()
+                        }
+                        for body_name, pose in robot_body_poses.items()
+                    }
+                }
+            
+            return {
+                "robots": robot_data,
+                "objects": {
+                    prim_path: {
+                        **{k: v.tolist() if hasattr(v, 'tolist') else v 
+                           for k, v in self.get_object_state(prim_path).items()}
+                    }
+                    for prim_path in self._objects.keys()
+                },
+                "timestep": self.get_physics_dt(),
                 "time": self.data.time
             }
-            
-            # Export robot states
-            for prim_path, robot_info in self._robots.items():
-                robot_state = self.get_robot_state(prim_path)
-                state["robots"][prim_path] = {
-                    "position": robot_state["position"].tolist(),
-                    "orientation": robot_state["orientation"].tolist(),
-                    "joint_positions": robot_state["joint_positions"].tolist(),
-                    "joint_velocities": robot_state["joint_velocities"].tolist()
-                }
-            
-            # Export object states
-            for prim_path, obj_info in self._objects.items():
-                obj_state = self.get_object_state(prim_path)
-                state["objects"][prim_path] = {
-                    "position": obj_state["position"].tolist(),
-                    "orientation": obj_state["orientation"].tolist()
-                }
-            
-            # Export essential physics parameters
-            state["physics_params"] = {
-                "timestep": self.config.mujoco_config.timestep,
-                "gravity": self.config.mujoco_config.gravity,
-                "solver": self.config.mujoco_config.solver,
-                "iterations": self.config.mujoco_config.iterations
-            }
-            
-            return state
     
     def get_simulation_time(self) -> float:
         """Get current simulation time.

@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: Depth camera config of SynthNova
+# Description: Depth camera config of Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-04-02
 #

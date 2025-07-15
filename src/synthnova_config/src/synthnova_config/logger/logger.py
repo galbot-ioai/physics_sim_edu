@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: Logger configuration module for SynthNova
+# Description: Logger configuration module for Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-04-16
 #
@@ -32,7 +32,7 @@ from typing import Literal, Optional, Dict, Any
 
 
 class LoggerConfig(BaseModel):
-    """Configuration class for managing logging behavior in the SynthNova application.
+    """Configuration class for managing logging behavior in the Synthnova application.
 
     This class provides a structured way to configure logging parameters, including log levels,
     output destinations, and file paths. It uses Pydantic for data validation and serialization.

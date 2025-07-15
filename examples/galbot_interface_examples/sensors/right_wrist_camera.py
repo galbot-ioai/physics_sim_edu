@@ -32,9 +32,9 @@ from synthnova_config import (
     PhysicsSimulatorConfig,
     RobotConfig,
     RgbCameraConfig,
-    RealsenseD415RgbSensorConfig,
+    RealsenseD405RgbSensorConfig,
     DepthCameraConfig,
-    RealsenseD415DepthSensorConfig,
+    RealsenseD405DepthSensorConfig,
 )
 from physics_simulator.galbot_interface import GalbotInterface, GalbotInterfaceConfig
 from physics_simulator.utils import preprocess_depth
@@ -56,19 +56,19 @@ def main():
     # Add robot
     robot_config = RobotConfig(
         prim_path="/World/Galbot",
-        name="galbot_one_charlie",
+        name="galbot_one_foxtrot",
         mjcf_path=Path()
             .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("robot")
-            .joinpath("galbot_one_charlie_description")
-            .joinpath("galbot_one_charlie.xml"),
+            .joinpath("robots")
+            .joinpath("galbot_one_foxtrot_description")
+            .joinpath("galbot_one_foxtrot.xml"),
         position=[0, 0, 0],
         orientation=[0, 0, 0, 1]
     )
     robot_path = synthnova_physics_simulator.add_robot(robot_config)
 
-    # Add right wrist RGB camera (RealSense D415)
+    # Add right wrist RGB camera (RealSense D405)
     right_wrist_rgb_camera_config = RgbCameraConfig(
         name="right_wrist_rgb_camera",
         prim_path=os.path.join(
@@ -77,17 +77,26 @@ def main():
             "right_arm_end_effector_mount_link",
             "right_wrist_rgb_camera",
         ),
-        translation = [0.006478062856013861, -0.06463132943805237, 0.01188412217304172],
-        rotation = [-0.0353557, 0.7194, -0.020291, -0.6934],
-        camera_axes="usd",
-        sensor_config=RealsenseD415RgbSensorConfig(),
-        parent_entity_name="galbot_one_charlie/right_arm_end_effector_mount_link"
+        translation=[
+            -0.027350505376469682,
+            0.008052716477323975,
+            0.0685470849954687,
+        ],
+        rotation=[
+            -0.5165864364288519,
+            0.5197467005152123,
+            -0.4827209538660852,
+            0.47956470022292763,
+        ],
+        camera_axes="ros",
+        sensor_config=RealsenseD405RgbSensorConfig(),
+        parent_entity_name="galbot_one_foxtrot/right_arm_end_effector_mount_link"
     )
     right_wrist_rgb_camera_path = synthnova_physics_simulator.add_sensor(
         right_wrist_rgb_camera_config
     )
 
-    # Add right wrist depth camera (RealSense D415)
+    # Add right wrist depth camera (RealSense D405)
     right_wrist_depth_camera_config = DepthCameraConfig(
         name="right_wrist_depth_camera",
         prim_path=os.path.join(
@@ -96,11 +105,20 @@ def main():
             "right_arm_end_effector_mount_link",
             "right_wrist_depth_camera",
         ),
-        translation = [0.006478062856013861, -0.06463132943805237, 0.01188412217304172],
-        rotation = [-0.0353557, 0.7194, -0.020291, -0.6934],
-        camera_axes="usd",
-        sensor_config=RealsenseD415DepthSensorConfig(),
-        parent_entity_name="galbot_one_charlie/right_arm_end_effector_mount_link"
+        translation=[
+            -0.027350505376469682,
+            0.008052716477323975,
+            0.0685470849954687,
+        ],
+        rotation=[
+            -0.5165864364288519,
+            0.5197467005152123,
+            -0.4827209538660852,
+            0.47956470022292763,
+        ],
+        camera_axes="ros",
+        sensor_config=RealsenseD405DepthSensorConfig(),
+        parent_entity_name="galbot_one_foxtrot/right_arm_end_effector_mount_link"
     )
     right_wrist_depth_camera_path = synthnova_physics_simulator.add_sensor(
         right_wrist_depth_camera_config
@@ -130,31 +148,41 @@ def main():
     synthnova_physics_simulator.step(10)
 
     while True:
-        synthnova_physics_simulator.step(7)
-        
-        # Get rgb data
-        rgb_data = galbot_interface.right_wrist_camera.get_rgb()
-        
-        # Get depth data
-        depth_data = galbot_interface.right_wrist_camera.get_depth()
-        
-        # Preprocess depth data for visualization
-        # You can also use this function to preprocess the depth data for other purposes
-        depth_data = preprocess_depth(
-            depth_data,
-            scale=1000,  # m to mm
-            min_value=0.0,
-            max_value=1 * 1000,  # 1m to mm
-            data_type=np.uint16,
-        )
-        
-        # Display images in non-blocking way
-        cv2.imshow("RGB Camera", cv2.cvtColor(rgb_data, cv2.COLOR_RGB2BGR))
-        cv2.imshow("Depth Camera", depth_data)
+        try:
+            if not synthnova_physics_simulator.is_running():
+                print("Simulator has been closed, exiting...")
+                break
 
-        # Wait for 1ms and check for 'q' key to quit
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            cv2.destroyAllWindows()
+            synthnova_physics_simulator.step(7)
+            
+            # Get rgb data
+            rgb_data = galbot_interface.right_wrist_camera.get_rgb()
+            
+            # Get depth data
+            depth_data = galbot_interface.right_wrist_camera.get_depth()
+            
+            # Preprocess depth data for visualization
+            # You can also use this function to preprocess the depth data for other purposes
+            depth_data = preprocess_depth(
+                depth_data,
+                scale=1000,  # m to mm
+                min_value=0.0,
+                max_value=1 * 1000,  # 1m to mm
+                data_type=np.uint16,
+            )
+            
+            # Display images in non-blocking way
+            cv2.imshow("RGB Camera", cv2.cvtColor(rgb_data, cv2.COLOR_RGB2BGR))
+            cv2.imshow("Depth Camera", depth_data)
+
+            # Wait for 1ms and check for 'q' key to quit
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                cv2.destroyAllWindows()
+                break
+                
+        except (AttributeError, RuntimeError, Exception) as e:
+            # Handle any errors during shutdown or resource cleanup
+            print(f"Simulator resources unavailable during shutdown: {e}")
             break
 
     # Get camera parameters

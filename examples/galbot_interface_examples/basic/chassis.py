@@ -53,13 +53,13 @@ def main():
     # Add robot
     robot_config = RobotConfig(
         prim_path="/World/Galbot",
-        name="galbot_one_charlie",
+        name="galbot_one_foxtrot",
         mjcf_path=Path()
         .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
         .joinpath("synthnova_assets")
-        .joinpath("robot")
-        .joinpath("galbot_one_charlie_description")
-        .joinpath("galbot_one_charlie.xml"),
+        .joinpath("robots")
+        .joinpath("galbot_one_foxtrot_description")
+        .joinpath("galbot_one_foxtrot.xml"),
         position=[0, 0, 0],
         orientation=[0, 0, 0, 1]
     )
@@ -86,23 +86,59 @@ def main():
     galbot_interface.initialize()
 
     # Start the simulation
-    synthnova_physics_simulator.step()
+    synthnova_physics_simulator.step(10)
 
-    # Get current joint positions
-    current_joint_positions = galbot_interface.chassis.get_joint_positions()
+    # Example 1: Direct velocity control
+    print("Example 1: Direct velocity control")
+    
+    # Move forward for 2 seconds
+    print("Moving forward...")
+    for _ in range(2000):  # 2 seconds at 1000Hz
+        galbot_interface.chassis.set_joint_positions([0.5, 0.0, 0.0])  # forward, side, yaw
+        synthnova_physics_simulator.step(10)
 
-    # Define target joint positions
-    target_joint_positions = [1, 6, 1.5]
+    # Stop for 1 second
+    print("Stopping...")
+    for _ in range(100):
+        galbot_interface.chassis.set_joint_positions([0.0, 0.0, 0.0])
+        synthnova_physics_simulator.step(10)
 
-    # Interpolate joint positions
-    positions = interpolate_joint_positions(
-        current_joint_positions, target_joint_positions, 5000
-    )
-    # Create a joint trajectory
-    joint_trajectory = JointTrajectory(positions=positions)
+    # Move sideways for 2 seconds
+    print("Moving sideways...")
+    for _ in range(2000):
+        galbot_interface.chassis.set_joint_positions([0.0, 0.3, 0.0])  # forward, side, yaw
+        synthnova_physics_simulator.step(10)
 
-    # Follow the trajectory
-    galbot_interface.chassis.follow_trajectory(joint_trajectory)
+    # Stop for 1 second
+    print("Stopping...")
+    for _ in range(100):
+        galbot_interface.chassis.set_joint_positions([0.0, 0.0, 0.0])
+        synthnova_physics_simulator.step(10)
+
+    # Rotate for 2 seconds
+    print("Rotating...")
+    for _ in range(2000):
+        galbot_interface.chassis.set_joint_positions([0.0, 0.0, 0.5])  # forward, side, yaw
+        synthnova_physics_simulator.step(10)
+
+    # Stop
+    print("Final stop...")
+    for _ in range(100):
+        galbot_interface.chassis.set_joint_positions([0.0, 0.0, 0.0])
+        synthnova_physics_simulator.step(10)
+
+    # Example 2: Combined movement - diagonal with rotation
+    print("Example 2: Combined movement - diagonal with rotation")
+    for _ in range(3000):
+        galbot_interface.chassis.set_joint_positions([0.3, 0.2, 0.1])  # forward, side, yaw
+        synthnova_physics_simulator.step(10)
+
+    # Final stop
+    for _ in range(100):
+        galbot_interface.chassis.set_joint_positions([0.0, 0.0, 0.0])
+        synthnova_physics_simulator.step(10)
+
+    print("Demo completed!")
 
     # Run the display loop
     synthnova_physics_simulator.loop()

@@ -1,4 +1,4 @@
-<img src="docs/images/icon.svg" alt="SynthNova Icon" width="40" height="40" style="vertical-align: middle; margin-right: 5px;"> SynthNova Physics Simulator
+<img src="docs/image/icon.svg" alt="SynthNova Icon" width="40" height="40" style="vertical-align: middle; margin-right: 5px;"> SynthNova Physics Simulator
 
 <div align="right">
   <a href="README.md">English</a> | <a href="README.zh.md">中文</a>

@@ -57,10 +57,22 @@ class BasicCamera:
                 "module_name is not set, please set it in the __init__ method"
             )
         self.module_config = getattr(self.galbot_interface_config, self.module_name)
-        self.rgb_camera = self.simulator.get_sensor(self.module_config.prim_path_rgb)
-        self.depth_camera = self.simulator.get_sensor(
-            self.module_config.prim_path_depth
-        )
+        
+        # Get the camera by the prim path
+        if self.module_config.prim_path_rgb is not None:
+            self.rgb_camera = self.simulator.get_sensor(self.module_config.prim_path_rgb)
+        else:
+            self.rgb_camera = None
+            
+        if self.module_config.prim_path_depth is not None:
+            self.depth_camera = self.simulator.get_sensor(self.module_config.prim_path_depth)
+        else:
+            self.depth_camera = None
+
+        if self.rgb_camera is None and self.depth_camera is None:
+            raise RuntimeError(
+                f"At least one camera (RGB or depth) must be configured for {self.module_name}"
+            )
 
         self.initialized = True
         self.logger.log_debug(f"{self.__class__.__name__} initialized")
@@ -317,14 +329,55 @@ class BasicGripper(BasicLimb):
             f"Function {self.get_gripper_width.__name__} is not implemented"
         )
 
+    # def set_gripper_width(self, normalized_width: float):
+    #     """
+    #     Set the gripper width based on a normalized value between 0.0 (closed) and 1.0 (open).
+        
+    #     Args:
+    #         normalized_width: Float between 0.0 and 1.0 representing the desired gripper width
+    #     """
+    #     self._set_gripper_width_robotiq(normalized_width)
+
     def set_gripper_width(self, normalized_width: float):
         """
-        Set the gripper width based on a normalized value between 0.0 (closed) and 1.0 (open).
+        Set the Robotiq gripper width based on a normalized value.
         
         Args:
             normalized_width: Float between 0.0 and 1.0 representing the desired gripper width
         """
-        self._set_gripper_width_robotiq(normalized_width)
+        def map_range(
+            value: float, in_min: float, in_max: float, out_min: float, out_max: float
+        ) -> float:
+            """
+            Linearly maps input value from [in_min, in_max] to [out_min, out_max].
+
+            Args:
+                value: Input value
+                in_min: Input range minimum
+                in_max: Input range maximum
+                out_min: Output range minimum
+                out_max: Output range maximum
+            
+            Returns:
+                Mapped value
+            """
+            return out_min + (value - in_min) * (out_max - out_min) / (in_max - in_min)
+
+        value_min, value_max = 0.0, 1.0  # Input range [0,1]
+        width_min, width_max = (
+            0,
+            1.645,
+        )  # Mapped range [0, 1.645] m
+        # Inverse the value
+        normalized_width = 1 - normalized_width
+
+        # Calculate mapped gripper width
+        real_gripper_width = map_range(
+            normalized_width, value_min, value_max, width_min, width_max
+        )
+
+        joint_positions = [real_gripper_width]
+        self.set_joint_positions(joint_positions)
 
     def _set_gripper_width_robotiq(self, normalized_width: float):
         """

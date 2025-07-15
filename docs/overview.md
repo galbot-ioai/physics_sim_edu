@@ -16,6 +16,8 @@ High-level interface for controlling robots with modular components:
 * **Chassis**: Mobile base control for navigation
 * **Head/Leg**: Additional joint control modules
 
+Available modules: `chassis`, `left_arm`, `right_arm`, `leg`, `head`, `left_gripper`, `right_gripper`, `left_wrist_camera`, `right_wrist_camera`, `front_head_camera`
+
 **MujocoRobot**
 Low-level robot control interface providing:
 
@@ -41,3 +43,10 @@ Support for primitive shapes (boxes, spheres) and mesh objects from MJCF files.
 * **Asset Management**: Automatic discovery of robot and object assets
 * **Configuration System**: Code-based configuration for all simulation elements
 * **Physics Callbacks**: Custom behavior injection during simulation 
+
+## Applications
+* **Robotics Research**: Simulate and test robot kinematics, dynamics, and control algorithms in a realistic environment.
+* **Algorithm Prototyping**: Rapidly prototype and validate motion planning, manipulation, and navigation algorithms.
+* **Sensor Data Generation**: Generate synchronized RGB, depth, and segmentation data for computer vision and machine learning tasks.
+
+

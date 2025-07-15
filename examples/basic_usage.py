@@ -28,45 +28,18 @@
 #####################################################################################
 
 from physics_simulator import PhysicsSimulator
-from synthnova_config import PhysicsSimulatorConfig, RobotConfig
-from pathlib import Path
-
+from synthnova_config import PhysicsSimulatorConfig
 
 def main():
-    # Create sim config
-    my_config = PhysicsSimulatorConfig()
-
     # Initialize the simulator
+    my_config = PhysicsSimulatorConfig()
     synthnova_physics_simulator = PhysicsSimulator(my_config)
 
     # Add default scene
     synthnova_physics_simulator.add_default_scene()
 
-    # Add robot
-    robot_config = RobotConfig(
-        prim_path="/World/Galbot",
-        name="galbot_one_charlie",
-        mjcf_path=Path()
-            .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
-            .joinpath("synthnova_assets")
-            .joinpath("robot")
-            .joinpath("galbot_one_charlie_description")
-            .joinpath("galbot_one_charlie.xml"),
-        position=[0, 0, 0],
-        orientation=[0, 0, 0, 1]
-    )
-    synthnova_physics_simulator.add_robot(robot_config)
-
     # Initialize the simulator
     synthnova_physics_simulator.initialize()
-
-    # Get the init state
-    init_state = synthnova_physics_simulator.get_current_state()
-    print(init_state)
-
-    # Get the sim time
-    sim_time = synthnova_physics_simulator.get_simulation_time()
-    print(f"Simulation time: {sim_time}")
 
     # Run the display loop
     synthnova_physics_simulator.loop()

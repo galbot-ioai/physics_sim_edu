@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: SynthNova Cloud Streaming Config
+# Description: Synthnova Cloud Streaming Config
 # Author: Herman Ye@Galbot
 # Date: 2025-04-16
 #
@@ -34,10 +34,10 @@ import re
 
 
 class CloudStreamingConfig(BaseModel):
-    """Configuration class for SynthNova cloud streaming parameters.
+    """Configuration class for Synthnova cloud streaming parameters.
 
     This class serves as the central configuration for cloud streaming settings in the
-    SynthNova framework. It defines parameters for WebRTC streaming and
+    Synthnova framework. It defines parameters for WebRTC streaming and
     other cloud streaming configurations.
 
     Attributes:

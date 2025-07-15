@@ -128,7 +128,7 @@ class MujocoRobot(object):
                     
         # If we still didn't find a valid body, log a warning
         if self.root_body_name is None:
-            print(f"WARNING: Could not find a valid root body for robot {self.name}. Using body ID 1.")
+            self.sim.logger.log_warning(f"Could not find a valid root body for robot {self.name}. Using body ID 1.")
             self.root_body_id = 1
             self.root_body_name = mujoco.mj_id2name(self.mujoco_model, mujoco.mjtObj.mjOBJ_BODY, 1) or "unknown"
 
@@ -199,6 +199,20 @@ class MujocoRobot(object):
             
         return position, orientation
 
+    def get_joint_dof_index(self, joint_name):
+        """Get the DOF index for a joint by name for velocity operations.
+        
+        Args:
+            joint_name: Name of the joint
+            
+        Returns:
+            int: DOF index in qvel array, or -1 if not found
+        """
+        joint_id = mujoco.mj_name2id(self.mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+        if joint_id >= 0:
+            return self.mujoco_model.jnt_dofadr[joint_id]
+        return -1
+
     def get_joint_index(self, joint_name):
         """Get the index for a joint by name in MuJoCo's qpos array.
         
@@ -218,8 +232,8 @@ class MujocoRobot(object):
         ]
 
     def get_dof_index(self, joint_name):
-        """Get the DOF index for a joint by name (alias for get_joint_index)."""
-        return self.get_joint_index(joint_name)
+        """Get the DOF index for a joint by name (alias for get_joint_dof_index)."""
+        return self.get_joint_dof_index(joint_name)
 
     def get_joint_names(self):
         """Get all joint names from the robot.
@@ -265,17 +279,15 @@ class MujocoRobot(object):
             
         joint_velocities = []
         for joint_name in joint_names:
-            joint_id = mujoco.mj_name2id(self.mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
-            if joint_id >= 0:
-                dof_idx = self.mujoco_model.jnt_dofadr[joint_id]
+            dof_idx = self.get_joint_dof_index(joint_name)
+            if dof_idx >= 0:
                 joint_velocities.append(self.data.qvel[dof_idx])
             else:
-                # If joint not found, add a default value (0)
                 joint_velocities.append(0.0)
                 
         return np.array(joint_velocities)
 
-    def set_joint_positions(self, positions, joint_names, immediate=False):
+    def set_joint_positions(self, positions, joint_names=None, immediate=False):
         """Set positions of specified joints.
         
         Args:
@@ -283,21 +295,36 @@ class MujocoRobot(object):
             joint_names: List of joint names to set positions for
             immediate: If True, set positions immediately without interpolation
         """
+
+        if joint_names is None:
+            joint_names = self.joint_names
+
         # Process each joint and its target position
         for joint_name, position in zip(joint_names, positions):
-            if joint_name in self.joint_names:
-                # Set actuator control target if one exists for this joint
+            if joint_name not in self.joint_names:
+                raise ValueError(f"Joint {joint_name} not found")
+                
+            if immediate:
+                # Direct position setting + sync actuator control
+                joint_idx = self.get_joint_index(joint_name)
+                self.data.qpos[joint_idx] = position
+                # Also update actuator to maintain the position
                 actuator_id = self.model.actuator_name2id(joint_name)
-                if actuator_id >= 0:  # -1 indicates no actuator found
+                if actuator_id >= 0:
                     self.data.ctrl[actuator_id] = position
             else:
-                raise ValueError(f"Joint {joint_name} not found")
+                # Try actuator control first, fallback to direct setting
+                actuator_id = self.model.actuator_name2id(joint_name)
+                if actuator_id >= 0:
+                    self.data.ctrl[actuator_id] = position
+                else:
+                    joint_idx = self.get_joint_index(joint_name)
+                    self.data.qpos[joint_idx] = position
 
         if immediate:
             mujoco.mj_forward(self.mujoco_model, self.mujoco_data)
 
-    # NOTE@Chenyu: Basically same as set_joint_positions, but for velocities
-    def set_joint_velocities(self, velocities, joint_names, immediate=False):
+    def set_joint_velocities(self, velocities, joint_names=None, immediate=False):
         """Set velocities for specified joints.
         
         Args:
@@ -308,15 +335,31 @@ class MujocoRobot(object):
         Raises:
             ValueError: If a joint is not found
         """
+        if joint_names is None:
+            joint_names = self.joint_names
 
-        for joint_name, position in zip(joint_names, velocities):
-            if joint_name in self.joint_names:
-                # Set actuator control target if one exists for this joint
-                actuator_id = self.model.actuator_name2id(joint_name)
-                if actuator_id >= 0:  # -1 indicates no actuator found
-                    self.data.ctrl[actuator_id] = position
-            else:
+        for joint_name, velocity in zip(joint_names, velocities):
+            if joint_name not in self.joint_names:
                 raise ValueError(f"Joint {joint_name} not found")
+                
+            if immediate:
+                # Direct velocity setting + sync actuator control
+                dof_idx = self.get_joint_dof_index(joint_name)
+                if dof_idx >= 0:
+                    self.data.qvel[dof_idx] = velocity
+                # Also update actuator to maintain the velocity
+                actuator_id = self.model.actuator_name2id(joint_name)
+                if actuator_id >= 0:
+                    self.data.ctrl[actuator_id] = velocity
+            else:
+                # Try actuator control first, fallback to direct setting
+                actuator_id = self.model.actuator_name2id(joint_name)
+                if actuator_id >= 0:
+                    self.data.ctrl[actuator_id] = velocity
+                else:
+                    dof_idx = self.get_joint_dof_index(joint_name)
+                    if dof_idx >= 0:
+                        self.data.qvel[dof_idx] = velocity
 
         if immediate:
             mujoco.mj_forward(self.mujoco_model, self.mujoco_data)
@@ -518,3 +561,25 @@ class MujocoRobot(object):
             MujocoRobot: Self-reference to this robot instance
         """
         return self
+    
+    def get_body_world_pose(self, link_name: str):
+        """Get the world pose of a specific robot body.
+        
+        Args:
+            link_name: Name of the link to get the world pose for
+            
+        Returns:
+            numpy.ndarray: Array containing the world pose [x, y, z, qw, qx, qy, qz]
+                where [x, y, z] is position and [qw, qx, qy, qz] is quaternion orientation.
+        """
+        return self.robot_model.get_body_world_pose(link_name)
+    
+    def get_all_body_world_poses(self):
+        """Get the world poses of all robot bodies.
+        
+        Returns:
+            Dict[str, numpy.ndarray]: Dictionary mapping body names to their world poses.
+                Each pose is a 7-element array [x, y, z, qw, qx, qy, qz] 
+                where [x, y, z] is position and [qw, qx, qy, qz] is quaternion orientation.
+        """
+        return self.robot_model.get_all_body_world_poses()

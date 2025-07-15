@@ -21,14 +21,14 @@
 #
 #####################################################################################
 #
-# Description: Robot configuration module for SynthNova
+# Description: Robot configuration module for Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-04-02
 #
 #####################################################################################
 from typing import Optional, Dict, Any, List, Literal, Union, Tuple
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
-from pathlib import PosixPath, WindowsPath
+from pathlib import PosixPath
 import numpy as np
 from numpydantic import NDArray, Shape
 from typing_extensions import Self
@@ -42,16 +42,16 @@ import uuid
 class RobotConfig(BaseModel):
     """Base configuration class for Synthnova robots.
 
-    This class serves as the foundation for configuring robots in the SynthNova simulation environment.
+    This class serves as the foundation for configuring robots in the Synthnova simulation environment.
 
     Attributes:
-        prim_path (str | PosixPath | WindowsPath): The unique primitive path in the scene graph hierarchy.
+        prim_path (str | PosixPath): The unique primitive path in the scene graph hierarchy.
         name (str | None): A human-readable identifier for the object instance.
         uuid (str | None): A unique identifier for the object instance.
-        usd_path (str | PosixPath | WindowsPath | None): Path to the USD (Universal Scene Description) file.
-        mjcf_path (str | PosixPath | WindowsPath | None): Path to the MuJoCo XML configuration file.
-        urdf_path (str | PosixPath | WindowsPath | None): Path to the URDF file for robot kinematics.
-        srdf_path (str | PosixPath | WindowsPath | None): Path to the SRDF file for robot semantic information.
+        usd_path (str | PosixPath | None): Path to the USD (Universal Scene Description) file.
+        mjcf_path (str | PosixPath | None): Path to the MuJoCo XML configuration file.
+        urdf_path (str | PosixPath | None): Path to the URDF file for robot kinematics.
+        srdf_path (str | PosixPath | None): Path to the SRDF file for robot semantic information.
         position (NDArray[Shape["3"], np.float64] | None): Global position vector [x, y, z] in world coordinates.
         orientation (NDArray[Shape["4"], np.float64] | None): Global orientation quaternion [x, y, z, w] in world coordinates.
         translation (NDArray[Shape["3"], np.float64] | None): Local position vector [x, y, z] relative to parent.
@@ -81,15 +81,15 @@ class RobotConfig(BaseModel):
         ```
     """
 
-    prim_path: str | PosixPath | WindowsPath
+    prim_path: str | PosixPath
     name: str | None = None
     uuid: str | None = Field(
         default_factory=lambda: str(uuid.uuid4()).replace("-", "_")
     )
-    usd_path: str | PosixPath | WindowsPath | None = None
-    mjcf_path: str | PosixPath | WindowsPath | None = None
-    urdf_path: str | PosixPath | WindowsPath | None = None
-    srdf_path: str | PosixPath | WindowsPath | None = None
+    usd_path: str | PosixPath | None = None
+    mjcf_path: str | PosixPath | None = None
+    urdf_path: str | PosixPath | None = None
+    srdf_path: str | PosixPath | None = None
     position: NDArray[Shape["3"], np.float64] | None = None
     orientation: NDArray[Shape["4"], np.float64] | None = None
     translation: NDArray[Shape["3"], np.float64] | None = None
@@ -146,7 +146,7 @@ class RobotConfig(BaseModel):
     )
     @classmethod
     def process_object_config_different_input_path(
-        cls, value: str | PosixPath | WindowsPath | None
+        cls, value: str | PosixPath | None
     ) -> str | None:
         """Convert paths to absolute string paths.
 
@@ -154,8 +154,8 @@ class RobotConfig(BaseModel):
         It handles string paths, PosixPath objects, and None values.
 
         Args:
-            value (str | PosixPath | WindowsPath | None): Path to convert.
-                Can be a string path, PosixPath object, WindowsPath object, or None.
+            value (str | PosixPath | None): Path to convert.
+                Can be a string path, PosixPath object, or None.
 
         Returns:
             str | None: Absolute path as string, or None if input is None.

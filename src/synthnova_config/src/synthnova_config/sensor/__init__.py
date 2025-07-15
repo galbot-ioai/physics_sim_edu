@@ -8,6 +8,9 @@ from .basic import (
     Lidar3DSensorConfig,
     ImuConfig,
     ImuSensorConfig,
+    # Camera alignment utilities
+    align_depth_camera_to_rgb_camera,
+    align_rgb_camera_to_depth_camera,
 )
 from .isx031c_fisheye import Isx031cFisheyeSensorConfig
 from .realsense_d415 import RealsenseD415RgbSensorConfig, RealsenseD415DepthSensorConfig
@@ -37,6 +40,9 @@ __all__ = [
     "Lidar3DSensorConfig",
     "ImuConfig",
     "ImuSensorConfig",
+    # Camera alignment utilities
+    "align_depth_camera_to_rgb_camera",
+    "align_rgb_camera_to_depth_camera",
     # RealSense D415
     "RealsenseD415RgbSensorConfig",
     "RealsenseD415DepthSensorConfig",

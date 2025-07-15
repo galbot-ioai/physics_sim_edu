@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: Lidar config of SynthNova
+# Description: Lidar config of Synthnova
 # Author: Herman Ye@Galbot, Jinrui He@Galbot
 # Date: 2025-03-06
 #

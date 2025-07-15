@@ -36,7 +36,7 @@ import xml.etree.ElementTree as ET
 from copy import deepcopy
 
 import numpy as np
-import gc
+from auro_utils import Logger
 
 from physics_simulator.object import MujocoModel, MujocoXML
 from physics_simulator.utils.mjcf_utils import (
@@ -336,73 +336,42 @@ class MujocoObject(MujocoModel):
     def get_position(self):
         """Get the position of the object in world frame.
         
+        Note: This returns a default position. For runtime position queries,
+        use simulator.get_object_state() instead.
+        
         Returns:
-            np.ndarray: 3D position [x, y, z]
+            np.ndarray: 3D position [x, y, z] - default position only
         """
-        # Get the object position from MuJoCo if simulation is running
-        # First check if the simulator and data are available
-        from physics_simulator.simulator import MujocoSimulator as PhysicsSimulator
+        # Return default position - actual position should be queried through simulator
+        # This method is kept for API compatibility but should not be used for runtime queries
         
-        sim = None
-        
-        # Try to get simulator reference
-        try:
-            for obj in gc.get_objects():
-                if isinstance(obj, PhysicsSimulator):
-                    if hasattr(obj, 'data') and obj.data is not None:
-                        sim = obj
-                        break
-        except:
-            pass
-        
-        if sim is not None and sim.data is not None:
-            try:
-                # Try to get position of the main body of this object
-                body_name = f"{self.naming_prefix}main"
-                return sim.data.get_body_xpos(body_name)
-            except Exception as e:
-                # Fall back to default position if that fails
-                return np.array([0.0, 0.0, 0.0])
-        else:
-            # Return default position if simulator is not running
-            return np.array([0.0, 0.0, 0.0])
+        # Create a temporary logger for deprecation warning
+        logger = Logger()
+        logger.log_warning(
+            "get_position() called on object - this returns default position only. "
+            "Use simulator.get_object_state() for runtime position."
+        )
+        return np.array([0.0, 0.0, 0.0])
         
     def get_orientation(self):
         """Get the orientation of the object in world frame.
         
+        Note: This returns a default orientation. For runtime orientation queries,
+        use simulator.get_object_state() instead.
+        
         Returns:
-            np.ndarray: Quaternion in xyzw format
+            np.ndarray: Quaternion in xyzw format - default orientation only
         """
-        # Get the object orientation from MuJoCo if simulation is running
-        # First check if the simulator and data are available
-        from physics_simulator.simulator import MujocoSimulator as PhysicsSimulator
+        # Return default orientation - actual orientation should be queried through simulator
+        # This method is kept for API compatibility but should not be used for runtime queries
         
-        sim = None
-        
-        # Try to get simulator reference
-        try:
-            for obj in gc.get_objects():
-                if isinstance(obj, PhysicsSimulator):
-                    if hasattr(obj, 'data') and obj.data is not None:
-                        sim = obj
-                        break
-        except:
-            pass
-        
-        if sim is not None and sim.data is not None:
-            try:
-                # Try to get orientation from MuJoCo data
-                body_name = f"{self.naming_prefix}main"
-                # Get quaternion in wxyz format
-                quat_wxyz = sim.data.get_body_xquat(body_name)
-                # Convert to xyzw format
-                return wxyz_to_xyzw(quat_wxyz)
-            except Exception as e:
-                # Fall back to default orientation if that fails
-                return np.array([0.0, 0.0, 0.0, 1.0])
-        else:
-            # Return default orientation if simulator is not running
-            return np.array([0.0, 0.0, 0.0, 1.0])
+        # Create a temporary logger for deprecation warning
+        logger = Logger()
+        logger.log_warning(
+            "get_orientation() called on object - this returns default orientation only. "
+            "Use simulator.get_object_state() for runtime orientation."
+        )
+        return np.array([0.0, 0.0, 0.0, 1.0])
 
     def get_translation(self):
         """Get the translation of the object in local frame.
@@ -421,6 +390,33 @@ class MujocoObject(MujocoModel):
             np.ndarray: Quaternion in xyzw format
         """
         return self.get_orientation()
+
+    def set_pos(self, pos):
+        """
+        Set position of object position is defined as center of bounding box
+
+        Args:
+            pos (list of floats): 3D position to set object (should be 3 dims)
+        """
+        self._obj.set("pos", array_to_string(pos))
+
+    def set_euler(self, euler):
+        """
+        Set Euler value object position
+
+        Args:
+            euler (list of floats): 3D Euler values (should be 3 dims)
+        """
+        self._obj.set("euler", array_to_string(euler))
+
+    def set_quat(self, quat):
+        """
+        Set quaternion orientation for object.
+        
+        Args:
+            quat (list of floats): Quaternion [w, x, y, z] in wxyz format (4 dims)
+        """
+        self._obj.set("quat", array_to_string(quat))
 
 
 class MujocoXMLObject(MujocoObject, MujocoXML):
@@ -603,24 +599,6 @@ class MujocoXMLObject(MujocoObject, MujocoXML):
 
         # Return all found pairs
         return elem_pairs
-
-    def set_pos(self, pos):
-        """
-        Set position of object position is defined as center of bounding box
-
-        Args:
-            pos (list of floats): 3D position to set object (should be 3 dims)
-        """
-        self._obj.set("pos", array_to_string(pos))
-
-    def set_euler(self, euler):
-        """
-        Set Euler value object position
-
-        Args:
-            euler (list of floats): 3D Euler values (should be 3 dims)
-        """
-        self._obj.set("euler", array_to_string(euler))
 
     @property
     def rot(self):
@@ -1069,24 +1047,6 @@ class PrimitiveObject(MujocoGeneratedObject):
         site_element_attr["name"] = "default_site"
         obj.append(new_site(**site_element_attr))
         return obj
-
-    def set_pos(self, pos):
-        """
-        Set position of object position is defined as center of bounding box
-
-        Args:
-            pos (list of floats): 3D position to set object (should be 3 dims)
-        """
-        self._obj.set("pos", array_to_string(pos))
-
-    def set_euler(self, euler):
-        """
-        Set Euler value object position
-
-        Args:
-            euler (list of floats): 3D Euler values (should be 3 dims)
-        """
-        self._obj.set("euler", array_to_string(euler))
 
     # Methods that still need to be defined by subclass
     def _get_object_subtree(self):

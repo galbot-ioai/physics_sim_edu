@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: Mujoco config of SynthNova
+# Description: Mujoco config of Synthnova
 # Author: Herman Ye@Galbot
 # Date: 2025-04-01
 #
@@ -181,6 +181,12 @@ class MujocoConfig(BaseModel):
             Defaults to CompilerConfig().
         size_config (SizeConfig): Size settings.
             Defaults to SizeConfig().
+        headless (bool): Run the simulator in headless mode (no graphical output).
+            Defaults to False.
+        realtime_sync (bool): Run the simulator in realtime mode (sync with real time).
+            Defaults to False.
+        realtime_factor (float): Real-time factor for the simulator.
+            Must be positive. Defaults to 1.0.
 
     """
 
@@ -274,4 +280,17 @@ class MujocoConfig(BaseModel):
         default=False,
         description="Run the simulator in headless mode (no graphical output)",
         json_schema_extra={"examples": [True, False]},
+    )
+
+    realtime_sync: bool = Field(
+        default=False,
+        description="Run the simulator in realtime mode (sync with real time)",
+        json_schema_extra={"examples": [True, False]},
+    )
+
+    realtime_factor: float = Field(
+        default=1.0,
+        gt=0,
+        description="Real-time factor for the simulator",
+        json_schema_extra={"examples": [1.0, 2.0]},
     )

@@ -21,8 +21,8 @@
 #
 #####################################################################################
 #
-# Module: SynthNova render simulator configuration
-# Description: Top-level configuration management for SynthNova render simulator
+# Module: Synthnova render simulator configuration
+# Description: Top-level configuration management for Synthnova render simulator
 # Author: Herman Ye@Galbot
 # Date: 2025-04-16
 #
@@ -37,7 +37,7 @@ from .scenario import ScenarioConfig
 
 class RenderSimulatorConfig(BaseModel):
     """
-    Central configuration class for the SynthNova render simulator.
+    Central configuration class for the Synthnova render simulator.
 
     This class serves as the root configuration container that orchestrates all
     components of the simulation system. It integrates and manages configurations
@@ -67,7 +67,7 @@ class RenderSimulatorConfig(BaseModel):
     Example:
         ```python
         # Create a complete simulation configuration
-        config = SynthNovaConfig(
+        config = RenderSimulatorConfig(
             logger_config=LoggerConfig(
                 log_level="INFO",
                 log_file="simulation.log",

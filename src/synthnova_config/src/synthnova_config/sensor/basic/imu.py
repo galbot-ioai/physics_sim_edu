@@ -21,7 +21,7 @@
 #
 #####################################################################################
 #
-# Description: IMU config of SynthNova
+# Description: IMU config of Synthnova
 #
 # Author: Herman Ye@Galbot, Jinrui He@Galbot
 # Date: 2025-03-06

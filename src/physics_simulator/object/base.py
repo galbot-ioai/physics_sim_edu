@@ -250,43 +250,57 @@ class MujocoXML(object):
         # Parse the default tag accordingly
         for cls in default:
             cls_name = cls.get("class")
-            default_dic[cls_name] = {}
-            
-            # Handle nested default classes
-            for child in cls:
-                if child.tag == "default":
-                    nested_cls_name = child.get("class")
-                    default_dic[nested_cls_name] = {c.tag: c for c in child}
-                else:
-                    default_dic[cls_name][child.tag] = child
+            if cls_name is not None:
+                default_dic[cls_name] = {}
+                
+                # Handle nested default classes
+                for child in cls:
+                    if child.tag == "default":
+                        nested_cls_name = child.get("class")
+                        if nested_cls_name is not None:
+                            default_dic[nested_cls_name] = {c.tag: c for c in child}
+                    else:
+                        default_dic[cls_name][child.tag] = child
         return default_dic
 
-    def _replace_defaults_inline(self, default_dic, root=None):
+    def _replace_defaults_inline(self, default_dic, root=None, inherited_childclass=None):
         """Apply default attributes to elements in the XML tree.
         
         Recursively processes the XML tree, replacing class references with
         their corresponding default attributes where not explicitly specified.
+        Also handles childclass attributes that apply to all child elements.
         
         Args:
             default_dic: Dictionary of default classes and their attributes
             root: Root element to start processing from (None for top-level)
+            inherited_childclass: Class to inherit from parent's childclass attribute
         """
         # If root is None, this is the top level call -- replace root with self.root
         if root is None:
             root = self.root
-        # Check this current element if it contains any class elements
+            
+        # Handle inherited childclass from parent
+        effective_class = root.attrib.get("class", inherited_childclass)
+        
+        # Remove class attribute after reading it
         cls_name = root.attrib.pop("class", None)
-        if cls_name is not None:
+        
+        # Handle childclass attribute
+        childclass_name = root.attrib.pop("childclass", None)
+        
+        # Apply class attributes if present
+        if effective_class is not None:
             # If the tag for this element is contained in our default dic, we add any defaults that are not
             # explicitly specified in this
-            tag_attrs = default_dic[cls_name].get(root.tag, None)
+            tag_attrs = default_dic.get(effective_class, {}).get(root.tag, None)
             if tag_attrs is not None:
-                for k, v in tag_attrs.items():
+                for k, v in tag_attrs.attrib.items():
                     if root.get(k, None) is None:
                         root.set(k, v)
-        # Loop through all child elements
+        
+        # Loop through all child elements, passing childclass to children
         for child in root:
-            self._replace_defaults_inline(default_dic=default_dic, root=child)
+            self._replace_defaults_inline(default_dic=default_dic, root=child, inherited_childclass=childclass_name)
 
     @property
     def name(self):
