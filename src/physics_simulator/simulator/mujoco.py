@@ -349,7 +349,8 @@ class MujocoSimulator(BaseSim):
             
             num_steps = int(elapsed / self.config.mujoco_config.timestep)
 
-            self.step(num_steps)
+            # self.step(num_steps)
+            self.step(num_steps=1)
 
             if self._physics_callbacks:
                 callbacks = list(self._physics_callbacks.values())
