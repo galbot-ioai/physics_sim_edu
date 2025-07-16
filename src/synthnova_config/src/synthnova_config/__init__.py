@@ -1,3 +1,6 @@
+# Cloud Streaming
+from .cloud import *
+
 # Simulator
 from .sim import *
 
