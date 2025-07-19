@@ -70,25 +70,16 @@ class RealsenseD415DepthSensorConfig(DepthSensorConfig):
     """
     Configuration class for the RealSense D415 Depth camera.
 
-    Intrinsics of "Depth" / 1280x720 / {Z16}:
-      - Width:         1280
-      - Height:        720
-      - PPX:          631.942749023438
-      - PPY:          363.001342773438
-      - Fx:           890.299133300781
-      - Fy:           890.299133300781
-      - Distortion:   Brown Conrady (using plumb_bob model)
-      - Coeffs:       [0.0, 0.0, 0.0, 0.0, 0.0]
-      - FOV (deg):    71.42 x 44.03
+    Intrinsics aligned with RGB sensor for simulation consistency.
     """
 
     frequency: int = 60
     width: int = 1280
     height: int = 720
-    fx: float = 890.299133300781
-    fy: float = 890.299133300781
-    cx: float = 631.942749023438
-    cy: float = 363.001342773438
+    fx: float = 912.569580078125
+    fy: float = 909.815246582031
+    cx: float = 629.409301757812
+    cy: float = 366.805267333984
     pixel_size: float = 0.003
     f_stop: float = 0.0
     focus_distance: float = 0.0

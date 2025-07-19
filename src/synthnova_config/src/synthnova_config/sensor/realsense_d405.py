@@ -76,25 +76,16 @@ class RealsenseD405DepthSensor1280x720Config(DepthSensorConfig):
     """
     Configuration class for the RealSense D405 Depth camera(1280x720).
 
-    Intrinsics of "Depth" / 1280x720 / {Z16}:
-      - Width:         1280
-      - Height:        720
-      - PPX:          636.7132568359375
-      - PPY:          358.99658203125
-      - Fx:           649.6893310546875
-      - Fy:           649.6893310546875
-      - Distortion:   Brown Conrady (using plumb_bob model)
-      - Coeffs:       [0.0, 0.0, 0.0, 0.0, 0.0]
-      - FOV (deg):    75 x 47.6
+    Intrinsics aligned with RGB sensor for simulation consistency.
     """
 
     frequency: int = 30
     width: int = 1280
     height: int = 720
-    fx: float = 649.6893310546875
-    fy: float = 649.6893310546875
-    cx: float = 636.7132568359375
-    cy: float = 358.99658203125
+    fx: float = 649.24755859375
+    fy: float = 648.3587036132812
+    cx: float = 639.14599609375
+    cy: float = 355.1600341796875
     pixel_size: float = 0.003
     f_stop: float = 0.0
     focus_distance: float = 0.0
@@ -162,25 +153,16 @@ class RealsenseD405DepthSensor640x360Config(DepthSensorConfig):
     """
     Configuration class for the RealSense D405 Depth camera(640x360).
 
-    Intrinsics of "Depth" / 640x360 / {Z16}:
-      - Width:         640
-      - Height:        360
-      - PPX:          319.72
-      - PPY:          188.20
-      - Fx:           443.18
-      - Fy:           443.18
-      - Distortion:   Brown Conrady (using plumb_bob model)
-      - Coeffs:       [0.0, 0.0, 0.0, 0.0, 0.0]
-      - FOV (deg):    75 x 47.6
+    Intrinsics aligned with RGB sensor for simulation consistency.
     """
 
     frequency: int = 30
     width: int = 640
     height: int = 360
-    fx: float = 443.18
-    fy: float = 443.18
-    cx: float = 319.72
-    cy: float = 188.20
+    fx: float = 326.60852933950645
+    fy: float = 326.51969070689336
+    cx: float = 320.10334232983035
+    cy: float = 180.82591009857398
     pixel_size: float = 0.003
     f_stop: float = 0.0
     focus_distance: float = 0.0

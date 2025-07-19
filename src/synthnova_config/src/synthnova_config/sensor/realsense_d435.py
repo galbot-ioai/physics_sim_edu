@@ -69,25 +69,16 @@ class RealsenseD435DepthSensorConfig(DepthSensorConfig):
     """
     Configuration class for the RealSense D435 Depth camera.
 
-    Intrinsics of "Depth" / 1280x720 / {Z16}:
-      - Width:         1280
-      - Height:        720
-      - PPX:          647.503784179688
-      - PPY:          354.537139892578
-      - Fx:           655.93505859375
-      - Fy:           655.93505859375
-      - Distortion:   Brown Conrady (using plumb_bob model)
-      - Coeffs:       [0.0, 0.0, 0.0, 0.0, 0.0]
-      - FOV (deg):    88.59 x 57.52
+    Intrinsics aligned with RGB sensor for simulation consistency.
     """
 
-    frequency: int = 60  # Standard frame rate for D435
+    frequency: int = 60
     width: int = 1280
     height: int = 720
-    fx: float = 655.93505859375
-    fy: float = 655.93505859375
-    cx: float = 647.503784179688
-    cy: float = 354.537139892578
+    fx: float = 910.542541503906
+    fy: float = 910.544921875
+    cx: float = 634.326416015625
+    cy: float = 370.207214355469
     pixel_size: float = 0.003
     f_stop: float = 0.0
     focus_distance: float = 0.0
