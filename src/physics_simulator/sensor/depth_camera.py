@@ -69,10 +69,6 @@ class MujocoDepthCamera(MujocoRgbCamera):
         from physics_simulator.utils.camera_utils import get_real_depth_map
 
         depth = get_real_depth_map(self.simulator, depth)
-        
-        # Apply horizontal flip for ROS camera axes to correct mirroring
-        if self.camera_axes == "ros":
-            depth = np.fliplr(depth)
             
         return depth
     
@@ -155,10 +151,6 @@ class MujocoDepthCamera(MujocoRgbCamera):
         _, depth_map = self.render(depth=True, segmentation=False)
         from physics_simulator.utils.camera_utils import get_real_depth_map
         depth_map = get_real_depth_map(self.simulator, depth_map)
-        
-        # Apply horizontal flip for ROS camera axes to correct mirroring
-        if self.camera_axes == "ros":
-            depth_map = np.fliplr(depth_map)
         
         # Downsample for performance if requested
         if downsample_factor > 1:

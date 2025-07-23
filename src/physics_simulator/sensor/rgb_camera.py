@@ -44,21 +44,49 @@ import math
 from scipy.spatial.transform import Rotation as R
 
 # Coordinate transformation matrices
-# from ROS camera convention to USD camera convention
-U_R_TRANSFORM = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+# ROS (REP 103): X-forward, Y-left, Z-up
+# MuJoCo: X-right, Y-forward, Z-up
+# World: X-right, Y-forward, Z-up (same as MuJoCo)
 
-# from USD camera convention to ROS camera convention
-R_U_TRANSFORM = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+# Transformation from ROS camera frame to MuJoCo camera frame
+ROS_TO_MUJOCO_TRANSFORM = np.array([
+    [1, 0, 0, 0], 
+    [0, -1, 0, 0], 
+    [0, 0, -1, 0], 
+    [0, 0, 0, 1]
+])
 
-# from USD camera convention to World camera convention
-W_U_TRANSFORM = np.array([[0, 0, -1, 0], [-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+# Transformation from MuJoCo camera frame to ROS camera frame
+MUJOCO_TO_ROS_TRANSFORM = np.array([
+    [1, 0, 0, 0], 
+    [0, -1, 0, 0], 
+    [0, 0, -1, 0], 
+    [0, 0, 0, 1]
+])
 
-# from World camera convention to USD camera convention
-U_W_TRANSFORM = np.array([[0, -1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, 0], [0, 0, 0, 1]])
+# Transformation from World frame to MuJoCo camera frame
+WORLD_TO_MUJOCO_TRANSFORM = np.array([
+    [0, 0, -1, 0], 
+    [-1, 0, 0, 0], 
+    [0, 1, 0, 0], 
+    [0, 0, 0, 1]
+])
 
-# ROS camera convention transformation matrix (for image coordinate correction)
-# ROS uses standard computer vision convention where Y points down and Z points forward
-ROS_IMAGE_FLIP_TRANSFORM = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]])
+# Transformation from MuJoCo camera frame to World frame
+MUJOCO_TO_WORLD_TRANSFORM = np.array([
+    [0, -1, 0, 0], 
+    [0, 0, 1, 0], 
+    [-1, 0, 0, 0], 
+    [0, 0, 0, 1]
+])
+
+# ROS image coordinate transformation (for correcting image mirroring)
+# ROS uses standard computer vision convention where Y points down
+ROS_IMAGE_COORD_TRANSFORM = np.array([
+    [1, 0, 0], 
+    [0, -1, 0], 
+    [0, 0, 1]
+])
 
 
 class MujocoRgbCamera:
@@ -121,115 +149,21 @@ class MujocoRgbCamera:
             raise ValueError(
                 "Invalid pose input, must be either local(translation, rotation) or global(position, orientation)"
             )
-        # Convert camera axes to Mujoco format
-        if self.camera_axes == "world":
-            # Convert orientation to Mujoco format using NumPy
-            if self.orientation is not None:
-                # Convert orientation to rotation matrix
-                w, x, y, z = self.orientation
-                rotation_matrix = np.array(
-                    [
-                        [
-                            1 - 2 * (y**2 + z**2),
-                            2 * (x * y - w * z),
-                            2 * (x * z + w * y),
-                        ],
-                        [
-                            2 * (x * y + w * z),
-                            1 - 2 * (x**2 + z**2),
-                            2 * (y * z - w * x),
-                        ],
-                        [
-                            2 * (x * z - w * y),
-                            2 * (y * z + w * x),
-                            1 - 2 * (x**2 + y**2),
-                        ],
-                    ]
-                )
-                # Apply the transformation
-                self.orientation = np.dot(rotation_matrix, U_R_TRANSFORM[:3, :3].T)
-                # Convert rotation matrix to quaternion
-                self.orientation = self.rotation_matrix_to_quaternion(self.orientation)
-            if self.rotation is not None:
-                # Convert rotation to rotation matrix
-                w, x, y, z = self.rotation
-                rotation_matrix = np.array(
-                    [
-                        [
-                            1 - 2 * (y**2 + z**2),
-                            2 * (x * y - w * z),
-                            2 * (x * z + w * y),
-                        ],
-                        [
-                            2 * (x * y + w * z),
-                            1 - 2 * (x**2 + z**2),
-                            2 * (y * z - w * x),
-                        ],
-                        [
-                            2 * (x * z - w * y),
-                            2 * (y * z + w * x),
-                            1 - 2 * (x**2 + y**2),
-                        ],
-                    ]
-                )
-                # Apply the transformation
-                self.rotation = np.dot(rotation_matrix, U_W_TRANSFORM[:3, :3].T)
-                # Convert rotation matrix to quaternion
-                self.rotation = self.rotation_matrix_to_quaternion(self.rotation)
-        elif self.camera_axes == "ros":
-            # ROS camera convention: apply transformation to match MuJoCo coordinate system
-            if self.orientation is not None:
-                # Convert orientation to rotation matrix
-                w, x, y, z = self.orientation
-                rotation_matrix = np.array(
-                    [
-                        [
-                            1 - 2 * (y**2 + z**2),
-                            2 * (x * y - w * z),
-                            2 * (x * z + w * y),
-                        ],
-                        [
-                            2 * (x * y + w * z),
-                            1 - 2 * (x**2 + z**2),
-                            2 * (y * z - w * x),
-                        ],
-                        [
-                            2 * (x * z - w * y),
-                            2 * (y * z + w * x),
-                            1 - 2 * (x**2 + y**2),
-                        ],
-                    ]
-                )
-                # Apply ROS to MuJoCo transformation
-                self.orientation = np.dot(rotation_matrix, R_U_TRANSFORM[:3, :3].T)
-                # Convert rotation matrix to quaternion
-                self.orientation = self.rotation_matrix_to_quaternion(self.orientation)
-            if self.rotation is not None:
-                # Convert rotation to rotation matrix
-                w, x, y, z = self.rotation
-                rotation_matrix = np.array(
-                    [
-                        [
-                            1 - 2 * (y**2 + z**2),
-                            2 * (x * y - w * z),
-                            2 * (x * z + w * y),
-                        ],
-                        [
-                            2 * (x * y + w * z),
-                            1 - 2 * (x**2 + z**2),
-                            2 * (y * z - w * x),
-                        ],
-                        [
-                            2 * (x * z - w * y),
-                            2 * (y * z + w * x),
-                            1 - 2 * (x**2 + y**2),
-                        ],
-                    ]
-                )
-                # Apply ROS to MuJoCo transformation
-                self.rotation = np.dot(rotation_matrix, R_U_TRANSFORM[:3, :3].T)
-                # Convert rotation matrix to quaternion
-                self.rotation = self.rotation_matrix_to_quaternion(self.rotation)
+        # Convert camera axes to MuJoCo format
+        transform_matrix = {
+            "world": WORLD_TO_MUJOCO_TRANSFORM,
+            "ros": ROS_TO_MUJOCO_TRANSFORM
+        }.get(self.camera_axes)
+        
+        if transform_matrix is None:
+            raise ValueError(f"Unsupported camera_axes: {self.camera_axes}")
+            
+        # Apply coordinate transformation
+        for attr in ["orientation", "rotation"]:
+            value = getattr(self, attr)
+            if value is not None:
+                rotation_matrix = self._quaternion_to_rotation_matrix(value)
+                setattr(self, attr, self._apply_coordinate_transform(rotation_matrix, transform_matrix))
 
         # Get sensor config
         sensor_config = camera_config.sensor_config
@@ -344,6 +278,20 @@ class MujocoRgbCamera:
         z = (R[1, 0] - R[0, 1]) / (4 * w)
         return np.array([w, x, y, z])
 
+    def _quaternion_to_rotation_matrix(self, quaternion: np.ndarray) -> np.ndarray:
+        """Convert quaternion [w, x, y, z] to 3x3 rotation matrix."""
+        w, x, y, z = quaternion
+        return np.array([
+            [1 - 2*(y**2 + z**2), 2*(x*y - w*z), 2*(x*z + w*y)],
+            [2*(x*y + w*z), 1 - 2*(x**2 + z**2), 2*(y*z - w*x)],
+            [2*(x*z - w*y), 2*(y*z + w*x), 1 - 2*(x**2 + y**2)]
+        ])
+
+    def _apply_coordinate_transform(self, rotation_matrix: np.ndarray, transform: np.ndarray) -> np.ndarray:
+        """Apply coordinate system transformation and return quaternion [w, x, y, z]."""
+        transformed = rotation_matrix @ transform[:3, :3].T
+        return self.rotation_matrix_to_quaternion(transformed)
+
     def get_parameters(self) -> dict:
         """Retrieves the camera's parameters.
 
@@ -404,10 +352,6 @@ class MujocoRgbCamera:
             if reshaped_data.size == 0:
                 return None
 
-            # Apply horizontal flip for ROS camera axes to correct mirroring
-            if self.camera_axes == "ros":
-                reshaped_data = np.fliplr(reshaped_data)
-
             return reshaped_data
 
         except (ValueError, AttributeError) as e:
@@ -455,7 +399,21 @@ class MujocoRgbCamera:
             # Extract rotation matrix and convert to quaternion
             rotation_matrix = camera_to_world_matrix[:3, :3]
             quaternion = R.from_matrix(rotation_matrix).as_quat()
-            # TODO@Herman: CAMERA AXES CONVENTION
+
+            inverse_transform = {
+                "world": MUJOCO_TO_WORLD_TRANSFORM,
+                "ros": MUJOCO_TO_ROS_TRANSFORM
+            }.get(camera_axes, np.eye(4))
+
+            # Transform position
+            homog_pos = np.append(position, 1)
+            position = (inverse_transform @ homog_pos)[:3]
+
+            # Transform rotation
+            rotation_matrix = R.from_quat(quaternion).as_matrix()
+            transformed_rot = rotation_matrix @ inverse_transform[:3, :3].T
+            quaternion = R.from_matrix(transformed_rot).as_quat()
+
         return np.concatenate([position, quaternion])
 
     def get_pose_wrt_robot(self, robot):

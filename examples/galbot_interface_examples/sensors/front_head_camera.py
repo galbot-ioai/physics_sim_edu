@@ -32,7 +32,8 @@ from synthnova_config import (
     PhysicsSimulatorConfig,
     RobotConfig,
     RgbCameraConfig,
-    TaobaoTeleCameraConfig,
+    RealsenseD436RgbSensorConfig,
+    RealsenseD436DepthSensorConfig
 )
 from physics_simulator.galbot_interface import GalbotInterface, GalbotInterfaceConfig
 import os
@@ -74,18 +75,18 @@ def main():
             "front_head_rgb_camera",
         ),
         translation=[
-            0.0858238788733053,
-            -0.10168608253554307,
-            -0.007771316983090526,
+            0.10084319533055261,
+            -0.059042081352783105,
+            0.03184978861787491
         ],
         rotation=[
-            -0.15485006716959193,
-            0.6896409270934599,
-            0.15633230305840196,
-            0.6899109068537053,
+            -0.1654571792421115, 
+            0.6935589352367344,
+            0.16457378953789606,
+            0.6815536611211676
         ],
         camera_axes="ros",
-        sensor_config=TaobaoTeleCameraConfig(),
+        sensor_config=RealsenseD436RgbSensorConfig(),
         parent_entity_name="galbot_one_foxtrot/head_end_effector_mount_link"
     )
     front_head_rgb_camera_path = synthnova_physics_simulator.add_sensor(front_head_rgb_camera_config)
