@@ -30,7 +30,7 @@ from physics_simulator.utils.control_utils import BasicPathFollower
 def interpolate_joint_positions(start_positions, end_positions, steps):
     return np.linspace(start_positions, end_positions, steps).tolist()
 
-class OlympicNavEnv:
+class IoaiNavEnv:
     def __init__(self, headless=False):
         self.simulator = None
         self.robot = None
@@ -203,7 +203,7 @@ class OlympicNavEnv:
                   f"Waypoint: {self.current_target_index}/{len(self.path)}")
 
 if __name__ == "__main__":
-    env = OlympicNavEnv(headless=False)
+    env = IoaiNavEnv(headless=False)
     env.simulator.play()
     env.simulator.add_physics_callback("follow_path_callback", env.follow_path_callback)
     env.simulator.loop()
