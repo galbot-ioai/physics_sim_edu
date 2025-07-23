@@ -43,23 +43,6 @@ import numpy as np
 import cv2
 
 from pathlib import Path
-import open3d as o3d
-
-def visualize_point_cloud(point_cloud_data):
-    """Simple point cloud visualization with Open3D."""
-    if point_cloud_data is None or len(point_cloud_data) == 0:
-        print("No point cloud data to visualize")
-        return
-    
-    # Create Open3D point cloud
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(point_cloud_data)
-    
-    # Add coordinate frame
-    coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
-    
-    # Visualize
-    o3d.visualization.draw_geometries([pcd, coordinate_frame])
 
 def main():
     """Main function to set up and run the left wrist camera example."""

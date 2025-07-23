@@ -33,11 +33,15 @@ from synthnova_config import (
     RobotConfig,
     RgbCameraConfig,
     RealsenseD436RgbSensorConfig,
+    DepthCameraConfig,
     RealsenseD436DepthSensorConfig
 )
 from physics_simulator.galbot_interface import GalbotInterface, GalbotInterfaceConfig
+from physics_simulator.utils import preprocess_depth
 import os
+import numpy as np
 import cv2
+
 from pathlib import Path
 
 
@@ -91,6 +95,32 @@ def main():
     )
     front_head_rgb_camera_path = synthnova_physics_simulator.add_sensor(front_head_rgb_camera_config)
 
+    # Add front head depth camera (RealSense D436)
+    front_head_depth_camera_config = DepthCameraConfig(
+        name="front_head_depth_camera",
+        prim_path=os.path.join(
+            robot_path,
+            "head_link2",
+            "head_end_effector_mount_link",
+            "front_head_depth_camera",
+        ),
+        translation=[
+            0.10084319533055261,
+            -0.059042081352783105,
+            0.03184978861787491
+        ],
+        rotation=[
+            -0.1654571792421115, 
+            0.6935589352367344,
+            0.16457378953789606,
+            0.6815536611211676
+        ],
+        camera_axes="ros",
+        sensor_config=RealsenseD436DepthSensorConfig(),
+        parent_entity_name="galbot_one_foxtrot/head_end_effector_mount_link"
+    )
+    front_head_depth_camera_path = synthnova_physics_simulator.add_sensor(front_head_depth_camera_config)
+
     # Initialize the galbot interface
     galbot_interface_config = GalbotInterfaceConfig()
     # Enable the modules
@@ -98,6 +128,7 @@ def main():
     # Bind the simulation entity prim path to the interface config
     galbot_interface_config.robot.prim_path = robot_path
     galbot_interface_config.front_head_camera.prim_path_rgb = front_head_rgb_camera_path
+    galbot_interface_config.front_head_camera.prim_path_depth = front_head_depth_camera_path
     galbot_interface = GalbotInterface(
         galbot_interface_config=galbot_interface_config,
         simulator=synthnova_physics_simulator
@@ -118,11 +149,25 @@ def main():
 
             synthnova_physics_simulator.step(7)
             
-            # Get RGB data
+            # Get rgb data
             rgb_data = galbot_interface.front_head_camera.get_rgb()
-   
+            
+            # Get depth data
+            depth_data = galbot_interface.front_head_camera.get_depth()
+            
+            # Preprocess depth data for visualization
+            # You can also use this function to preprocess the depth data for other purposes
+            depth_data = preprocess_depth(
+                depth_data,
+                scale=1000,  # m to mm
+                min_value=0.0,
+                max_value=5 * 1000,  # 5m to mm
+                data_type=np.uint16,
+            )
+            
             # Display images in non-blocking way
             cv2.imshow("RGB Camera", cv2.cvtColor(rgb_data, cv2.COLOR_RGB2BGR))
+            cv2.imshow("Depth Camera", depth_data)
 
             # Wait for 1ms and check for 'q' key to quit
             if cv2.waitKey(1) & 0xFF == ord("q"):
