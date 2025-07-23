@@ -44,9 +44,6 @@ import math
 from scipy.spatial.transform import Rotation as R
 
 # Coordinate transformation matrices
-# ROS (REP 103): X-forward, Y-left, Z-up
-# MuJoCo: X-right, Y-forward, Z-up
-# World: X-right, Y-forward, Z-up (same as MuJoCo)
 
 # Transformation from ROS camera frame to MuJoCo camera frame
 ROS_TO_MUJOCO_TRANSFORM = np.array([
@@ -79,15 +76,6 @@ MUJOCO_TO_WORLD_TRANSFORM = np.array([
     [-1, 0, 0, 0], 
     [0, 0, 0, 1]
 ])
-
-# ROS image coordinate transformation (for correcting image mirroring)
-# ROS uses standard computer vision convention where Y points down
-ROS_IMAGE_COORD_TRANSFORM = np.array([
-    [1, 0, 0], 
-    [0, -1, 0], 
-    [0, 0, 1]
-])
-
 
 class MujocoRgbCamera:
     """RGB camera sensor for MuJoCo simulation.
@@ -289,7 +277,7 @@ class MujocoRgbCamera:
 
     def _apply_coordinate_transform(self, rotation_matrix: np.ndarray, transform: np.ndarray) -> np.ndarray:
         """Apply coordinate system transformation and return quaternion [w, x, y, z]."""
-        transformed = rotation_matrix @ transform[:3, :3].T
+        transformed = transform[:3, :3] @ rotation_matrix @ transform[:3, :3].T
         return self.rotation_matrix_to_quaternion(transformed)
 
     def get_parameters(self) -> dict:
@@ -341,6 +329,7 @@ class MujocoRgbCamera:
         # Check if data is valid
         if data is None or data.size == 0:
             return None
+        
 
         try:
             # Reshape the data to height x width x 3 format
@@ -351,6 +340,10 @@ class MujocoRgbCamera:
             # Additional validation
             if reshaped_data.size == 0:
                 return None
+            
+            # Flip rgb img vertically
+            # Reason: the image returned by `read_pixels`` is upside-down compared to the usual image coordinates (origin at top-left).
+            reshaped_data = np.flipud(reshaped_data)
 
             return reshaped_data
 
