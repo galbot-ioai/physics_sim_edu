@@ -1,12 +1,12 @@
 {
     "name": "ioai_test_scenario",
     "description": "Exported scenario from SynthNova Physics Simulator",
-    "uuid": "088d7eed_a398_4f3b_a218_a55afd73b72e",
+    "uuid": "9369cc3d_6f6b_4101_bed5_934719663fb3",
     "robots": [
         {
             "prim_path": "/World/Galbot",
             "name": "galbot_one_foxtrot",
-            "uuid": "1561dafc_4ba2_492f_8cc2_7fb6d1fe35d9",
+            "uuid": "07edcb57_d8d6_4fc9_8b43_99c87f321c0c",
             "usd_path": null,
             "mjcf_path": "synthnova_assets/robots/galbot_one_foxtrot_description_simplified/galbot_one_foxtrot.xml",
             "urdf_path": null,
@@ -41,7 +41,7 @@
             "prim_path": "/World/Shelf",
             "type": "mesh",
             "name": "shelf",
-            "uuid": "ad0cc8b4_4d59_4798_bc23_f9689bfdb14b",
+            "uuid": "b58ea66c_b955_42db_856a_e28ec155ed7b",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects_aigc/shelf/shelf.xml",
@@ -74,7 +74,7 @@
             "prim_path": "/World/Table",
             "type": "mesh",
             "name": "table",
-            "uuid": "54ee2176_6705_4ea6_bcb7_0f5f0990339c",
+            "uuid": "e6780d96_5f2f_4c98_bf4d_202e5d049ffe",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects_aigc/table/table.xml",
@@ -107,7 +107,7 @@
             "prim_path": "/World/Mug",
             "type": "mesh",
             "name": "mug",
-            "uuid": "158db2d5_32c0_48d8_9798_f80570ee8f1c",
+            "uuid": "00a3b559_f326_46b6_9661_3b796db71c62",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects/mug/mug.xml",
@@ -140,7 +140,7 @@
             "prim_path": "/World/Power_drill",
             "type": "mesh",
             "name": "power_drill",
-            "uuid": "ad48b526_cd11_4156_83f2_7c720fd22ae5",
+            "uuid": "215a8ff0_bcf7_43b6_851b_70ff203a185a",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects/power_drill/power_drill.xml",
@@ -173,7 +173,7 @@
             "prim_path": "/World/cone_1",
             "type": "mesh",
             "name": "cone_1",
-            "uuid": "eb8b9fcd_908b_4bb9_bd51_7e61f94cee57",
+            "uuid": "94681e0d_f5e8_47dc_acf4_a663375bbcb1",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects_aigc/cone/cone.xml",
@@ -206,7 +206,7 @@
             "prim_path": "/World/cone_2",
             "type": "mesh",
             "name": "cone_2",
-            "uuid": "d70e82b0_3c24_43fe_801f_7f340dc991ff",
+            "uuid": "f2dff16d_c4c3_4d52_ab3d_a7ab84e37b18",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects_aigc/cone/cone.xml",
@@ -239,7 +239,7 @@
             "prim_path": "/World/cone_3",
             "type": "mesh",
             "name": "cone_3",
-            "uuid": "e439652f_0622_48b8_91f1_449dbe4c9f69",
+            "uuid": "dc2714af_568b_40da_86ab_564362188165",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects_aigc/cone/cone.xml",
@@ -272,7 +272,7 @@
             "prim_path": "/World/bucket_1",
             "type": "mesh",
             "name": "bucket_1",
-            "uuid": "89c6b02f_5471_4397_9dfc_8affbe3c0574",
+            "uuid": "6785312f_ce0f_491d_8071_db9976277f3a",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects_aigc/bucket/bucket.xml",
@@ -300,6 +300,196 @@
             "semantic_type": "class",
             "attributes": null,
             "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/Wall_Left",
+            "type": "cuboid",
+            "name": "wall_left",
+            "uuid": "bbcab49e_2575_4c28_a1cf_f06155b4a072",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": null,
+            "urdf_path": null,
+            "position": [
+                -5.0,
+                -2.5,
+                1.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                0.1,
+                5.0,
+                2.0
+            ],
+            "interaction_type": "static",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "size": 1.0,
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "prim_path": "/World/Wall_Right",
+            "type": "cuboid",
+            "name": "wall_right",
+            "uuid": "d1f99031_cce3_4b20_bca4_4d6880eebfdd",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": null,
+            "urdf_path": null,
+            "position": [
+                0.0,
+                -2.5,
+                1.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                0.1,
+                5.0,
+                2.0
+            ],
+            "interaction_type": "static",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "size": 1.0,
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "prim_path": "/World/Wall_Bottom",
+            "type": "cuboid",
+            "name": "wall_bottom",
+            "uuid": "3953c811_4a8e_47bf_aa8a_064840767394",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": null,
+            "urdf_path": null,
+            "position": [
+                -2.5,
+                -5.0,
+                1.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                5.0,
+                0.1,
+                2.0
+            ],
+            "interaction_type": "static",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "size": 1.0,
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "prim_path": "/World/Wall_Top",
+            "type": "cuboid",
+            "name": "wall_top",
+            "uuid": "e0af895e_09a1_42f4_9ae1_cec6e498889a",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": null,
+            "urdf_path": null,
+            "position": [
+                -2.5,
+                0.0,
+                1.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                5.0,
+                0.1,
+                2.0
+            ],
+            "interaction_type": "static",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "size": 1.0,
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "prim_path": "/World/Floor",
+            "type": "cuboid",
+            "name": "floor",
+            "uuid": "427d4068_b456_415b_9b1c_ba908179451c",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": null,
+            "urdf_path": null,
+            "position": [
+                -2.5,
+                -2.5,
+                -0.001
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                5.0,
+                5.0,
+                0.002
+            ],
+            "interaction_type": "static",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "size": 1.0,
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ]
         }
     ],
     "sensors": [],

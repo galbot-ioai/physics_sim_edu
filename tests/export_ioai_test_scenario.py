@@ -185,6 +185,66 @@ def main():
     )
     bucket_1_path = synthnova_physics_simulator.add_object(bucket_1_config)
 
+    # Add left wall (x=-5)
+    wall_left_config = CuboidConfig(
+        name="wall_left",
+        prim_path="/World/Wall_Left",
+        position=[-5, -2.5, 1],
+        orientation=[0, 0, 0, 1],
+        scale=[0.1, 5, 2],
+        color=[1.0, 1.0, 1.0],
+        interaction_type="static",
+    )
+    synthnova_physics_simulator.add_object(wall_left_config)
+
+    # Add right wall (x=0)
+    wall_right_config = CuboidConfig(
+        name="wall_right",
+        prim_path="/World/Wall_Right",
+        position=[0, -2.5, 1],
+        orientation=[0, 0, 0, 1],
+        scale=[0.1, 5, 2],
+        color=[1.0, 1.0, 1.0],
+        interaction_type="static",
+    )
+    synthnova_physics_simulator.add_object(wall_right_config)
+
+    # Add bottom wall (y=-5)
+    wall_bottom_config = CuboidConfig(
+        name="wall_bottom",
+        prim_path="/World/Wall_Bottom",
+        position=[-2.5, -5, 1],
+        orientation=[0, 0, 0, 1],
+        scale=[5, 0.1, 2],
+        color=[1.0, 1.0, 1.0],
+        interaction_type="static",
+    )
+    synthnova_physics_simulator.add_object(wall_bottom_config)
+
+    # Add top wall (y=0)
+    wall_top_config = CuboidConfig(
+        name="wall_top",
+        prim_path="/World/Wall_Top",
+        position=[-2.5, 0, 1],
+        orientation=[0, 0, 0, 1],
+        scale=[5, 0.1, 2],
+        color=[1.0, 1.0, 1.0],
+        interaction_type="static",
+    )
+    synthnova_physics_simulator.add_object(wall_top_config)
+
+    # Add floot
+    floor_config = CuboidConfig(
+        name="floor",
+        prim_path="/World/Floor",
+        position=[-2.5, -2.5, -0.001],
+        orientation=[0, 0, 0, 1],
+        scale=[5, 5, 0.002],
+        color=[1.0, 1.0, 1.0],
+        interaction_type="static",
+    )
+    synthnova_physics_simulator.add_object(floor_config)
+
     # Initialize the simulator
     synthnova_physics_simulator.initialize()
 
