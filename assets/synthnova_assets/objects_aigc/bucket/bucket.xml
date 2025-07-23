@@ -1,10 +1,10 @@
 <mujoco model="bucket">
   <default>
     <default class="visual">
-      <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+      <geom group="1" type="mesh" contype="0" conaffinity="0"/>
     </default>
     <default class="collision">
-      <geom group="3" type="mesh"/>
+      <geom group="0" type="mesh"/>
     </default>
   </default>
   <asset>
