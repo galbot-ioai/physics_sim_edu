@@ -69,6 +69,8 @@ class MujocoDepthCamera(MujocoRgbCamera):
         from physics_simulator.utils.camera_utils import get_real_depth_map
 
         depth = get_real_depth_map(self.simulator, depth)
+
+        depth = np.flipud(depth)
             
         return depth
     
