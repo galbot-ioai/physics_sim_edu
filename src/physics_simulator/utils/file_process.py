@@ -133,21 +133,13 @@ def preprocess_depth(
     Raises:
         ValueError: If the depth data is not a valid shape or if the specified min_value/max_value are invalid.
     """
-    # Scale the depth data
     depth_data_scaled = depth_data * scale
-
-    # Clamp the depth data
-    # if min_value is not None or max_value is not None:
-    #     depth_data_clamped = np.clip(depth_data_scaled, min_value, max_value)
-    depth_data_clamped = depth_data_scaled
-    if max_value is not None:
-        depth_data_clamped[depth_data_clamped > max_value] = 0
-    if min_value is not None:
-        depth_data_clamped[depth_data_clamped < min_value] = 0
-
+    if min_value is not None or max_value is not None:
+        depth_data_clamped = np.clip(depth_data_scaled, 
+                                     min_value if min_value is not None else depth_data_scaled.min(),
+                                     max_value if max_value is not None else depth_data_scaled.max())
     else:
         depth_data_clamped = depth_data_scaled
-    # Convert to the desired data type
     processed_data = depth_data_clamped.astype(data_type)
     return processed_data
 
