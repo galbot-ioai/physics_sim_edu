@@ -20,7 +20,7 @@ theme:
   language: en
   name: material
   logo: image/galbot_white_logo.png
-  favicon: image/galbot_white_logo.png
+  favicon: image/icon.svg
   icon:
     repo: fontawesome/brands/github
   font:
