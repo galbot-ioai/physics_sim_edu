@@ -28,7 +28,7 @@
   </asset>
   <worldbody>
     <body>
-      <body name="power_drill">
+      <body name="object">
         <geom material="material_0" mesh="power_drill" class="visual"/>
         <geom mesh="power_drill_collision_0" rgba="0.009385127057412457 0.5913731444558021 0.2185053113514941 1" class="collision"/>
         <geom mesh="power_drill_collision_1" rgba="0.12306346622183273 0.9872147974775598 0.868313537941251 1" class="collision"/>
