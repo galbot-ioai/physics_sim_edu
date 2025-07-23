@@ -19,6 +19,7 @@ from .realsense_d405 import (
     RealsenseD405RgbSensorConfig,
     RealsenseD405DepthSensorConfig,
 )
+from .realsense_d436 import RealsenseD436RgbSensorConfig, RealsenseD436DepthSensorConfig
 from .taobao_tele_camera import (
     TaobaoTeleCameraConfig,
 )
@@ -49,6 +50,9 @@ __all__ = [
     # RealSense D435
     "RealsenseD435RgbSensorConfig",
     "RealsenseD435DepthSensorConfig",
+    # RealSense D436
+    "RealsenseD436RgbSensorConfig",
+    "RealsenseD436DepthSensorConfig",
     # RealSense D405
     "RealsenseD405RgbSensorConfig",
     "RealsenseD405DepthSensorConfig",
