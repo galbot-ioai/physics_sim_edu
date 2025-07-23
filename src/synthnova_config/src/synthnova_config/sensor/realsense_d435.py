@@ -86,5 +86,5 @@ class RealsenseD435DepthSensorConfig(DepthSensorConfig):
     clipping_range: List[float] = [0.05, 15.0]
     distortion_model: Literal["plumb_bob"] = "plumb_bob"
     distortion_coefficients: List[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
-    horizontal_fov: float = 88.59
-    vertical_fov: float = 57.52
+    horizontal_fov: float | None = 70.2
+    vertical_fov: float | None = 43.14

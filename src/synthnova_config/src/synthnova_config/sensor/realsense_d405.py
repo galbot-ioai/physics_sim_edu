@@ -170,8 +170,9 @@ class RealsenseD405DepthSensor640x360Config(DepthSensorConfig):
     clipping_range: List[float] = [0.05, 15.0]
     distortion_model: Literal["plumb_bob"] = "plumb_bob"
     distortion_coefficients: List[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
-    horizontal_fov: float = 75
-    vertical_fov: float = 47.6
+    horizontal_fov: float | None = 88.83
+    vertical_fov: float | None = 57.73
+    diagonal_fov: float | None = 96.70
 
 
 class RealsenseD405RgbSensorConfig(RealsenseD405RgbSensor640x360Config):
