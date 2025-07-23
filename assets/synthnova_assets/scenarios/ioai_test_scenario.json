@@ -1,0 +1,314 @@
+{
+    "name": "ioai_test_scenario",
+    "description": "Exported scenario from SynthNova Physics Simulator",
+    "uuid": "088d7eed_a398_4f3b_a218_a55afd73b72e",
+    "robots": [
+        {
+            "prim_path": "/World/Galbot",
+            "name": "galbot_one_foxtrot",
+            "uuid": "1561dafc_4ba2_492f_8cc2_7fb6d1fe35d9",
+            "usd_path": null,
+            "mjcf_path": "synthnova_assets/robots/galbot_one_foxtrot_description_simplified/galbot_one_foxtrot.xml",
+            "urdf_path": null,
+            "srdf_path": null,
+            "position": [
+                -0.5,
+                -1.4,
+                0.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "interaction_type": "dynamic",
+            "collision_type": "convex_decomposition",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null
+        }
+    ],
+    "objects": [
+        {
+            "prim_path": "/World/Shelf",
+            "type": "mesh",
+            "name": "shelf",
+            "uuid": "ad0cc8b4_4d59_4798_bc23_f9689bfdb14b",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects_aigc/shelf/shelf.xml",
+            "urdf_path": null,
+            "position": [
+                -0.8,
+                -4.5,
+                0.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.707,
+                0.707
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                1.1312,
+                1.1312,
+                1.1312
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/Table",
+            "type": "mesh",
+            "name": "table",
+            "uuid": "54ee2176_6705_4ea6_bcb7_0f5f0990339c",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects_aigc/table/table.xml",
+            "urdf_path": null,
+            "position": [
+                -4.4,
+                -0.4,
+                0.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.707,
+                0.707
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                0.5747,
+                0.5747,
+                0.5747
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/Mug",
+            "type": "mesh",
+            "name": "mug",
+            "uuid": "158db2d5_32c0_48d8_9798_f80570ee8f1c",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects/mug/mug.xml",
+            "urdf_path": null,
+            "position": [
+                -4.7,
+                -0.4,
+                0.45
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                -0.707,
+                0.707
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/Power_drill",
+            "type": "mesh",
+            "name": "power_drill",
+            "uuid": "ad48b526_cd11_4156_83f2_7c720fd22ae5",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects/power_drill/power_drill.xml",
+            "urdf_path": null,
+            "position": [
+                -4.2,
+                -0.4,
+                0.53
+            ],
+            "orientation": [
+                0.5,
+                -0.5,
+                -0.5,
+                0.5
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/cone_1",
+            "type": "mesh",
+            "name": "cone_1",
+            "uuid": "eb8b9fcd_908b_4bb9_bd51_7e61f94cee57",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects_aigc/cone/cone.xml",
+            "urdf_path": null,
+            "position": [
+                -4.5,
+                -3.4,
+                0.25
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/cone_2",
+            "type": "mesh",
+            "name": "cone_2",
+            "uuid": "d70e82b0_3c24_43fe_801f_7f340dc991ff",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects_aigc/cone/cone.xml",
+            "urdf_path": null,
+            "position": [
+                -2.5,
+                -2.5,
+                0.25
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/cone_3",
+            "type": "mesh",
+            "name": "cone_3",
+            "uuid": "e439652f_0622_48b8_91f1_449dbe4c9f69",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects_aigc/cone/cone.xml",
+            "urdf_path": null,
+            "position": [
+                -3.0,
+                -0.7,
+                0.25
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/bucket_1",
+            "type": "mesh",
+            "name": "bucket_1",
+            "uuid": "89c6b02f_5471_4397_9dfc_8affbe3c0574",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects_aigc/bucket/bucket.xml",
+            "urdf_path": null,
+            "position": [
+                -2.2,
+                -4.4,
+                0.25
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        }
+    ],
+    "sensors": [],
+    "ground_planes": [
+        {
+            "static_friction": 0.5,
+            "dynamic_friction": 0.5,
+            "restitution": 0.8,
+            "z_position": 0.0
+        }
+    ]
+}
