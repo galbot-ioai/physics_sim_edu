@@ -113,6 +113,5 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/galbot-ioai/physics_sim_edu
       name: Physics Simulator on GitHub
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/physics-simulator/
-      name: PyPI Package
+    - icon: fontawesome/brands/bilibili
+      link: https://space.bilibili.com/3546595559737798?spm_id_from=333.337.search-card.all.click
