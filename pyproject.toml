@@ -45,6 +45,8 @@ dependencies = [
     "loop_rate_limiters",
     # For object detection
     "ultralytics",
+    # numpy version must < 2.0
+    "numpy<2.0.0",
 ]
 
 [project.optional-dependencies]
