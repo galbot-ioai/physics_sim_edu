@@ -4,7 +4,7 @@
   <a href="README.md">English</a> | <a href="README.zh.md">中文</a>
 </div> -->
 
-SynthNova Physics Simulator Edu is a robotics simulation framework built on the MuJoCo physics engine for eduactional purposes.
+SynthNova Physics Simulator Edu is a robotics simulation framework built on the MuJoCo physics engine for educational purposes.
 
 ## ⚙️ Installation
 
