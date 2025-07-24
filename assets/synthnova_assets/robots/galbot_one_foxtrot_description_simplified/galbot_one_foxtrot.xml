@@ -1362,16 +1362,16 @@
   </contact>
 
   <equality>
-    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_l_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_l_inner_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_r_inner_knuckle_joint" polycoef="0 -1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_l_finger_joint" polycoef="0 -1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_r_finger_joint" polycoef="0 1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_l_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_l_inner_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_r_inner_knuckle_joint" polycoef="0 -1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_l_finger_joint" polycoef="0 -1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
-    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_r_finger_joint" polycoef="0 1 0 0 0" solimp="0.0005 0.9995  0.0001 " solref="0.001 1" />
+    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_l_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_l_inner_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_r_inner_knuckle_joint" polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_l_finger_joint" polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="left_gripper_r_knuckle_joint" joint2="left_gripper_r_finger_joint" polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_l_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_l_inner_knuckle_joint" polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_r_inner_knuckle_joint" polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_l_finger_joint" polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
+    <joint joint1="right_gripper_r_knuckle_joint" joint2="right_gripper_r_finger_joint" polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001 " solref="0.001 1" />
   </equality>
 
   <sensor>
