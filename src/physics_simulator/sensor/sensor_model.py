@@ -85,7 +85,7 @@ class MujocoSensorModel(MujocoObject):
             self.orientation = rotation
         else:
             self.position = np.zeros(3)
-            self.orientation = np.array([0, 0, 0, 1])  # Identity quaternion
+            self.orientation = np.array([1, 0, 0, 0])  # Identity quaternion
             
         # Import constants for default values
         from physics_simulator.utils.constants import (
@@ -112,7 +112,7 @@ class MujocoSensorModel(MujocoObject):
         camera = ET.Element("camera")
         camera.set("name", self.camera_name)
         camera.set("pos", array_to_string(self.position))
-        camera.set("quat", array_to_string(xyzw_to_wxyz(self.orientation)))
+        camera.set("quat", array_to_string(self.orientation))
         camera.set("fovy", str(self.fov))
         camera.set("resolution", f"{self.width} {self.height}")
         

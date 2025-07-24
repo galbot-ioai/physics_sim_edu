@@ -252,32 +252,38 @@ class MujocoRgbCamera:
         }
 
     def rotation_matrix_to_quaternion(self, R):
-        """Convert a 3x3 rotation matrix to a quaternion.
+        """Convert a 3x3 rotation matrix to a quaternion using scipy.
         
         Args:
-            R: 3x3 rotation matrix
+            R: 3x3 rotation matrix (numpy.ndarray)
             
         Returns:
             np.ndarray: Quaternion in [w, x, y, z] format
         """
-        w = np.sqrt(1 + R[0, 0] + R[1, 1] + R[2, 2]) / 2
-        x = (R[2, 1] - R[1, 2]) / (4 * w)
-        y = (R[0, 2] - R[2, 0]) / (4 * w)
-        z = (R[1, 0] - R[0, 1]) / (4 * w)
-        return np.array([w, x, y, z])
+        from scipy.spatial.transform import Rotation as SciRot
+        rot = SciRot.from_matrix(R)
+        # scipy返回的四元数格式为[x, y, z, w]，需转换为[w, x, y, z]
+        quat_xyzw = rot.as_quat()
+        quat_wxyz = np.array([quat_xyzw[3], quat_xyzw[0], quat_xyzw[1], quat_xyzw[2]])
+        return quat_wxyz
+
 
     def _quaternion_to_rotation_matrix(self, quaternion: np.ndarray) -> np.ndarray:
-        """Convert quaternion [w, x, y, z] to 3x3 rotation matrix."""
-        w, x, y, z = quaternion
-        return np.array([
-            [1 - 2*(y**2 + z**2), 2*(x*y - w*z), 2*(x*z + w*y)],
-            [2*(x*y + w*z), 1 - 2*(x**2 + z**2), 2*(y*z - w*x)],
-            [2*(x*z - w*y), 2*(y*z + w*x), 1 - 2*(x**2 + y**2)]
-        ])
+        """Convert quaternion [w, x, y, z] to 3x3 rotation matrix using scipy."""
+        from scipy.spatial.transform import Rotation as R
+        # scipy的from_quat格式为[x, y, z, w]
+        q = np.asarray(quaternion)
+        if q.shape[0] != 4:
+            raise ValueError("Quaternion must be of shape (4,), format [w, x, y, z]")
+        # 转换为[x, y, z, w]格式
+        quat_xyzw = np.array([q[1], q[2], q[3], q[0]])
+        rot = R.from_quat(quat_xyzw)
+        return rot.as_matrix()
 
     def _apply_coordinate_transform(self, rotation_matrix: np.ndarray, transform: np.ndarray) -> np.ndarray:
         """Apply coordinate system transformation and return quaternion [w, x, y, z]."""
-        transformed = transform[:3, :3] @ rotation_matrix @ transform[:3, :3].T
+        # transformed = transform[:3, :3] @ rotation_matrix @ transform[:3, :3].T
+        transformed = np.matmul(rotation_matrix, transform[:3, :3])
         return self.rotation_matrix_to_quaternion(transformed)
 
     def get_parameters(self) -> dict:
@@ -342,7 +348,7 @@ class MujocoRgbCamera:
                 return None
             
             # Flip rgb img vertically
-            # Reason: the image returned by `read_pixels`` is upside-down compared to the usual image coordinates (origin at top-left).
+            # Reason: the image returned by `read_pixels` is upside-down compared to the usual image coordinates (origin at top-left).
             reshaped_data = np.flipud(reshaped_data)
 
             return reshaped_data
