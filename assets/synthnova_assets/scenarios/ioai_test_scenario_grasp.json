@@ -136,8 +136,8 @@
             "attributes": null,
             "size": 1.0,
             "color": [
-                1.0,
                 0.0,
+                1.0,
                 0.0
             ]
         },
@@ -167,6 +167,39 @@
                 0.249,
                 0.249,
                 0.249
+            ],
+            "interaction_type": "dynamic",
+            "semantic_label": null,
+            "semantic_type": "class",
+            "attributes": null,
+            "collision_type": "convex_decomposition"
+        },
+        {
+            "prim_path": "/World/Shelf",
+            "type": "mesh",
+            "name": "shelf",
+            "uuid": "bf4c374a_3358_4961_8564_9496d434a3b4",
+            "usd_path": null,
+            "obj_path": null,
+            "mjcf_path": "synthnova_assets/objects_aigc/shelf/shelf.xml",
+            "urdf_path": null,
+            "position": [
+                0.0,
+                3.25,
+                0.0
+            ],
+            "orientation": [
+                0.0,
+                0.0,
+                0.707,
+                0.707
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                1.1312, 
+                1.1312, 
+                1.1312
             ],
             "interaction_type": "dynamic",
             "semantic_label": null,
