@@ -342,24 +342,27 @@ class MujocoSimulator(BaseSim):
 
     def loop(self):
         """Run the simulation loop."""
-        last_time = time.time()
-        while self._running:
-            current_time = time.time()
-            elapsed = current_time - last_time
-            
-            num_steps = int(elapsed / self.config.mujoco_config.timestep)
+        # TODO@Chenyu Cao: Hard code for control dt
+        ctrl_dt = 0.004
+        sim_dt = self.config.mujoco_config.timestep
 
-            # self.step(num_steps)
-            self.step(num_steps=20)
+        num_steps = int(ctrl_dt / sim_dt)
+
+        realtime_sync = self.config.mujoco_config.realtime_sync
+
+        while self._running:
+            start_time = time.time()
+            self.step(num_steps)
 
             if self._physics_callbacks:
                 callbacks = list(self._physics_callbacks.values())
                 for callback in callbacks:
                     callback()
 
-            last_time = current_time
-
-            time.sleep(self.config.mujoco_config.timestep)
+            elapsed = time.time() - start_time
+            if realtime_sync and elapsed < ctrl_dt:
+                time.sleep(ctrl_dt - elapsed)
+            
         self.close()
 
     def reset(self):
