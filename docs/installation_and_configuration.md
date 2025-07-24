@@ -68,7 +68,7 @@ Physics engine configuration with core simulation parameters.
 
 **Key Parameters:**
 - `headless`: Run without GUI (default: False)
-- `realtime_sync`: Synchronize with real time (default: False)
+- `realtime_sync`: Synchronize with real time (default: True)
 - `timestep`: Physics simulation timestep in seconds (default: 0.002)
 - `gravity`: Gravitational acceleration vector (default: "0 0 -9.81")
 - `integrator`: Numerical integration method ("implicitfast", "implicit", "explicit")

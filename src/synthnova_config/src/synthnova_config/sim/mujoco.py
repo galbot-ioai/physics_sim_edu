@@ -184,7 +184,7 @@ class MujocoConfig(BaseModel):
         headless (bool): Run the simulator in headless mode (no graphical output).
             Defaults to False.
         realtime_sync (bool): Run the simulator in realtime mode (sync with real time).
-            Defaults to False.
+            Defaults to True.
         realtime_factor (float): Real-time factor for the simulator.
             Must be positive. Defaults to 1.0.
 
@@ -283,7 +283,7 @@ class MujocoConfig(BaseModel):
     )
 
     realtime_sync: bool = Field(
-        default=False,
+        default=True,
         description="Run the simulator in realtime mode (sync with real time)",
         json_schema_extra={"examples": [True, False]},
     )
