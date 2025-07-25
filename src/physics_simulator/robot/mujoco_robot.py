@@ -463,95 +463,95 @@ class MujocoRobot(object):
         # Apply velocities if specified
         if joint_velocities is not None and joint_names is not None:
             self.set_joint_velocities(joint_velocities, joint_names, immediate=False)
-            
-    # Forward kinematics methods
-    
-    def fk_link(self, q: np.ndarray, link: str) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute forward kinematics for a specific link.
-        
-        Calculates the position and orientation of a link given a set of joint angles.
-        
-        Args:
-            q: Joint angle configuration array
-            link: Name of the target link
-            
-        Returns:
-            tuple: (position, rotation_matrix) where:
-                - position: 3D position vector of the link
-                - rotation_matrix: 3x3 rotation matrix of the link
-        """
-        return self.robot_model.fk_link(q, link)
-    
-    def fk_all_link(self, q: np.ndarray) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-        """Compute forward kinematics for all links in the robot.
-        
-        Calculates the position and orientation of all links given a set of joint angles.
-        
-        Args:
-            q: Joint angle configuration array
-            
-        Returns:
-            tuple: (positions, rotation_matrices) where:
-                - positions: Dictionary mapping link names to 3D position vectors
-                - rotation_matrices: Dictionary mapping link names to 3x3 rotation matrices
-        """
-        return self.robot_model.fk_all_link(q)
-    
-    def fk_jacobian(self, q: np.ndarray, link: str) -> np.ndarray:
-        """Compute the Jacobian matrix for a specific link.
-        
-        The Jacobian maps joint velocities to end-effector velocities (linear and angular).
-        
-        Args:
-            q: Joint angle configuration array
-            link: Name of the target link
-            
-        Returns:
-            np.ndarray: 6xN Jacobian matrix where N is the number of joints
-                        (first 3 rows for linear velocity, last 3 for angular velocity)
-        """
-        return self.robot_model.fk_jacobian(q, link)
-    
-    def generate_random_qpos(self) -> np.ndarray:
-        """Generate a random joint configuration within joint limits.
-        
-        Returns:
-            np.ndarray: Random joint configuration array
-        """
-        return self.robot_model.generate_random_qpos()
-    
-    def clip_qpos(self, q: np.ndarray) -> np.ndarray:
-        """Clip a joint configuration to respect joint limits.
-        
-        Args:
-            q: Joint configuration to clip
-            
-        Returns:
-            np.ndarray: Clipped joint configuration that respects joint limits
-        """
-        return self.robot_model.clip_qpos(q)
 
-    def get_linear_velocities(self):
-        """Get the linear velocities of the robot bodies.
+    # NOTE@Chenyu Cao: uncomment unused methods
+    # # Forward kinematics methods
+    # def fk_link(self, q: np.ndarray, link: str) -> Tuple[np.ndarray, np.ndarray]:
+    #     """Compute forward kinematics for a specific link.
         
-        Returns:
-            numpy.ndarray: Array of linear velocity vectors for each body
-        """
-        body_id = self.root_body_id
+    #     Calculates the position and orientation of a link given a set of joint angles.
         
-        self.linear_velocity = self.data.cvel[body_id][3:].copy()
-        return [self.linear_velocity]
+    #     Args:
+    #         q: Joint angle configuration array
+    #         link: Name of the target link
+            
+    #     Returns:
+    #         tuple: (position, rotation_matrix) where:
+    #             - position: 3D position vector of the link
+    #             - rotation_matrix: 3x3 rotation matrix of the link
+    #     """
+    #     return self.robot_model.fk_link(q, link)
+    
+    # def fk_all_link(self, q: np.ndarray) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    #     """Compute forward kinematics for all links in the robot.
+        
+    #     Calculates the position and orientation of all links given a set of joint angles.
+        
+    #     Args:
+    #         q: Joint angle configuration array
+            
+    #     Returns:
+    #         tuple: (positions, rotation_matrices) where:
+    #             - positions: Dictionary mapping link names to 3D position vectors
+    #             - rotation_matrices: Dictionary mapping link names to 3x3 rotation matrices
+    #     """
+    #     return self.robot_model.fk_all_link(q)
+    
+    # def fk_jacobian(self, q: np.ndarray, link: str) -> np.ndarray:
+    #     """Compute the Jacobian matrix for a specific link.
+        
+    #     The Jacobian maps joint velocities to end-effector velocities (linear and angular).
+        
+    #     Args:
+    #         q: Joint angle configuration array
+    #         link: Name of the target link
+            
+    #     Returns:
+    #         np.ndarray: 6xN Jacobian matrix where N is the number of joints
+    #                     (first 3 rows for linear velocity, last 3 for angular velocity)
+    #     """
+    #     return self.robot_model.fk_jacobian(q, link)
+    
+    # def generate_random_qpos(self) -> np.ndarray:
+    #     """Generate a random joint configuration within joint limits.
+        
+    #     Returns:
+    #         np.ndarray: Random joint configuration array
+    #     """
+    #     return self.robot_model.generate_random_qpos()
+    
+    # def clip_qpos(self, q: np.ndarray) -> np.ndarray:
+    #     """Clip a joint configuration to respect joint limits.
+        
+    #     Args:
+    #         q: Joint configuration to clip
+            
+    #     Returns:
+    #         np.ndarray: Clipped joint configuration that respects joint limits
+    #     """
+    #     return self.robot_model.clip_qpos(q)
 
-    def get_angular_velocities(self):
-        """Get the angular velocities of the robot bodies.
+    # def get_linear_velocities(self):
+    #     """Get the linear velocities of the robot bodies.
         
-        Returns:
-            numpy.ndarray: Array of angular velocity vectors for each body
-        """
-        body_id = self.root_body_id
+    #     Returns:
+    #         numpy.ndarray: Array of linear velocity vectors for each body
+    #     """
+    #     body_id = self.root_body_id
         
-        self.angular_velocity = self.data.cvel[body_id][:3].copy()
-        return [self.angular_velocity]
+    #     self.linear_velocity = self.data.cvel[body_id][3:].copy()
+    #     return [self.linear_velocity]
+
+    # def get_angular_velocities(self):
+    #     """Get the angular velocities of the robot bodies.
+        
+    #     Returns:
+    #         numpy.ndarray: Array of angular velocity vectors for each body
+    #     """
+    #     body_id = self.root_body_id
+        
+    #     self.angular_velocity = self.data.cvel[body_id][:3].copy()
+    #     return [self.angular_velocity]
     
     # TODO@Chenyu: Add articulation controller
     def get_articulation_controller(self):
