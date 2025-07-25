@@ -84,10 +84,6 @@ class MujocoRobot(object):
             self.set_world_pose(np.concatenate([translation, rotation]))
         else:
             raise ValueError("Invalid pose input")
-        
-        # Store target positions for non-immediate joint control
-        self.joint_position_targets = {}
-        self.position_control_mode = {}
 
     def initialize(self):
         """Initialize the robot with MuJoCo model and data references.

@@ -433,6 +433,8 @@ class MujocoSimulator(BaseSim):
             config.usd_path = self._convert_to_absolute_path(config.usd_path)
         if hasattr(config, "mjcf_path"):
             config.mjcf_path = self._convert_to_absolute_path(config.mjcf_path)
+        if hasattr(config, "urdf_path"):
+            config.urdf_path = self._convert_to_absolute_path(config.urdf_path)
         if hasattr(config, "obj_path"):
             config.obj_path = self._convert_to_absolute_path(config.obj_path)
         if hasattr(config, "srdf_path"):
