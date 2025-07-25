@@ -339,7 +339,7 @@ def main():
         .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
         .joinpath("synthnova_assets")
         .joinpath("scenarios")
-        .joinpath("ioai_test_scenario_7*7.json")
+        .joinpath("ioai_test_scenario_7_7.json")
     )
 
     # Run the display loop
