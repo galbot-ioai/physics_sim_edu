@@ -1,0 +1,134 @@
+<mujoco model="shelf">
+  <default>
+    <default class="visual">
+      <geom group="1" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="0" type="mesh"/>
+    </default>
+  </default>
+  <asset>
+    <texture type="2d" name="huojia02_rgb" file="huojia02_rgb.png"/>
+    <material name="Ml_huojia02" texture="huojia02_rgb" specular="1.0" shininess="0.5"/>
+    <mesh name="shelf" file="shelf.obj"/>
+    <mesh name="shelf_collision_0" file="shelf_collision_0.obj"/>
+    <mesh name="shelf_collision_1" file="shelf_collision_1.obj"/>
+    <mesh name="shelf_collision_2" file="shelf_collision_2.obj"/>
+    <mesh name="shelf_collision_3" file="shelf_collision_3.obj"/>
+    <mesh name="shelf_collision_4" file="shelf_collision_4.obj"/>
+    <mesh name="shelf_collision_5" file="shelf_collision_5.obj"/>
+    <mesh name="shelf_collision_6" file="shelf_collision_6.obj"/>
+    <mesh name="shelf_collision_7" file="shelf_collision_7.obj"/>
+    <mesh name="shelf_collision_8" file="shelf_collision_8.obj"/>
+    <mesh name="shelf_collision_9" file="shelf_collision_9.obj"/>
+    <mesh name="shelf_collision_10" file="shelf_collision_10.obj"/>
+    <mesh name="shelf_collision_11" file="shelf_collision_11.obj"/>
+    <mesh name="shelf_collision_12" file="shelf_collision_12.obj"/>
+    <mesh name="shelf_collision_13" file="shelf_collision_13.obj"/>
+    <mesh name="shelf_collision_14" file="shelf_collision_14.obj"/>
+    <mesh name="shelf_collision_15" file="shelf_collision_15.obj"/>
+    <mesh name="shelf_collision_16" file="shelf_collision_16.obj"/>
+    <mesh name="shelf_collision_17" file="shelf_collision_17.obj"/>
+    <mesh name="shelf_collision_18" file="shelf_collision_18.obj"/>
+    <mesh name="shelf_collision_19" file="shelf_collision_19.obj"/>
+    <mesh name="shelf_collision_20" file="shelf_collision_20.obj"/>
+    <mesh name="shelf_collision_21" file="shelf_collision_21.obj"/>
+    <mesh name="shelf_collision_22" file="shelf_collision_22.obj"/>
+    <mesh name="shelf_collision_23" file="shelf_collision_23.obj"/>
+    <mesh name="shelf_collision_24" file="shelf_collision_24.obj"/>
+    <mesh name="shelf_collision_25" file="shelf_collision_25.obj"/>
+    <mesh name="shelf_collision_26" file="shelf_collision_26.obj"/>
+    <mesh name="shelf_collision_27" file="shelf_collision_27.obj"/>
+    <mesh name="shelf_collision_28" file="shelf_collision_28.obj"/>
+    <mesh name="shelf_collision_29" file="shelf_collision_29.obj"/>
+    <mesh name="shelf_collision_30" file="shelf_collision_30.obj"/>
+    <mesh name="shelf_collision_31" file="shelf_collision_31.obj"/>
+    <mesh name="shelf_collision_32" file="shelf_collision_32.obj"/>
+    <mesh name="shelf_collision_33" file="shelf_collision_33.obj"/>
+    <mesh name="shelf_collision_34" file="shelf_collision_34.obj"/>
+    <mesh name="shelf_collision_35" file="shelf_collision_35.obj"/>
+    <mesh name="shelf_collision_36" file="shelf_collision_36.obj"/>
+    <mesh name="shelf_collision_37" file="shelf_collision_37.obj"/>
+    <mesh name="shelf_collision_38" file="shelf_collision_38.obj"/>
+    <mesh name="shelf_collision_39" file="shelf_collision_39.obj"/>
+    <mesh name="shelf_collision_40" file="shelf_collision_40.obj"/>
+    <mesh name="shelf_collision_41" file="shelf_collision_41.obj"/>
+    <mesh name="shelf_collision_42" file="shelf_collision_42.obj"/>
+    <mesh name="shelf_collision_43" file="shelf_collision_43.obj"/>
+    <mesh name="shelf_collision_44" file="shelf_collision_44.obj"/>
+    <mesh name="shelf_collision_45" file="shelf_collision_45.obj"/>
+    <mesh name="shelf_collision_46" file="shelf_collision_46.obj"/>
+    <mesh name="shelf_collision_47" file="shelf_collision_47.obj"/>
+    <mesh name="shelf_collision_48" file="shelf_collision_48.obj"/>
+    <mesh name="shelf_collision_49" file="shelf_collision_49.obj"/>
+    <mesh name="shelf_collision_50" file="shelf_collision_50.obj"/>
+    <mesh name="shelf_collision_51" file="shelf_collision_51.obj"/>
+    <mesh name="shelf_collision_52" file="shelf_collision_52.obj"/>
+    <mesh name="shelf_collision_53" file="shelf_collision_53.obj"/>
+    <mesh name="shelf_collision_54" file="shelf_collision_54.obj"/>
+    <mesh name="shelf_collision_55" file="shelf_collision_55.obj"/>
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom material="Ml_huojia02" mesh="shelf" class="visual"/>
+        <geom mesh="shelf_collision_0" rgba="0.8865750482290826 0.5876631020169045 0.635518964768364 1" class="collision"/>
+        <geom mesh="shelf_collision_1" rgba="0.8616217554349124 0.7414676247327742 0.9918668302646247 1" class="collision"/>
+        <geom mesh="shelf_collision_2" rgba="0.8541049452924827 0.7628695264198417 0.5584209101698354 1" class="collision"/>
+        <geom mesh="shelf_collision_3" rgba="0.030834724940724034 0.8153495909341464 0.46839370134601255 1" class="collision"/>
+        <geom mesh="shelf_collision_4" rgba="0.8650788650011065 0.14805885352044013 0.21320017782191203 1" class="collision"/>
+        <geom mesh="shelf_collision_5" rgba="0.5952439326816722 0.06000234722440734 0.08732887035573345 1" class="collision"/>
+        <geom mesh="shelf_collision_6" rgba="0.05913608696135875 0.542997294503504 0.6061931198069188 1" class="collision"/>
+        <geom mesh="shelf_collision_7" rgba="0.6772799116577907 0.7749246944637916 0.08892904949724101 1" class="collision"/>
+        <geom mesh="shelf_collision_8" rgba="0.8356960998313563 0.701963823957277 0.16291856299386953 1" class="collision"/>
+        <geom mesh="shelf_collision_9" rgba="0.007523708805215135 0.2124531682844678 0.17957127040708554 1" class="collision"/>
+        <geom mesh="shelf_collision_10" rgba="0.4010338527535324 0.7178990697760488 0.26084955845890523 1" class="collision"/>
+        <geom mesh="shelf_collision_11" rgba="0.7332745535983501 0.9891184090871041 0.5915586801027045 1" class="collision"/>
+        <geom mesh="shelf_collision_12" rgba="0.15465291868668896 0.5134276192080164 0.3055054295246017 1" class="collision"/>
+        <geom mesh="shelf_collision_13" rgba="0.9798982747409167 0.13781457186063084 0.2062051353365142 1" class="collision"/>
+        <geom mesh="shelf_collision_14" rgba="0.6915379215583892 0.7518598883659204 0.8798312257586655 1" class="collision"/>
+        <geom mesh="shelf_collision_15" rgba="0.42303219113594404 0.8782153297468761 0.8826164305599699 1" class="collision"/>
+        <geom mesh="shelf_collision_16" rgba="0.3585663692325727 0.5275435341407362 0.08096764392943157 1" class="collision"/>
+        <geom mesh="shelf_collision_17" rgba="0.6136035040404775 0.8161548409714551 0.9036622829689488 1" class="collision"/>
+        <geom mesh="shelf_collision_18" rgba="0.5107409809426091 0.17823360617210837 0.6329134745219979 1" class="collision"/>
+        <geom mesh="shelf_collision_19" rgba="0.742455215644886 0.9562761691178557 0.08982303476557818 1" class="collision"/>
+        <geom mesh="shelf_collision_20" rgba="0.9266298934127116 0.4515422216871141 0.015978429898546254 1" class="collision"/>
+        <geom mesh="shelf_collision_21" rgba="0.8441078357916046 0.4326248202433478 0.17707865325594485 1" class="collision"/>
+        <geom mesh="shelf_collision_22" rgba="0.8261604816732983 0.950495664784066 0.9665422723204424 1" class="collision"/>
+        <geom mesh="shelf_collision_23" rgba="0.7660332816962458 0.6771596716589453 0.6996518692139578 1" class="collision"/>
+        <geom mesh="shelf_collision_24" rgba="0.9494744429677654 0.2840315312831523 0.02956856201269198 1" class="collision"/>
+        <geom mesh="shelf_collision_25" rgba="0.3368112105866582 0.6205887022912675 0.8870071915764208 1" class="collision"/>
+        <geom mesh="shelf_collision_26" rgba="0.6097930322460686 0.6796727340786063 0.09446192331711867 1" class="collision"/>
+        <geom mesh="shelf_collision_27" rgba="0.98097414800621 0.11719817426338874 0.3176408486216421 1" class="collision"/>
+        <geom mesh="shelf_collision_28" rgba="0.8715475274730734 0.5445787061256467 0.7603990080442152 1" class="collision"/>
+        <geom mesh="shelf_collision_29" rgba="0.9838829673798615 0.7574967953605636 0.0791480809829831 1" class="collision"/>
+        <geom mesh="shelf_collision_30" rgba="0.9794368832728477 0.28457269861601064 0.36139549346019206 1" class="collision"/>
+        <geom mesh="shelf_collision_31" rgba="0.8072223525932373 0.8873157721947943 0.5908560079287828 1" class="collision"/>
+        <geom mesh="shelf_collision_32" rgba="0.8725901660254984 0.8260580140530838 0.6955782745982805 1" class="collision"/>
+        <geom mesh="shelf_collision_33" rgba="0.6512826709063726 0.7997040724033804 0.5612556734219956 1" class="collision"/>
+        <geom mesh="shelf_collision_34" rgba="0.48541147167694765 0.43034867500980256 0.3774833915139898 1" class="collision"/>
+        <geom mesh="shelf_collision_35" rgba="0.5064547322281765 0.8249070676903268 0.15159077790633935 1" class="collision"/>
+        <geom mesh="shelf_collision_36" rgba="0.5987436634148062 0.0452730403181032 0.3711210838749479 1" class="collision"/>
+        <geom mesh="shelf_collision_37" rgba="0.2994564053677117 0.5773318983452794 0.1837170855428053 1" class="collision"/>
+        <geom mesh="shelf_collision_38" rgba="0.5625345404147818 0.13396220764966382 0.7023331581070713 1" class="collision"/>
+        <geom mesh="shelf_collision_39" rgba="0.47244987527402615 0.14949693635414973 0.9691455300417506 1" class="collision"/>
+        <geom mesh="shelf_collision_40" rgba="0.39326203687470107 0.1623700956425851 0.03979163629235183 1" class="collision"/>
+        <geom mesh="shelf_collision_41" rgba="0.1860075328944938 0.5534994723359455 0.23700453374521735 1" class="collision"/>
+        <geom mesh="shelf_collision_42" rgba="0.6258015955850065 0.12151024707380398 0.8162458282559827 1" class="collision"/>
+        <geom mesh="shelf_collision_43" rgba="0.9482011091801952 0.9759421950786745 0.02423217566801794 1" class="collision"/>
+        <geom mesh="shelf_collision_44" rgba="0.24515820130669452 0.09275656734304571 0.06341652541404941 1" class="collision"/>
+        <geom mesh="shelf_collision_45" rgba="0.3785116645679629 0.6163927039443456 0.803781089540119 1" class="collision"/>
+        <geom mesh="shelf_collision_46" rgba="0.4948848005202474 0.8594815730951646 0.29910692156028185 1" class="collision"/>
+        <geom mesh="shelf_collision_47" rgba="0.05749790212065964 0.1806748747075766 0.6766734896927808 1" class="collision"/>
+        <geom mesh="shelf_collision_48" rgba="0.3914521136848874 0.3176820703530996 0.9211248489509053 1" class="collision"/>
+        <geom mesh="shelf_collision_49" rgba="0.18875540020561488 0.13566598283615272 0.5200440679232428 1" class="collision"/>
+        <geom mesh="shelf_collision_50" rgba="0.06879232265264701 0.6779894995156918 0.3437153347125719 1" class="collision"/>
+        <geom mesh="shelf_collision_51" rgba="0.8662030403532205 0.1847622964065071 0.9892861864041786 1" class="collision"/>
+        <geom mesh="shelf_collision_52" rgba="0.2895552050657786 0.6620459055795143 0.9728167531864845 1" class="collision"/>
+        <geom mesh="shelf_collision_53" rgba="0.403542906137454 0.04436826082086176 0.9352313446025048 1" class="collision"/>
+        <geom mesh="shelf_collision_54" rgba="0.29079131651998325 0.4116823935390064 0.9341420468675489 1" class="collision"/>
+        <geom mesh="shelf_collision_55" rgba="0.5194233420422141 0.06954600590436144 0.13426733921444922 1" class="collision"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

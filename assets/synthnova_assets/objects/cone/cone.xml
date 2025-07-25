@@ -1,0 +1,100 @@
+<mujoco model="cone">
+  <default>
+    <default class="visual">
+      <geom group="1" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="0" type="mesh"/>
+    </default>
+  </default>
+  <asset>
+    <texture type="2d" name="luzhang_rgb" file="luzhang_rgb.png"/>
+    <material name="材质" texture="luzhang_rgb" specular="0.5" shininess="0.5"/>
+    <mesh name="cone" file="cone.obj"/>
+    <mesh name="cone_collision_0" file="cone_collision_0.obj"/>
+    <mesh name="cone_collision_1" file="cone_collision_1.obj"/>
+    <mesh name="cone_collision_2" file="cone_collision_2.obj"/>
+    <mesh name="cone_collision_3" file="cone_collision_3.obj"/>
+    <mesh name="cone_collision_4" file="cone_collision_4.obj"/>
+    <mesh name="cone_collision_5" file="cone_collision_5.obj"/>
+    <mesh name="cone_collision_6" file="cone_collision_6.obj"/>
+    <mesh name="cone_collision_7" file="cone_collision_7.obj"/>
+    <mesh name="cone_collision_8" file="cone_collision_8.obj"/>
+    <mesh name="cone_collision_9" file="cone_collision_9.obj"/>
+    <mesh name="cone_collision_10" file="cone_collision_10.obj"/>
+    <mesh name="cone_collision_11" file="cone_collision_11.obj"/>
+    <mesh name="cone_collision_12" file="cone_collision_12.obj"/>
+    <mesh name="cone_collision_13" file="cone_collision_13.obj"/>
+    <mesh name="cone_collision_14" file="cone_collision_14.obj"/>
+    <mesh name="cone_collision_15" file="cone_collision_15.obj"/>
+    <mesh name="cone_collision_16" file="cone_collision_16.obj"/>
+    <mesh name="cone_collision_17" file="cone_collision_17.obj"/>
+    <mesh name="cone_collision_18" file="cone_collision_18.obj"/>
+    <mesh name="cone_collision_19" file="cone_collision_19.obj"/>
+    <mesh name="cone_collision_20" file="cone_collision_20.obj"/>
+    <mesh name="cone_collision_21" file="cone_collision_21.obj"/>
+    <mesh name="cone_collision_22" file="cone_collision_22.obj"/>
+    <mesh name="cone_collision_23" file="cone_collision_23.obj"/>
+    <mesh name="cone_collision_24" file="cone_collision_24.obj"/>
+    <mesh name="cone_collision_25" file="cone_collision_25.obj"/>
+    <mesh name="cone_collision_26" file="cone_collision_26.obj"/>
+    <mesh name="cone_collision_27" file="cone_collision_27.obj"/>
+    <mesh name="cone_collision_28" file="cone_collision_28.obj"/>
+    <mesh name="cone_collision_29" file="cone_collision_29.obj"/>
+    <mesh name="cone_collision_30" file="cone_collision_30.obj"/>
+    <mesh name="cone_collision_31" file="cone_collision_31.obj"/>
+    <mesh name="cone_collision_32" file="cone_collision_32.obj"/>
+    <mesh name="cone_collision_33" file="cone_collision_33.obj"/>
+    <mesh name="cone_collision_34" file="cone_collision_34.obj"/>
+    <mesh name="cone_collision_35" file="cone_collision_35.obj"/>
+    <mesh name="cone_collision_36" file="cone_collision_36.obj"/>
+    <mesh name="cone_collision_37" file="cone_collision_37.obj"/>
+    <mesh name="cone_collision_38" file="cone_collision_38.obj"/>
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object">
+       <geom material="材质" mesh="cone" class="visual"/>
+        <geom mesh="cone_collision_0" rgba="0.12048250427056995 0.4114405943147178 0.4522262974766915 1" class="collision"/>
+        <geom mesh="cone_collision_1" rgba="0.0022304662280077103 0.47218322479440356 0.31792082099615304 1" class="collision"/>
+        <geom mesh="cone_collision_2" rgba="0.0977741667913169 0.9538725284246801 0.14518813941240327 1" class="collision"/>
+        <geom mesh="cone_collision_3" rgba="0.7604142720916471 0.7981943317076042 0.46523168155846306 1" class="collision"/>
+        <geom mesh="cone_collision_4" rgba="0.1012144167816299 0.9886061606285711 0.03767645157850441 1" class="collision"/>
+        <geom mesh="cone_collision_5" rgba="0.3320256767085863 0.9478529124272516 0.6063961205820197 1" class="collision"/>
+        <geom mesh="cone_collision_6" rgba="0.003414204335260851 0.10993276525030193 0.2287090805360078 1" class="collision"/>
+        <geom mesh="cone_collision_7" rgba="0.6302297639680088 0.9103511011287506 0.6594278360735022 1" class="collision"/>
+        <geom mesh="cone_collision_8" rgba="0.42388205601530704 0.4139334591483528 0.28029994305119166 1" class="collision"/>
+        <geom mesh="cone_collision_9" rgba="0.15448054125865673 0.7109046563057076 0.32302789922630637 1" class="collision"/>
+        <geom mesh="cone_collision_10" rgba="0.8216175667881752 0.7457991822050217 0.11246560100403136 1" class="collision"/>
+        <geom mesh="cone_collision_11" rgba="0.9877354110812283 0.5799354507894235 0.7161774085958249 1" class="collision"/>
+        <geom mesh="cone_collision_12" rgba="0.023499539536910086 0.89521446990663 0.3484766364852916 1" class="collision"/>
+        <geom mesh="cone_collision_13" rgba="0.5653817323895247 0.8546084977603648 0.13331656623478516 1" class="collision"/>
+        <geom mesh="cone_collision_14" rgba="0.687354475706763 0.7211185917375817 0.08184846226227949 1" class="collision"/>
+        <geom mesh="cone_collision_15" rgba="0.46813405365235117 0.039271218127515994 0.6615530825900852 1" class="collision"/>
+        <geom mesh="cone_collision_16" rgba="0.5370216685120357 0.3399956737867462 0.7535531172501211 1" class="collision"/>
+        <geom mesh="cone_collision_17" rgba="0.5899425363391085 0.9666679457642869 0.3786452973897484 1" class="collision"/>
+        <geom mesh="cone_collision_18" rgba="0.8836500686796281 0.020074105487957628 0.024122635645069446 1" class="collision"/>
+        <geom mesh="cone_collision_19" rgba="0.7438173109763225 0.5792505431525476 0.6474957906308789 1" class="collision"/>
+        <geom mesh="cone_collision_20" rgba="0.5810035137609506 0.9003630278994069 0.010404260947381117 1" class="collision"/>
+        <geom mesh="cone_collision_21" rgba="0.8455968224864672 0.9571528791713646 0.43465704423468365 1" class="collision"/>
+        <geom mesh="cone_collision_22" rgba="0.41055207633937063 0.5806210054568035 0.9635933054181001 1" class="collision"/>
+        <geom mesh="cone_collision_23" rgba="0.6828470421682192 0.03313898633780765 0.2548753621626846 1" class="collision"/>
+        <geom mesh="cone_collision_24" rgba="0.32924539991530466 0.5942578344157974 0.010626585198255434 1" class="collision"/>
+        <geom mesh="cone_collision_25" rgba="0.9216255299679728 0.023144569572492668 0.025293395198687785 1" class="collision"/>
+        <geom mesh="cone_collision_26" rgba="0.5990670548670891 0.2118270100492895 0.9633859156838969 1" class="collision"/>
+        <geom mesh="cone_collision_27" rgba="0.1413064508573426 0.35649489559707226 0.5009217928914316 1" class="collision"/>
+        <geom mesh="cone_collision_28" rgba="0.3841395185241233 0.3820614108287945 0.150007335615019 1" class="collision"/>
+        <geom mesh="cone_collision_29" rgba="0.3884145946509605 0.40227778556974414 0.5569267559046148 1" class="collision"/>
+        <geom mesh="cone_collision_30" rgba="0.018879395079463124 0.8333073553540318 0.1730238225348376 1" class="collision"/>
+        <geom mesh="cone_collision_31" rgba="0.20520708960704304 0.6086419640454771 0.3958833915148955 1" class="collision"/>
+        <geom mesh="cone_collision_32" rgba="0.48537769825108923 0.7175050797917537 0.9771031099985625 1" class="collision"/>
+        <geom mesh="cone_collision_33" rgba="0.013174840267618726 0.5125559020940669 0.6804337608380439 1" class="collision"/>
+        <geom mesh="cone_collision_34" rgba="0.20500983344645707 0.06354399236524566 0.21494245454963057 1" class="collision"/>
+        <geom mesh="cone_collision_35" rgba="0.9780820441116441 0.22178637652497324 0.6353721235855977 1" class="collision"/>
+        <geom mesh="cone_collision_36" rgba="0.7876611378520441 0.4689531551545728 0.03552124436102666 1" class="collision"/>
+        <geom mesh="cone_collision_37" rgba="0.02206927798227576 0.2436939509986601 0.6314619378762341 1" class="collision"/>
+        <geom mesh="cone_collision_38" rgba="0.8780311872806216 0.6274893765098124 0.5738329064922578 1" class="collision"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

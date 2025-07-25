@@ -108,7 +108,7 @@ class IoaiGraspEnv:
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects")
-            .joinpath("table")
+            .joinpath("table_old")
             .joinpath("table.xml"),
             position=[0.65, 0, 0],
             orientation=[0, 0, 0.70711, -0.70711],

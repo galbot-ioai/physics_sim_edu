@@ -1,12 +1,12 @@
 {
     "name": "ioai_test_scenario_grasp",
     "description": "Exported scenario from SynthNova Physics Simulator",
-    "uuid": "e3c80a0d_feba_4ab6_8032_2f4e75d52507",
+    "uuid": "70289d76_2685_485a_9ba3_9ffba10bab0e",
     "robots": [
         {
             "prim_path": "/World/Galbot",
             "name": "galbot_one_foxtrot",
-            "uuid": "d63b88e0_aece_40b0_8382_55b8c573083d",
+            "uuid": "c75e66a1_1242_4bce_bb34_56f522beadb5",
             "usd_path": null,
             "mjcf_path": "synthnova_assets/robots/galbot_one_foxtrot_description_simplified/galbot_one_foxtrot.xml",
             "urdf_path": null,
@@ -41,10 +41,10 @@
             "prim_path": "/World/Table",
             "type": "mesh",
             "name": "table",
-            "uuid": "bf4c374a_3358_4961_8564_9496d434a3a4",
+            "uuid": "eeee5397_6272_44eb_9cbd_b0610b6c84d6",
             "usd_path": null,
             "obj_path": null,
-            "mjcf_path": "synthnova_assets/objects_aigc/table/table.xml",
+            "mjcf_path": "synthnova_assets/objects/table/table.xml",
             "urdf_path": null,
             "position": [
                 -0.7,
@@ -54,15 +54,15 @@
             "orientation": [
                 0.0,
                 0.0,
-                0.0,
-                1.0
+                0.70710678,
+                0.70710678
             ],
             "translation": null,
             "rotation": null,
             "scale": [
-                0.5747,
-                0.5747,
-                0.5747
+                1.0,
+                1.0,
+                1.0
             ],
             "interaction_type": "dynamic",
             "semantic_label": null,
@@ -74,7 +74,7 @@
             "prim_path": "/World/Power_drill",
             "type": "mesh",
             "name": "power_drill",
-            "uuid": "6d91f31a_52b8_43a5_8504_fc04dd71ef9c",
+            "uuid": "6c068b02_9365_4d45_9c65_8eae2be29f38",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": "synthnova_assets/objects/power_drill/power_drill.xml",
@@ -107,7 +107,7 @@
             "prim_path": "/World/cube",
             "type": "cuboid",
             "name": "cube",
-            "uuid": "593b3d19_376b_41cf_8819_467cbbf37b54",
+            "uuid": "11596d3e_5fdc_49ba_abd3_27dc4103cd44",
             "usd_path": null,
             "obj_path": null,
             "mjcf_path": null,
@@ -120,8 +120,8 @@
             "orientation": [
                 0.0,
                 0.0,
-                0.0,
-                1.0
+                0.70710678,
+                0.70710678
             ],
             "translation": null,
             "rotation": null,
@@ -136,8 +136,8 @@
             "attributes": null,
             "size": 1.0,
             "color": [
-                0.0,
                 1.0,
+                0.0,
                 0.0
             ]
         },
@@ -145,10 +145,10 @@
             "prim_path": "/World/bucket",
             "type": "mesh",
             "name": "bucket_1",
-            "uuid": "1283831f_7c54_4c7e_b8c0_4cd39aa3c574",
+            "uuid": "d6899b71_05e8_46e0_a0d6_c6abd122aef5",
             "usd_path": null,
             "obj_path": null,
-            "mjcf_path": "synthnova_assets/objects_aigc/bucket/bucket.xml",
+            "mjcf_path": "synthnova_assets/objects/bucket/bucket.xml",
             "urdf_path": null,
             "position": [
                 -0.5499999999999999,
@@ -158,48 +158,15 @@
             "orientation": [
                 0.0,
                 0.0,
-                0.0,
+                0.70710678,
+                0.70710678
+            ],
+            "translation": null,
+            "rotation": null,
+            "scale": [
+                1.0,
+                1.0,
                 1.0
-            ],
-            "translation": null,
-            "rotation": null,
-            "scale": [
-                0.249,
-                0.249,
-                0.249
-            ],
-            "interaction_type": "dynamic",
-            "semantic_label": null,
-            "semantic_type": "class",
-            "attributes": null,
-            "collision_type": "convex_decomposition"
-        },
-        {
-            "prim_path": "/World/Shelf",
-            "type": "mesh",
-            "name": "shelf",
-            "uuid": "bf4c374a_3358_4961_8564_9496d434a3b4",
-            "usd_path": null,
-            "obj_path": null,
-            "mjcf_path": "synthnova_assets/objects_aigc/shelf/shelf.xml",
-            "urdf_path": null,
-            "position": [
-                0.0,
-                3.25,
-                0.0
-            ],
-            "orientation": [
-                0.0,
-                0.0,
-                0.707,
-                0.707
-            ],
-            "translation": null,
-            "rotation": null,
-            "scale": [
-                1.1312, 
-                1.1312, 
-                1.1312
             ],
             "interaction_type": "dynamic",
             "semantic_label": null,
@@ -212,7 +179,7 @@
         {
             "type": "rgb_camera",
             "name": "front_head_rgb_camera",
-            "uuid": "980ba7ca_3e01_4376_b885_791c7b6335a9",
+            "uuid": "4b54745b_5e5a_4fb2_bb7b_02226a8775e9",
             "prim_path": "/World/Galbot/head_link2/head_end_effector_mount_link/front_head_rgb_camera",
             "parent_entity_name": "galbot_one_foxtrot/head_end_effector_mount_link",
             "position": null,
@@ -262,7 +229,7 @@
         {
             "type": "depth_camera",
             "name": "front_head_depth_camera",
-            "uuid": "58d01932_7167_4c6d_a1d3_93b5999a2866",
+            "uuid": "931c849a_89c3_4928_ac17_f15dc23d9835",
             "prim_path": "/World/Galbot/head_link2/head_end_effector_mount_link/front_head_depth_camera",
             "parent_entity_name": "galbot_one_foxtrot/head_end_effector_mount_link",
             "position": null,

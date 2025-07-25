@@ -129,7 +129,7 @@ def main():
 
     # Add a table
     table_position = np.array([-0.7, 0, 0])
-    table_orientation = np.array([0, 0, 0, 1])
+    table_orientation = np.array([0, 0, 0.70710678, 0.70710678])
 
     table_config = MeshConfig(
         prim_path="/World/Table",
@@ -137,12 +137,11 @@ def main():
         mjcf_path=Path()
             .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("objects_aigc")
+            .joinpath("objects")
             .joinpath("table")
             .joinpath("table.xml"),
         position=table_position,
         orientation=table_orientation,
-        scale=[0.5747, 0.5747, 0.5747]
     )
     table_path = synthnova_physics_simulator.add_object(table_config)
 
@@ -158,7 +157,6 @@ def main():
             .joinpath("power_drill.xml"),
         position=table_position + np.array([0.05, 0.1, 0.53]),
         orientation=[0.5, -0.5, -0.5, 0.5],
-        scale=[1.0, 1.0, 1.0]
     )
     power_drill_path = synthnova_physics_simulator.add_object(power_drill_config)
 
@@ -180,12 +178,11 @@ def main():
         mjcf_path=Path()
             .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("objects_aigc")
+            .joinpath("objects")
             .joinpath("bucket")
             .joinpath("bucket.xml"),
         position=table_position + np.array([0.15, -0.3, 0.5]),
         orientation=table_orientation,
-        scale=[0.249, 0.249, 0.249],
     )
     bucket_path = synthnova_physics_simulator.add_object(bucket_config)
 
