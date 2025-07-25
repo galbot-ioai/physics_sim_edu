@@ -37,7 +37,7 @@ dependencies = [
     "Pillow",
     "pynput",
     "pyopengl==3.1.9",
-    "open3d",
+    # "open3d",
     "tifffile",
     "opencv-python",
     # For ik using mink
