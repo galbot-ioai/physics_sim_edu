@@ -1,0 +1,14 @@
+[project]
+name = "trac_ik_python_galbot_release"
+version = "0.0.1"
+description = "TRAC-IK Python binding with all dependencies included, Galbot release version"
+authors = [
+    { name="Chenyu Cao", email="caochenyu@galbot.com" },
+]
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+license = { file="LICENSE.txt" }
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
