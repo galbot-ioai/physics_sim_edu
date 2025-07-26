@@ -186,7 +186,8 @@ class MujocoRobotModel(MujocoXMLModel):
                 - position: numpy.ndarray [x, y, z] - 3D position
                 - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
         """
-        body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link_name)
+
+        body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, self.naming_prefix + link_name)
         if body_id < 0:
             raise ValueError(f"Link {link_name} not found in model")
             
