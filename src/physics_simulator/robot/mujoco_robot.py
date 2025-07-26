@@ -558,24 +558,24 @@ class MujocoRobot(object):
         """
         return self
     
-    def get_body_world_pose(self, link_name: str):
-        """Get the world pose of a specific robot body.
+    # def get_body_world_pose(self, link_name: str):
+    #     """Get the world pose of a specific robot body.
         
-        Args:
-            link_name: Name of the link to get the world pose for
+    #     Args:
+    #         link_name: Name of the link to get the world pose for
             
-        Returns:
-            numpy.ndarray: Array containing the world pose [x, y, z, qw, qx, qy, qz]
-                where [x, y, z] is position and [qw, qx, qy, qz] is quaternion orientation.
-        """
-        return self.robot_model.get_body_world_pose(link_name)
+    #     Returns:
+    #         numpy.ndarray: Array containing the world pose [x, y, z, qw, qx, qy, qz]
+    #             where [x, y, z] is position and [qw, qx, qy, qz] is quaternion orientation.
+    #     """
+    #     return self.robot_model.get_body_world_pose(link_name)
     
-    def get_all_body_world_poses(self):
-        """Get the world poses of all robot bodies.
+    # def get_all_body_world_poses(self):
+    #     """Get the world poses of all robot bodies.
         
-        Returns:
-            Dict[str, numpy.ndarray]: Dictionary mapping body names to their world poses.
-                Each pose is a 7-element array [x, y, z, qw, qx, qy, qz] 
-                where [x, y, z] is position and [qw, qx, qy, qz] is quaternion orientation.
-        """
-        return self.robot_model.get_all_body_world_poses()
+    #     Returns:
+    #         Dict[str, numpy.ndarray]: Dictionary mapping body names to their world poses.
+    #             Each pose is a 7-element array [x, y, z, qw, qx, qy, qz] 
+    #             where [x, y, z] is position and [qw, qx, qy, qz] is quaternion orientation.
+    #     """
+    #     return self.robot_model.get_all_body_world_poses()

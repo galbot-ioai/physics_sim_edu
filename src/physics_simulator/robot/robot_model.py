@@ -175,232 +175,232 @@ class MujocoRobotModel(MujocoXMLModel):
             "quat", array_to_string(rot)
         )
 
-    def get_body_world_pose(self, link_name: str):
-        """Get the world pose of a specific robot body.
+    # def get_body_world_pose(self, link_name: str):
+    #     """Get the world pose of a specific robot body.
         
-        Args:
-            link_name: Name of the body/link
+    #     Args:
+    #         link_name: Name of the body/link
             
-        Returns:
-            dict: World pose dictionary with:
-                - position: numpy.ndarray [x, y, z] - 3D position
-                - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
-        """
+    #     Returns:
+    #         dict: World pose dictionary with:
+    #             - position: numpy.ndarray [x, y, z] - 3D position
+    #             - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
+    #     """
 
-        body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, self.naming_prefix + link_name)
-        if body_id < 0:
-            raise ValueError(f"Link {link_name} not found in model")
+    #     body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, self.naming_prefix + link_name)
+    #     if body_id < 0:
+    #         raise ValueError(f"Link {link_name} not found in model")
             
-        link_pos = self._mujoco_data.xpos[body_id].copy()
-        link_quat = self._mujoco_data.xquat[body_id].copy()
-        link_quat = wxyz_to_xyzw(link_quat)
+    #     link_pos = self._mujoco_data.xpos[body_id].copy()
+    #     link_quat = self._mujoco_data.xquat[body_id].copy()
+    #     link_quat = wxyz_to_xyzw(link_quat)
         
-        return {
-            "position": link_pos,
-            "orientation": link_quat
-        }
+    #     return {
+    #         "position": link_pos,
+    #         "orientation": link_quat
+    #     }
     
-    def get_all_body_world_poses(self):
-        """Get the world poses of all robot bodies.
+    # def get_all_body_world_poses(self):
+    #     """Get the world poses of all robot bodies.
         
-        Returns:
-            Dict[str, dict]: Dictionary mapping body names to their world pose dictionaries.
-                Each pose dictionary contains:
-                - position: numpy.ndarray [x, y, z] - 3D position
-                - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
-                Body names in the dictionary keys have the naming prefix removed.
-        """
-        body_poses = {}
-        for link_name in self.links_name:
-            # Remove naming prefix from the key while keeping full name for pose retrieval
-            clean_link_name = link_name
-            if self.naming_prefix and link_name.startswith(self.naming_prefix):
-                clean_link_name = link_name[len(self.naming_prefix):]
-            body_poses[clean_link_name] = self.get_body_world_pose(link_name)
+    #     Returns:
+    #         Dict[str, dict]: Dictionary mapping body names to their world pose dictionaries.
+    #             Each pose dictionary contains:
+    #             - position: numpy.ndarray [x, y, z] - 3D position
+    #             - orientation: numpy.ndarray [qx, qy, qz, qw] - quaternion orientation
+    #             Body names in the dictionary keys have the naming prefix removed.
+    #     """
+    #     body_poses = {}
+    #     for link_name in self.links_name:
+    #         # Remove naming prefix from the key while keeping full name for pose retrieval
+    #         clean_link_name = link_name
+    #         if self.naming_prefix and link_name.startswith(self.naming_prefix):
+    #             clean_link_name = link_name[len(self.naming_prefix):]
+    #         body_poses[clean_link_name] = self.get_body_world_pose(link_name)
         
-        return body_poses
+    #     return body_poses
     
-    def fk_link(self, q: np.ndarray, link: str) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Compute the forward kinematics for a specific link.
+    # def fk_link(self, q: np.ndarray, link: str) -> Tuple[np.ndarray, np.ndarray]:
+    #     """
+    #     Compute the forward kinematics for a specific link.
 
-        Parameters
-        ----------
-        q: np.ndarray (J,)
-            The joint angles.
-        link: str
-            The link name.
+    #     Parameters
+    #     ----------
+    #     q: np.ndarray (J,)
+    #         The joint angles.
+    #     link: str
+    #         The link name.
 
-        Returns
-        -------
-        link_trans: np.ndarray (3,)
-            The translation of the link.
-        link_rot: np.ndarray (3, 3)
-            The rotation of the link.
-        """
-        if self._mujoco_model is None or self._mujoco_data is None:
-            raise ValueError("MuJoCo model and data not initialized")
+    #     Returns
+    #     -------
+    #     link_trans: np.ndarray (3,)
+    #         The translation of the link.
+    #     link_rot: np.ndarray (3, 3)
+    #         The rotation of the link.
+    #     """
+    #     if self._mujoco_model is None or self._mujoco_data is None:
+    #         raise ValueError("MuJoCo model and data not initialized")
             
-        # Save original positions
-        original_qpos = self._mujoco_data.qpos.copy()
+    #     # Save original positions
+    #     original_qpos = self._mujoco_data.qpos.copy()
         
-        # Set joint positions
-        for i, joint_name in enumerate(self.joint_names):
-            if i < len(q):
-                joint_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
-                if joint_id >= 0:
-                    self._mujoco_data.qpos[self._mujoco_model.jnt_qposadr[joint_id]] = q[i]
+    #     # Set joint positions
+    #     for i, joint_name in enumerate(self.joint_names):
+    #         if i < len(q):
+    #             joint_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+    #             if joint_id >= 0:
+    #                 self._mujoco_data.qpos[self._mujoco_model.jnt_qposadr[joint_id]] = q[i]
         
-        # Forward kinematics
-        mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
+    #     # Forward kinematics
+    #     mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
         
-        # Get link position and orientation
-        body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link)
-        if body_id < 0:
-            raise ValueError(f"Link {link} not found in model")
+    #     # Get link position and orientation
+    #     body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link)
+    #     if body_id < 0:
+    #         raise ValueError(f"Link {link} not found in model")
             
-        link_trans = self._mujoco_data.xpos[body_id].copy()
-        link_rot = self._mujoco_data.xmat[body_id].reshape(3, 3).copy()
+    #     link_trans = self._mujoco_data.xpos[body_id].copy()
+    #     link_rot = self._mujoco_data.xmat[body_id].reshape(3, 3).copy()
         
-        # Restore original positions
-        self._mujoco_data.qpos[:] = original_qpos
-        mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
+    #     # Restore original positions
+    #     self._mujoco_data.qpos[:] = original_qpos
+    #     mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
         
-        return link_trans, link_rot
+    #     return link_trans, link_rot
     
-    def fk_all_link(self, q: np.ndarray) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-        """
-        Compute the forward kinematics for all links.
+    # def fk_all_link(self, q: np.ndarray) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    #     """
+    #     Compute the forward kinematics for all links.
 
-        Parameters
-        ----------
-        q: np.ndarray (J,)
-            The joint angles.
+    #     Parameters
+    #     ----------
+    #     q: np.ndarray (J,)
+    #         The joint angles.
 
-        Returns
-        -------
-        link_trans: Dict[str, np.ndarray (3,)]
-            The translation of each link.
-        link_rot: Dict[str, np.ndarray (3, 3)]
-            The rotation of each link.
-        """
-        if self._mujoco_model is None or self._mujoco_data is None:
-            raise ValueError("MuJoCo model and data not initialized")
+    #     Returns
+    #     -------
+    #     link_trans: Dict[str, np.ndarray (3,)]
+    #         The translation of each link.
+    #     link_rot: Dict[str, np.ndarray (3, 3)]
+    #         The rotation of each link.
+    #     """
+    #     if self._mujoco_model is None or self._mujoco_data is None:
+    #         raise ValueError("MuJoCo model and data not initialized")
             
-        # Save original positions
-        original_qpos = self._mujoco_data.qpos.copy()
+    #     # Save original positions
+    #     original_qpos = self._mujoco_data.qpos.copy()
         
-        # Set joint positions
-        for i, joint_name in enumerate(self.joint_names):
-            if i < len(q):
-                joint_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
-                if joint_id >= 0:
-                    self._mujoco_data.qpos[self._mujoco_model.jnt_qposadr[joint_id]] = q[i]
+    #     # Set joint positions
+    #     for i, joint_name in enumerate(self.joint_names):
+    #         if i < len(q):
+    #             joint_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+    #             if joint_id >= 0:
+    #                 self._mujoco_data.qpos[self._mujoco_model.jnt_qposadr[joint_id]] = q[i]
         
-        # Forward kinematics
-        mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
+    #     # Forward kinematics
+    #     mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
         
-        # Get all link positions and orientations
-        link_trans = {}
-        link_rot = {}
+    #     # Get all link positions and orientations
+    #     link_trans = {}
+    #     link_rot = {}
         
-        for link in self.links_name:
-            body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link)
-            if body_id >= 0:
-                link_trans[link] = self._mujoco_data.xpos[body_id].copy()
-                link_rot[link] = self._mujoco_data.xmat[body_id].reshape(3, 3).copy()
+    #     for link in self.links_name:
+    #         body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link)
+    #         if body_id >= 0:
+    #             link_trans[link] = self._mujoco_data.xpos[body_id].copy()
+    #             link_rot[link] = self._mujoco_data.xmat[body_id].reshape(3, 3).copy()
         
-        # Restore original positions
-        self._mujoco_data.qpos[:] = original_qpos
-        mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
+    #     # Restore original positions
+    #     self._mujoco_data.qpos[:] = original_qpos
+    #     mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
         
-        return link_trans, link_rot
+    #     return link_trans, link_rot
     
-    def fk_jacobian(self, q: np.ndarray, link: str) -> np.ndarray:
-        """
-        Compute the forward kinematics jacobian for a specific link.
+    # def fk_jacobian(self, q: np.ndarray, link: str) -> np.ndarray:
+    #     """
+    #     Compute the forward kinematics jacobian for a specific link.
 
-        Parameters
-        ----------
-        q: np.ndarray (J,)
-            The joint angles.
-        link: str
-            The link name.
+    #     Parameters
+    #     ----------
+    #     q: np.ndarray (J,)
+    #         The joint angles.
+    #     link: str
+    #         The link name.
 
-        Returns
-        -------
-        link_jacobian: np.ndarray (6, J)
-            The jacobian of the link.
-        """
-        if self._mujoco_model is None or self._mujoco_data is None:
-            raise ValueError("MuJoCo model and data not initialized")
+    #     Returns
+    #     -------
+    #     link_jacobian: np.ndarray (6, J)
+    #         The jacobian of the link.
+    #     """
+    #     if self._mujoco_model is None or self._mujoco_data is None:
+    #         raise ValueError("MuJoCo model and data not initialized")
             
-        # Save original positions
-        original_qpos = self._mujoco_data.qpos.copy()
+    #     # Save original positions
+    #     original_qpos = self._mujoco_data.qpos.copy()
         
-        # Set joint positions
-        for i, joint_name in enumerate(self.joint_names):
-            if i < len(q):
-                joint_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
-                if joint_id >= 0:
-                    self._mujoco_data.qpos[self._mujoco_model.jnt_qposadr[joint_id]] = q[i]
+    #     # Set joint positions
+    #     for i, joint_name in enumerate(self.joint_names):
+    #         if i < len(q):
+    #             joint_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+    #             if joint_id >= 0:
+    #                 self._mujoco_data.qpos[self._mujoco_model.jnt_qposadr[joint_id]] = q[i]
         
-        # Forward kinematics
-        mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
+    #     # Forward kinematics
+    #     mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
         
-        # Get body ID for the link
-        body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link)
-        if body_id < 0:
-            raise ValueError(f"Link {link} not found in model")
+    #     # Get body ID for the link
+    #     body_id = mujoco.mj_name2id(self._mujoco_model, mujoco.mjtObj.mjOBJ_BODY, link)
+    #     if body_id < 0:
+    #         raise ValueError(f"Link {link} not found in model")
             
-        # Compute Jacobian
-        jacp = np.zeros((3, self._mujoco_model.nv))
-        jacr = np.zeros((3, self._mujoco_model.nv))
+    #     # Compute Jacobian
+    #     jacp = np.zeros((3, self._mujoco_model.nv))
+    #     jacr = np.zeros((3, self._mujoco_model.nv))
         
-        mujoco.mj_jacBody(self._mujoco_model, self._mujoco_data, jacp, jacr, body_id)
+    #     mujoco.mj_jacBody(self._mujoco_model, self._mujoco_data, jacp, jacr, body_id)
         
-        # Combine translational and rotational Jacobians
-        jacobian = np.vstack((jacp, jacr))
+    #     # Combine translational and rotational Jacobians
+    #     jacobian = np.vstack((jacp, jacr))
         
-        # Restore original positions
-        self._mujoco_data.qpos[:] = original_qpos
-        mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
+    #     # Restore original positions
+    #     self._mujoco_data.qpos[:] = original_qpos
+    #     mujoco.mj_forward(self._mujoco_model, self._mujoco_data)
         
-        return jacobian
+    #     return jacobian
     
-    def generate_random_qpos(self) -> np.ndarray:
-        """
-        Generate a random joint configuration.
+    # def generate_random_qpos(self) -> np.ndarray:
+    #     """
+    #     Generate a random joint configuration.
 
-        Returns
-        -------
-        qpos: np.ndarray (J,)
-            The random joint configuration.
-        """
-        if self.joints_lower_limit is None or self.joints_upper_limit is None:
-            raise ValueError("Joint limits not initialized")
+    #     Returns
+    #     -------
+    #     qpos: np.ndarray (J,)
+    #         The random joint configuration.
+    #     """
+    #     if self.joints_lower_limit is None or self.joints_upper_limit is None:
+    #         raise ValueError("Joint limits not initialized")
             
-        return (
-            np.random.rand(len(self.joints_lower_limit))
-            * (self.joints_upper_limit - self.joints_lower_limit)
-            + self.joints_lower_limit
-        )
+    #     return (
+    #         np.random.rand(len(self.joints_lower_limit))
+    #         * (self.joints_upper_limit - self.joints_lower_limit)
+    #         + self.joints_lower_limit
+    #     )
     
-    def clip_qpos(self, q: np.ndarray) -> np.ndarray:
-        """
-        Clip the joint configuration to the joint limits.
+    # def clip_qpos(self, q: np.ndarray) -> np.ndarray:
+    #     """
+    #     Clip the joint configuration to the joint limits.
 
-        Parameters
-        ----------
-        q: np.ndarray (J,)
-            The joint configuration.
+    #     Parameters
+    #     ----------
+    #     q: np.ndarray (J,)
+    #         The joint configuration.
 
-        Returns
-        -------
-        clipped_qpos: np.ndarray (J,)
-            The clipped joint configuration.
-        """
-        if self.joints_lower_limit is None or self.joints_upper_limit is None:
-            raise ValueError("Joint limits not initialized")
+    #     Returns
+    #     -------
+    #     clipped_qpos: np.ndarray (J,)
+    #         The clipped joint configuration.
+    #     """
+    #     if self.joints_lower_limit is None or self.joints_upper_limit is None:
+    #         raise ValueError("Joint limits not initialized")
             
-        return np.clip(q, self.joints_lower_limit, self.joints_upper_limit)
+    #     return np.clip(q, self.joints_lower_limit, self.joints_upper_limit)

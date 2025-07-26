@@ -60,10 +60,6 @@ def main():
     # Initialize the simulator
     synthnova_physics_simulator.initialize()
 
-    # Get the init state
-    init_state = synthnova_physics_simulator.get_state()
-    print(init_state)
-
     # Get robot state
     robot_state = synthnova_physics_simulator.get_robot_state(robot_config.prim_path)
     print(robot_state)
