@@ -64,6 +64,7 @@ class IoaiGraspEnv:
         self._setup_simulator(headless=headless)
         # Setup the interface
         self._setup_interface()
+        self._init_pose()
         # Setup the Mink for solving the inverse kinematics
         self._setup_mink()
         self.state_machine = SimpleStateMachine(max_states=8)
@@ -116,20 +117,19 @@ class IoaiGraspEnv:
         )
         self.simulator.add_object(table_config)
 
-        # Add closet
-        closet_config = MeshConfig(
-            prim_path="/World/Closet",
+        # Add bucket
+        bucket_config = MeshConfig(
+            prim_path="/World/bucket",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects")
-            .joinpath("closet")
-            .joinpath("closet.xml"),
+            .joinpath("bucket")
+            .joinpath("bucket.xml"),
             position=[0.65, -0.1, 0.55],
-            orientation=[0, 0, 0.70711, -0.70711],
-            scale=[0.2, 0.2, 0.2]
+            orientation=[0, 0, 0, 1],
         )
-        self.simulator.add_object(closet_config)
+        self.simulator.add_object(bucket_config)
 
         # Add cube
         cube_config = CuboidConfig(
@@ -144,9 +144,9 @@ class IoaiGraspEnv:
         # Initialize the simulator
         self.simulator.initialize()
 
-        closet_state = self.simulator.get_object_state("/World/Closet")
-        self.closet_position = closet_state["position"]
-        self.closet_orientation = closet_state["orientation"]
+        bucket_state = self.simulator.get_object_state("/World/bucket")
+        self.bucket_position = bucket_state["position"]
+        self.bucket_orientation = bucket_state["orientation"]
 
 
     def _setup_interface(self):
@@ -226,33 +226,29 @@ class IoaiGraspEnv:
         model = self.simulator.model._model
         self.mink_config = mink.Configuration(model)
         
-        # Create tasks
-        self.tasks = [
-            mink.FrameTask(
+        # Create tasks as dictionary
+        self.tasks = {
+            "torso": mink.FrameTask(
                 frame_name=self.robot.namespace + "torso_base_link",
                 frame_type="body",
-                position_cost=0.0,
-                orientation_cost=10.0,
+                position_cost=1e6,
+                orientation_cost=1e6,
             ),
-            mink.PostureTask(model, cost=1.0),
-            mink.FrameTask(
+            "posture": mink.PostureTask(model, cost=1.0),
+            "chassis": mink.FrameTask(
                 frame_name=self.robot.namespace + "omni_chassis_base_link",
                 frame_type="body",
-                position_cost=100.0,
-                orientation_cost=100.0,
+                position_cost=1e6,
+                orientation_cost=1e6,
             ),
-        ]
-        
-        # Create arm tasks
-        self.arm_tasks = {
-            "left": mink.FrameTask(
+            "left_arm": mink.FrameTask(
                 frame_name=self.robot.namespace + "left_gripper_tcp",
                 frame_type="site",
                 position_cost=50.0,
                 orientation_cost=50.0,
                 lm_damping=1.0,
             ),
-            "right": mink.FrameTask(
+            "right_arm": mink.FrameTask(
                 frame_name=self.robot.namespace + "right_gripper_tcp",
                 frame_type="site",
                 position_cost=50.0,
@@ -272,8 +268,28 @@ class IoaiGraspEnv:
         self.solver = "daqp"
         self.rate_limiter = RateLimiter(frequency=1000, warn=False)
         
-        for task in self.tasks:
-            task.set_target_from_configuration(self.mink_config)
+        # Set targets for torso, posture, and chassis tasks
+        # for task_name in ["torso", "posture", "chassis"]:
+        #     self.tasks[task_name].set_target_from_configuration(self.mink_config)
+
+        # Set target for chassis
+        chassis_target = mink.SE3.from_rotation_and_translation(
+            rotation=mink.SO3(wxyz=xyzw_to_wxyz(self.robot.get_orientation())),
+            translation=self.robot.get_position()
+        )
+        self.tasks["chassis"].set_target(chassis_target)
+
+        # Set target for torso
+        import mujoco
+        torso_body_id = mujoco.mj_name2id(self.simulator.model._model, mujoco.mjtObj.mjOBJ_BODY, self.robot.namespace + "torso_base_link")
+        torso_target = mink.SE3.from_rotation_and_translation(
+            rotation=mink.SO3(wxyz=self.simulator.data.xquat[torso_body_id]),
+            translation=self.simulator.data.xpos[torso_body_id]
+        )
+        self.tasks["torso"].set_target(torso_target)
+
+        # Set target for posture
+        self.tasks["posture"].set_target_from_configuration(self.mink_config)
 
     def solve_ik(self,
                  left_target_position=None,
@@ -291,42 +307,42 @@ class IoaiGraspEnv:
             right_target_position: Target position for right arm [x, y, z]
             right_target_orientation: Target orientation for right arm as quaternion [x, y, z, w]
         """
-        active_tasks = self.tasks.copy()
-        
-        if left_target_position is not None:
-            if left_target_orientation is not None:
-                target = mink.SE3.from_rotation_and_translation(
-                    rotation=mink.SO3(wxyz=xyzw_to_wxyz(left_target_orientation)),
-                    translation=left_target_position
-                )
-                self.arm_tasks["left"].set_target(target)
-                active_tasks.append(self.arm_tasks["left"])
-            
-        if right_target_position is not None:
-            if right_target_orientation is not None:
-                target = mink.SE3.from_rotation_and_translation(
-                    rotation=mink.SO3(wxyz=xyzw_to_wxyz(right_target_orientation)),
-                    translation=right_target_position
-                )
-                self.arm_tasks["right"].set_target(target)
-                active_tasks.append(self.arm_tasks["right"])
-            
+
+        # Set targets for left and right arm
+        if left_target_position is not None and left_target_orientation is not None:
+            target = mink.SE3.from_rotation_and_translation(
+                rotation=mink.SO3(wxyz=xyzw_to_wxyz(left_target_orientation)),
+                translation=left_target_position
+            )
+            self.tasks["left_arm"].set_target(target)
+        if right_target_position is not None and right_target_orientation is not None:
+            target = mink.SE3.from_rotation_and_translation(
+                rotation=mink.SO3(wxyz=xyzw_to_wxyz(right_target_orientation)),
+                translation=right_target_position
+            )
+            self.tasks["right_arm"].set_target(target)
+
+        # Collect all tasks
+        tasks = [self.tasks["torso"], self.tasks["posture"], self.tasks["chassis"]]
+        if left_target_position is not None and left_target_orientation is not None:
+            tasks.append(self.tasks["left_arm"])
+        if right_target_position is not None and right_target_orientation is not None:
+            tasks.append(self.tasks["right_arm"])
+
         # Solve IK
         vel = mink.solve_ik(
             self.mink_config,
-            active_tasks,
+            tasks,
             self.rate_limiter.dt,
             self.solver,
             0.01,
             limits=[self.velocity_limit] if limit_velocity else None
         )
 
-        self.mink_config.integrate_inplace(vel, self.rate_limiter.dt * 0.1)
-         
-        # Update robot joint positions
+        self.mink_config.integrate_inplace(vel, self.rate_limiter.dt * 0.02)
         joint_positions = self.mink_config.q
 
-        # Use joint_positions to update leg, head, left_arm, and right_arm
+        # Extract joint positions for each module
         left_arm_joint_indexes = self.interface.left_arm.joint_indexes
         left_arm_joint_positions = joint_positions[left_arm_joint_indexes]
         right_arm_joint_indexes = self.interface.right_arm.joint_indexes
@@ -342,39 +358,18 @@ class IoaiGraspEnv:
             "head": head_joint_positions,
             "leg": leg_joint_positions
         }
-    
+
     def _init_pose(self):
-        # Init head pose
-        head = [0.0, 0.0]
-        self._move_joints_to_target(self.interface.head, head)
-
-        # Init leg pose
-        leg = [0.43, 1.48, 1.07, 0.0]
-        self._move_joints_to_target(self.interface.leg, leg)
-
-        # Init left arm pose
-        left_arm = [
-            -0.716656506061554,
-            -1.538102626800537,
-            -0.03163932263851166,
-            -1.379408597946167,
-            -1.4995604753494263,
-            0.0332450270652771,
-            -1.0637063884735107
-        ]
-        self._move_joints_to_target(self.interface.left_arm, left_arm)
-
-        # Init right arm pose
-        right_arm = [
-            -0.058147381991147995,
-            -1.4785659313201904,
-            0.0999724417924881,
-            2.097979784011841,
-            -1.3999720811843872,
-            0.009971064515411854,
-            -1.0999830961227417
-        ]
-        self._move_joints_to_target(self.interface.right_arm, right_arm)
+        # Initialize robot pose
+        poses = {
+            self.interface.head: [0.0, 0.0],
+            self.interface.leg: [0.2, 0.756, 0.53, 0.0],
+            self.interface.left_arm: [-0.4654513936071508, 1.4785659313201904, -0.6235712173907869, 2.097979784011841, 1.3999720811843872, -0.009971064515411854, 1.0999830961227417],
+            self.interface.right_arm: [0.4654513936071508, -1.4785659313201904, 0.6235712173907869, -2.097979784011841, -1.3999720811843872, 0.009971064515411854, -1.0999830961227417]
+        }
+        
+        for module, pose in poses.items():
+            module.set_joint_positions(pose, immediate=True)
 
     def _move_joints_to_target(self, module, target_positions, steps=100):
         """Move joints from current position to target position smoothly."""
@@ -428,9 +423,9 @@ class IoaiGraspEnv:
 
         def init_state():
             """Ready to pick"""
-            left_target_position = np.array([0.4, 0.3, 0.8])
+            left_target_position = np.array([0.5, 0.3, 0.7])
             left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.4, -0.3, 0.8])
+            right_target_position = np.array([0.5, -0.3, 0.7])
             right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
 
             # Solve IK for left arm
@@ -467,7 +462,7 @@ class IoaiGraspEnv:
                 self.state_first_entry = False
             left_target_position = self.cube_position + np.array([0, 0, 0.15])
             left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.4, -0.3, 0.8])
+            right_target_position = np.array([0.5, -0.3, 0.7])
             right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
             
             # Solve IK for left arm
@@ -503,7 +498,7 @@ class IoaiGraspEnv:
                 self.state_first_entry = False
             left_target_position = self.cube_position + np.array([0, 0, 0.03])
             left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.4, -0.3, 0.8])
+            right_target_position = np.array([0.5, -0.3, 0.7])
             right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
             
             # Solve IK for left arm
@@ -538,9 +533,9 @@ class IoaiGraspEnv:
         def move_to_pre_place_state():
             """Move to place position"""
 
-            left_target_position = self.cube_position + np.array([0, 0, 0.4])
+            left_target_position = self.cube_position + np.array([-0.1, 0, 0.4])
             left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.4, -0.3, 0.7])
+            right_target_position = np.array([0.5, -0.3, 0.7])
             right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
             
             # Solve IK for left arm 
@@ -569,13 +564,13 @@ class IoaiGraspEnv:
         def move_to_place_state():
             """Move to place position"""
             if self.state_first_entry:
-                closet_state = self.simulator.get_object_state("/World/Closet")
-                self.closet_position = closet_state["position"].copy()
+                bucket_state = self.simulator.get_object_state("/World/bucket")
+                self.bucket_position = bucket_state["position"].copy()
                 self.state_first_entry = False
 
-            left_target_position = self.closet_position + np.array([0, 0, 0.3])
+            left_target_position = self.bucket_position + np.array([0, 0, 0.3])
             left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.4, -0.3, 0.7])
+            right_target_position = np.array([0.5, -0.3, 0.7])
             right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
             
             # Solve IK for left arm
