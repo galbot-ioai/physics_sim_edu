@@ -109,11 +109,11 @@ class IoaiGraspEnv:
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects")
-            .joinpath("table_old")
+            .joinpath("table")
             .joinpath("table.xml"),
             position=[0.65, 0, 0],
-            orientation=[0, 0, 0.70711, -0.70711],
-            scale=[0.5, 0.7, 0.5]
+            orientation=[0, 0, 0.70711, 0.70711],
+            # scale=[0.5, 0.7, 0.5]
         )
         self.simulator.add_object(table_config)
 
@@ -126,8 +126,8 @@ class IoaiGraspEnv:
             .joinpath("objects")
             .joinpath("bucket")
             .joinpath("bucket.xml"),
-            position=[0.65, -0.1, 0.55],
-            orientation=[0, 0, 0, 1],
+            position=[0.7, -0.1, 0.55],
+            orientation=[0, 0, 0.70711, 0.70711],
         )
         self.simulator.add_object(bucket_config)
 
