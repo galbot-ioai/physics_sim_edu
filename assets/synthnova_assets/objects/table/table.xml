@@ -8,8 +8,8 @@
     </default>
   </default>
   <asset>
-    <texture type="2d" name="zhuozi_rgb" file="zhuozi_rgb.png"/>
-    <material name="Ml_Zuozi_01" texture="zhuozi_rgb" specular="0.5" shininess="0.5"/>
+    <texture type="2d" name="zhuozi_white" file="zhuozi_white.png"/>
+    <material name="Ml_Zuozi_01" texture="zhuozi_white" specular="0.5" shininess="0.5"/>
     <mesh name="table" file="table.obj"/>
     <mesh name="table_collision_0" file="table_collision_0.obj"/>
     <mesh name="table_collision_1" file="table_collision_1.obj"/>
