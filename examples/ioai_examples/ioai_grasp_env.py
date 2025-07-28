@@ -365,6 +365,49 @@ class IoaiGraspEnv:
         arm_joint_positions = joint_positions[arm_joint_indexes]
         return arm_joint_positions
 
+    def compute_simple_fk(self, arm_id="left_arm"):
+        """Compute forward kinematics using ground truth from simulator.
+        
+        Args:
+            arm_id: The ID of the arm, either "left_arm" or "right_arm"
+            
+        Returns:
+            TCP pose in base link frame [x, y, z, qx, qy, qz, qw]
+        """
+        if arm_id == "left_arm":
+            # Get left gripper TCP pose from simulator
+            position, quaternion = self.get_left_gripper_pose()
+        elif arm_id == "right_arm":
+            # Get right gripper TCP pose from simulator
+            position, quaternion = self.get_right_gripper_pose()
+        else:
+            raise ValueError(f"Invalid arm_id: {arm_id}")
+        
+        # Transform from world frame to base link frame
+        base_position = self.robot.get_position()
+        base_orientation = self.robot.get_orientation()
+        
+        # Create transformation matrices
+        from scipy.spatial.transform import Rotation
+        
+        # World to base transformation
+        base_rot = Rotation.from_quat(base_orientation)
+        base_rot_matrix = base_rot.as_matrix()
+        
+        # TCP in world frame
+        tcp_rot = Rotation.from_quat(quaternion)
+        tcp_rot_matrix = tcp_rot.as_matrix()
+        
+        # Transform position: subtract base position and rotate
+        relative_position = position - base_position
+        tcp_position_base = base_rot.inv().apply(relative_position)
+        
+        # Transform orientation: compose rotations
+        tcp_orientation_base = (base_rot.inv() * tcp_rot).as_quat()
+        
+        # Return pose in base link frame [x, y, z, qx, qy, qz, qw]
+        return np.concatenate([tcp_position_base, tcp_orientation_base])
+
     def _init_pose(self):
         # Initialize robot pose
         poses = {
