@@ -33,7 +33,11 @@ from synthnova_config import (
     PhysicsSimulatorConfig,
     RobotConfig,
     MeshConfig,
-    CuboidConfig
+    CuboidConfig,
+    RgbCameraConfig,
+    RealsenseD436RgbSensorConfig,
+    DepthCameraConfig,
+    RealsenseD436DepthSensorConfig
 )
 from physics_simulator.galbot_interface import GalbotInterface, GalbotInterfaceConfig
 import mink
@@ -43,6 +47,7 @@ from pathlib import Path
 import numpy as np
 from physics_simulator.utils.data_types import JointTrajectory
 import time
+import os
 
 from physics_simulator.utils.state_machine import SimpleStateMachine
 
@@ -107,6 +112,58 @@ class IoaiGraspEnv:
         self.simulator.add_robot(robot_config)
         self.robot = self.simulator.get_robot("/World/Galbot")
 
+        # Add front head RGB camera (RealSense D405)
+        front_head_rgb_camera_config = RgbCameraConfig(
+            name="front_head_rgb_camera",
+            prim_path=os.path.join(
+                self.robot.prim_path,
+                "head_link2",
+                "head_end_effector_mount_link",
+                "front_head_rgb_camera",
+            ),
+            translation=[
+                0.10084319533055261,
+                -0.059042081352783105,
+                0.03184978861787491
+            ],
+            rotation=[
+                -0.1654571792421115, 
+                0.6935589352367344,
+                0.16457378953789606,
+                0.6815536611211676
+            ],
+            camera_axes="ros",
+            sensor_config=RealsenseD436RgbSensorConfig(),
+            parent_entity_name="galbot_one_foxtrot/head_end_effector_mount_link"
+        )
+        self.front_head_rgb_camera_path = self.simulator.add_sensor(front_head_rgb_camera_config)
+
+        # Add front head depth camera (RealSense D436)
+        front_head_depth_camera_config = DepthCameraConfig(
+            name="front_head_depth_camera",
+            prim_path=os.path.join(
+                self.robot.prim_path,
+                "head_link2",
+                "head_end_effector_mount_link",
+                "front_head_depth_camera",
+            ),
+            translation=[
+                0.10084319533055261,
+                -0.059042081352783105,
+                0.03184978861787491
+            ],
+            rotation=[
+                -0.1654571792421115, 
+                0.6935589352367344,
+                0.16457378953789606,
+                0.6815536611211676
+            ],
+            camera_axes="ros",
+            sensor_config=RealsenseD436DepthSensorConfig(),
+            parent_entity_name="galbot_one_foxtrot/head_end_effector_mount_link"
+        )
+        self.front_head_depth_camera_path = self.simulator.add_sensor(front_head_depth_camera_config)
+
         # Add table
         table_config = MeshConfig(
             prim_path="/World/Table",
@@ -165,7 +222,7 @@ class IoaiGraspEnv:
         galbot_interface_config.modules_manager.enabled_modules.append("left_arm")
         galbot_interface_config.modules_manager.enabled_modules.append("leg")
         galbot_interface_config.modules_manager.enabled_modules.append("head")
-        # galbot_interface_config.modules_manager.enabled_modules.append("chassis")
+        galbot_interface_config.modules_manager.enabled_modules.append("chassis")
         galbot_interface_config.modules_manager.enabled_modules.append("left_gripper")
         galbot_interface_config.modules_manager.enabled_modules.append("right_gripper")
 
@@ -201,11 +258,11 @@ class IoaiGraspEnv:
             f"{robot_name}/head_joint2"
         ]
 
-        # galbot_interface_config.chassis.joint_names = [
-        #     f"{robot_name}/mobile_forward_joint",
-        #     f"{robot_name}/mobile_side_joint",
-        #     f"{robot_name}/mobile_yaw_joint",
-        # ]
+        galbot_interface_config.chassis.joint_names = [
+            f"{robot_name}/mobile_forward_joint",
+            f"{robot_name}/mobile_side_joint",
+            f"{robot_name}/mobile_yaw_joint",
+        ]
 
         galbot_interface_config.left_gripper.joint_names = [
             f"{robot_name}/left_gripper_r_knuckle_joint",
@@ -215,6 +272,11 @@ class IoaiGraspEnv:
             f"{robot_name}/right_gripper_r_knuckle_joint",
         ]
 
+        # Enable the front camera modules
+        galbot_interface_config.modules_manager.enabled_modules.append("front_head_camera")
+        galbot_interface_config.front_head_camera.prim_path_rgb = self.front_head_rgb_camera_path
+        galbot_interface_config.front_head_camera.prim_path_depth = self.front_head_depth_camera_path
+
         galbot_interface = GalbotInterface(
             galbot_interface_config=galbot_interface_config,
             simulator=self.simulator
@@ -222,7 +284,6 @@ class IoaiGraspEnv:
         galbot_interface.initialize()
 
         self.interface = galbot_interface
-
 
     def _setup_mink(self):
         """
