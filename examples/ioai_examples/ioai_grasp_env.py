@@ -274,25 +274,16 @@ class IoaiGraspEnv:
         self.damping = 1e-3
         self.rate_limiter = RateLimiter(frequency=1000, warn=False)
 
-    def solve_ik(self,
-                 left_target_position=None,
-                 left_target_orientation=None,
-                 right_target_position=None,
-                 right_target_orientation=None,
-                 limit_velocity=False
-                 ):
-        """
-        Solve IK for specified arm(s) and return final joint positions
+    def compute_simple_ik(self, start_joint, target_pose, arm_id="left_arm"):
+        """Compute inverse kinematics using Mink.
         
         Args:
-            left_target_position: Target position for left arm [x, y, z]
-            left_target_orientation: Target orientation for left arm as quaternion [x, y, z, w]
-            right_target_position: Target position for right arm [x, y, z]
-            right_target_orientation: Target orientation for right arm as quaternion [x, y, z, w]
-            limit_velocity: Whether to apply velocity limits
+            start_joint: Initial joint configuration (not used in current implementation)
+            target_pose: Target pose [x, y, z, qx, qy, qz, qw] in world coordinates
+            arm_id: The ID of the arm, either "left_arm" or "right_arm"
             
         Returns:
-            Dictionary containing final joint positions for each module
+            Target joint configuration for the specified arm
         """
         # Set target for chassis
         chassis_target = mink.SE3.from_rotation_and_translation(
@@ -313,26 +304,27 @@ class IoaiGraspEnv:
         # Set target for posture
         self.tasks["posture"].set_target_from_configuration(self.mink_config)
 
-        # Set targets for left and right arm
-        if left_target_position is not None and left_target_orientation is not None:
+        # Extract position and orientation from target pose
+        target_position = target_pose[:3]
+        target_orientation = target_pose[3:7]  # [qx, qy, qz, qw]
+
+        # Set target for the specified arm
+        if arm_id == "left_arm":
             target = mink.SE3.from_rotation_and_translation(
-                rotation=mink.SO3(wxyz=xyzw_to_wxyz(left_target_orientation)),
-                translation=left_target_position
+                rotation=mink.SO3(wxyz=xyzw_to_wxyz(target_orientation)),
+                translation=target_position
             )
             self.tasks["left_arm"].set_target(target)
-        if right_target_position is not None and right_target_orientation is not None:
+            tasks = [self.tasks["torso"], self.tasks["posture"], self.tasks["chassis"], self.tasks["left_arm"]]
+        elif arm_id == "right_arm":
             target = mink.SE3.from_rotation_and_translation(
-                rotation=mink.SO3(wxyz=xyzw_to_wxyz(right_target_orientation)),
-                translation=right_target_position
+                rotation=mink.SO3(wxyz=xyzw_to_wxyz(target_orientation)),
+                translation=target_position
             )
             self.tasks["right_arm"].set_target(target)
-
-        # Collect all tasks
-        tasks = [self.tasks["torso"], self.tasks["posture"], self.tasks["chassis"]]
-        if left_target_position is not None and left_target_orientation is not None:
-            tasks.append(self.tasks["left_arm"])
-        if right_target_position is not None and right_target_orientation is not None:
-            tasks.append(self.tasks["right_arm"])
+            tasks = [self.tasks["torso"], self.tasks["posture"], self.tasks["chassis"], self.tasks["right_arm"]]
+        else:
+            raise ValueError(f"Invalid arm_id: {arm_id}")
         
         # Iterative IK solving to get final positions
         dt = 1e-3
@@ -348,47 +340,30 @@ class IoaiGraspEnv:
                 dt,
                 self.solver,
                 self.damping,
-                limits=[self.velocity_limit] if limit_velocity else None
+                limits=[self.velocity_limit] if False else None
             )
             
             # Integrate to update configuration
             self.mink_config.integrate_inplace(vel, dt)
             
-            # Check convergence for left arm
-            if left_target_position is not None and left_target_orientation is not None:
-                error = self.tasks["left_arm"].compute_error(self.mink_config)
-                pos_error = np.linalg.norm(error[:3])
-                ori_error = np.linalg.norm(error[3:])
-                if pos_error < position_tolerance and ori_error < orientation_tolerance:
-                    break
-            
-            # Check convergence for right arm
-            if right_target_position is not None and right_target_orientation is not None:
-                error = self.tasks["right_arm"].compute_error(self.mink_config)
-                pos_error = np.linalg.norm(error[:3])
-                ori_error = np.linalg.norm(error[3:])
-                if pos_error < position_tolerance and ori_error < orientation_tolerance:
-                    break
+            # Check convergence for the specified arm
+            error = self.tasks[arm_id].compute_error(self.mink_config)
+            pos_error = np.linalg.norm(error[:3])
+            ori_error = np.linalg.norm(error[3:])
+            if pos_error < position_tolerance and ori_error < orientation_tolerance:
+                break
 
         # Get final joint positions
         joint_positions = self.mink_config.q
 
-        # Extract joint positions for each module
-        left_arm_joint_indexes = self.interface.left_arm.joint_indexes
-        left_arm_joint_positions = joint_positions[left_arm_joint_indexes]
-        right_arm_joint_indexes = self.interface.right_arm.joint_indexes
-        right_arm_joint_positions = joint_positions[right_arm_joint_indexes]
-        head_joint_indexes = self.interface.head.joint_indexes
-        head_joint_positions = joint_positions[head_joint_indexes]
-        leg_joint_indexes = self.interface.leg.joint_indexes
-        leg_joint_positions = joint_positions[leg_joint_indexes]
-
-        return {
-            "left_arm": left_arm_joint_positions,
-            "right_arm": right_arm_joint_positions,
-            "head": head_joint_positions,
-            "leg": leg_joint_positions
-        }
+        # Extract joint positions for the specified arm
+        if arm_id == "left_arm":
+            arm_joint_indexes = self.interface.left_arm.joint_indexes
+        else:  # right_arm
+            arm_joint_indexes = self.interface.right_arm.joint_indexes
+        
+        arm_joint_positions = joint_positions[arm_joint_indexes]
+        return arm_joint_positions
 
     def _init_pose(self):
         # Initialize robot pose
@@ -458,21 +433,25 @@ class IoaiGraspEnv:
         def init_state():
             """Move to initial pose"""
             if not self.motion_in_progress:
-                joint_positions = self.solve_ik(
-                    left_target_position=np.array([0.5, 0.3, 0.7]),
-                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
-                    right_target_position=np.array([0.5, -0.3, 0.7]),
-                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
-                )
+                # Get current joint positions as start configuration
+                current_joints = self.mink_config.q
+                
+                # Solve IK for left arm
+                left_target_pose = np.array([0.5, 0.3, 0.7, 0, 0.7071, 0, 0.7071])
+                left_arm_joints = self.compute_simple_ik(current_joints, left_target_pose, "left_arm")
+                
+                # Solve IK for right arm
+                right_target_pose = np.array([0.5, -0.3, 0.7, 0, 0.7071, 0, 0.7071])
+                right_arm_joints = self.compute_simple_ik(current_joints, right_target_pose, "right_arm")
                 
                 # Start motion for arms only
-                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
-                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                self._move_joints_to_target(self.interface.left_arm, left_arm_joints)
+                self._move_joints_to_target(self.interface.right_arm, right_arm_joints)
                 
                 # Store target positions for completion check
                 self.target_joint_positions = {
-                    "left_arm": joint_positions["left_arm"],
-                    "right_arm": joint_positions["right_arm"]
+                    "left_arm": left_arm_joints,
+                    "right_arm": right_arm_joints
                 }
                 self.motion_in_progress = True
             
@@ -490,19 +469,22 @@ class IoaiGraspEnv:
                     self.cube_position = cube_state["position"].copy()
                     self.state_first_entry = False
                     
-                joint_positions = self.solve_ik(
-                    left_target_position=self.cube_position + np.array([0, 0, 0.15]),
-                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
-                    right_target_position=np.array([0.5, -0.3, 0.7]),
-                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
-                )
+                current_joints = self.mink_config.q
                 
-                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
-                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                # Solve IK for left arm
+                left_target_pose = np.concatenate([self.cube_position + np.array([0, 0, 0.15]), np.array([0, 0.7071, 0, 0.7071])])
+                left_arm_joints = self.compute_simple_ik(current_joints, left_target_pose, "left_arm")
+                
+                # Solve IK for right arm
+                right_target_pose = np.array([0.5, -0.3, 0.7, 0, 0.7071, 0, 0.7071])
+                right_arm_joints = self.compute_simple_ik(current_joints, right_target_pose, "right_arm")
+                
+                self._move_joints_to_target(self.interface.left_arm, left_arm_joints)
+                self._move_joints_to_target(self.interface.right_arm, right_arm_joints)
                 
                 self.target_joint_positions = {
-                    "left_arm": joint_positions["left_arm"],
-                    "right_arm": joint_positions["right_arm"]
+                    "left_arm": left_arm_joints,
+                    "right_arm": right_arm_joints
                 }
                 self.motion_in_progress = True
             
@@ -514,19 +496,22 @@ class IoaiGraspEnv:
         def move_to_pick_state():
             """Move to pick position"""
             if not self.motion_in_progress:
-                joint_positions = self.solve_ik(
-                    left_target_position=self.cube_position + np.array([0, 0, 0.03]),
-                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
-                    right_target_position=np.array([0.5, -0.3, 0.7]),
-                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
-                )
+                current_joints = self.mink_config.q
                 
-                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
-                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                # Solve IK for left arm
+                left_target_pose = np.concatenate([self.cube_position + np.array([0, 0, 0.03]), np.array([0, 0.7071, 0, 0.7071])])
+                left_arm_joints = self.compute_simple_ik(current_joints, left_target_pose, "left_arm")
+                
+                # Solve IK for right arm
+                right_target_pose = np.array([0.5, -0.3, 0.7, 0, 0.7071, 0, 0.7071])
+                right_arm_joints = self.compute_simple_ik(current_joints, right_target_pose, "right_arm")
+                
+                self._move_joints_to_target(self.interface.left_arm, left_arm_joints)
+                self._move_joints_to_target(self.interface.right_arm, right_arm_joints)
                 
                 self.target_joint_positions = {
-                    "left_arm": joint_positions["left_arm"],
-                    "right_arm": joint_positions["right_arm"]
+                    "left_arm": left_arm_joints,
+                    "right_arm": right_arm_joints
                 }
                 self.motion_in_progress = True
             
@@ -550,19 +535,22 @@ class IoaiGraspEnv:
         def move_to_pre_place_state():
             """Move to pre-place position"""
             if not self.motion_in_progress:
-                joint_positions = self.solve_ik(
-                    left_target_position=self.cube_position + np.array([-0.1, 0, 0.4]),
-                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
-                    right_target_position=np.array([0.5, -0.3, 0.7]),
-                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
-                )
+                current_joints = self.mink_config.q
                 
-                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
-                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                # Solve IK for left arm
+                left_target_pose = np.concatenate([self.cube_position + np.array([-0.1, 0, 0.4]), np.array([0, 0.7071, 0, 0.7071])])
+                left_arm_joints = self.compute_simple_ik(current_joints, left_target_pose, "left_arm")
+                
+                # Solve IK for right arm
+                right_target_pose = np.array([0.5, -0.3, 0.7, 0, 0.7071, 0, 0.7071])
+                right_arm_joints = self.compute_simple_ik(current_joints, right_target_pose, "right_arm")
+                
+                self._move_joints_to_target(self.interface.left_arm, left_arm_joints)
+                self._move_joints_to_target(self.interface.right_arm, right_arm_joints)
                 
                 self.target_joint_positions = {
-                    "left_arm": joint_positions["left_arm"],
-                    "right_arm": joint_positions["right_arm"]
+                    "left_arm": left_arm_joints,
+                    "right_arm": right_arm_joints
                 }
                 self.motion_in_progress = True
             
@@ -579,19 +567,22 @@ class IoaiGraspEnv:
                     self.bucket_position = bucket_state["position"].copy()
                     self.state_first_entry = False
 
-                joint_positions = self.solve_ik(
-                    left_target_position=self.bucket_position + np.array([0, 0, 0.3]),
-                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
-                    right_target_position=np.array([0.5, -0.3, 0.7]),
-                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
-                )
+                current_joints = self.mink_config.q
                 
-                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
-                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                # Solve IK for left arm
+                left_target_pose = np.concatenate([self.bucket_position + np.array([0, 0, 0.3]), np.array([0, 0.7071, 0, 0.7071])])
+                left_arm_joints = self.compute_simple_ik(current_joints, left_target_pose, "left_arm")
+                
+                # Solve IK for right arm
+                right_target_pose = np.array([0.5, -0.3, 0.7, 0, 0.7071, 0, 0.7071])
+                right_arm_joints = self.compute_simple_ik(current_joints, right_target_pose, "right_arm")
+                
+                self._move_joints_to_target(self.interface.left_arm, left_arm_joints)
+                self._move_joints_to_target(self.interface.right_arm, right_arm_joints)
                 
                 self.target_joint_positions = {
-                    "left_arm": joint_positions["left_arm"],
-                    "right_arm": joint_positions["right_arm"]
+                    "left_arm": left_arm_joints,
+                    "right_arm": right_arm_joints
                 }
                 self.motion_in_progress = True
             
