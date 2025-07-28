@@ -1,3 +1,12 @@
+# ignore mjmodel.xml
+mjmodel.xml
+
+# ignore mujoco log file
+MUJOCO_LOG.TXT
+
+# ignore asset: toy
+assets/synthnova_assets/objects/toy
+
 .vscode/
 
 # Mac
