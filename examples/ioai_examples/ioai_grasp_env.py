@@ -142,7 +142,7 @@ class IoaiGraspEnv:
             position=[0.65, 0.2, 0.56],
             orientation=[0, 0, 0, 1],
             scale=[0.05, 0.05, 0.05],
-            color=[0, 1, 0],
+            color=[0.5, 0.5, 0.5],  # Gray color
         )
         self.simulator.add_object(cube_config)
 
@@ -420,7 +420,7 @@ class IoaiGraspEnv:
         for module, pose in poses.items():
             module.set_joint_positions(pose, immediate=True)
 
-    def _move_joints_to_target(self, module, target_positions, steps=1000):
+    def _move_joints_to_target(self, module, target_positions, steps=500):
         """Move joints from current position to target position smoothly."""
         current_positions = module.get_joint_positions()
         positions = interpolate_joint_positions(current_positions, target_positions, steps)
