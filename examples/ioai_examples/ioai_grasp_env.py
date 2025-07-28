@@ -70,6 +70,11 @@ class IoaiGraspEnv:
         self.state_machine = SimpleStateMachine(max_states=8)
         self.last_state_transition_time = time.time()
         self.state_first_entry = False
+        
+        # Motion control variables
+        self.motion_in_progress = False
+        self.target_joint_positions = {}
+        self.grasp_start_time = None
 
     def _setup_simulator(self, headless=False):
         """
@@ -268,29 +273,6 @@ class IoaiGraspEnv:
         self.solver = "daqp"
         self.damping = 1e-3
         self.rate_limiter = RateLimiter(frequency=1000, warn=False)
-        
-        # Set targets for torso, posture, and chassis tasks
-        # for task_name in ["torso", "posture", "chassis"]:
-        #     self.tasks[task_name].set_target_from_configuration(self.mink_config)
-
-        # Set target for chassis
-        chassis_target = mink.SE3.from_rotation_and_translation(
-            rotation=mink.SO3(wxyz=xyzw_to_wxyz(self.robot.get_orientation())),
-            translation=self.robot.get_position()
-        )
-        self.tasks["chassis"].set_target(chassis_target)
-
-        # Set target for torso
-        import mujoco
-        torso_body_id = mujoco.mj_name2id(self.simulator.model._model, mujoco.mjtObj.mjOBJ_BODY, self.robot.namespace + "torso_base_link")
-        torso_target = mink.SE3.from_rotation_and_translation(
-            rotation=mink.SO3(wxyz=self.simulator.data.xquat[torso_body_id]),
-            translation=self.simulator.data.xpos[torso_body_id]
-        )
-        self.tasks["torso"].set_target(torso_target)
-
-        # Set target for posture
-        self.tasks["posture"].set_target_from_configuration(self.mink_config)
 
     def solve_ik(self,
                  left_target_position=None,
@@ -312,6 +294,25 @@ class IoaiGraspEnv:
         Returns:
             Dictionary containing final joint positions for each module
         """
+        # Set target for chassis
+        chassis_target = mink.SE3.from_rotation_and_translation(
+            rotation=mink.SO3(wxyz=xyzw_to_wxyz(self.robot.get_orientation())),
+            translation=self.robot.get_position()
+        )
+        self.tasks["chassis"].set_target(chassis_target)
+
+        # Set target for torso
+        import mujoco
+        torso_body_id = mujoco.mj_name2id(self.simulator.model._model, mujoco.mjtObj.mjOBJ_BODY, self.robot.namespace + "torso_base_link")
+        torso_target = mink.SE3.from_rotation_and_translation(
+            rotation=mink.SO3(wxyz=self.simulator.data.xquat[torso_body_id]),
+            translation=self.simulator.data.xpos[torso_body_id]
+        )
+        self.tasks["torso"].set_target(torso_target)
+
+        # Set target for posture
+        self.tasks["posture"].set_target_from_configuration(self.mink_config)
+
         # Set targets for left and right arm
         if left_target_position is not None and left_target_orientation is not None:
             target = mink.SE3.from_rotation_and_translation(
@@ -401,7 +402,7 @@ class IoaiGraspEnv:
         for module, pose in poses.items():
             module.set_joint_positions(pose, immediate=True)
 
-    def _move_joints_to_target(self, module, target_positions, steps=100):
+    def _move_joints_to_target(self, module, target_positions, steps=1000):
         """Move joints from current position to target position smoothly."""
         current_positions = module.get_joint_positions()
         positions = interpolate_joint_positions(current_positions, target_positions, steps)
@@ -412,6 +413,14 @@ class IoaiGraspEnv:
         """Check if joint positions are reached within tolerance."""
         current_positions = module.get_joint_positions()
         return np.allclose(current_positions, target_positions, atol=atol)
+    
+    def _is_arms_motion_complete(self, atol=0.01):
+        """Check if both arms have reached their target positions."""
+        for module_name, target_positions in self.target_joint_positions.items():
+            module = getattr(self.interface, module_name)
+            if not self._is_joint_positions_reached(module, target_positions, atol):
+                return False
+        return True
 
     def get_left_gripper_pose(self):
         tmat = np.eye(4)
@@ -444,193 +453,164 @@ class IoaiGraspEnv:
         return position, quaternion
 
     def pick_and_place_callback(self):
-        """
-        Callback function for pick and place task using state machine
-        
-        Args:
-            env: IoaiGraspEnv instance
-        """
+        """Callback function for pick and place task using state machine"""
 
         def init_state():
-            """Ready to pick"""
-            left_target_position = np.array([0.5, 0.3, 0.7])
-            left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.5, -0.3, 0.7])
-            right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-
-            # Solve IK for left arm
-            joint_positions = self.solve_ik(
-                left_target_position=left_target_position,
-                left_target_orientation=left_target_orientation,
-                right_target_position=right_target_position,
-                right_target_orientation=right_target_orientation
-            )
-
-            # Set joints to target positions
-            self.interface.left_arm.set_joint_positions(joint_positions["left_arm"])
-            self.interface.right_arm.set_joint_positions(joint_positions["right_arm"])
-            self.interface.head.set_joint_positions(joint_positions["head"])
-            self.interface.leg.set_joint_positions(joint_positions["leg"])
-
-            left_gripper_pose = self.get_left_gripper_pose()
-            right_gripper_pose = self.get_right_gripper_pose()
-
-            # Check if left gripper is close to cube
-            if not np.allclose(left_gripper_pose[0], left_target_position, atol=2e-2):
-                return False
-            # Check if right gripper is close to cube
-            if not np.allclose(right_gripper_pose[0], right_target_position, atol=2e-2):
-                return False
-            return True
+            """Move to initial pose"""
+            if not self.motion_in_progress:
+                joint_positions = self.solve_ik(
+                    left_target_position=np.array([0.5, 0.3, 0.7]),
+                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
+                    right_target_position=np.array([0.5, -0.3, 0.7]),
+                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
+                )
+                
+                # Start motion for arms only
+                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
+                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                
+                # Store target positions for completion check
+                self.target_joint_positions = {
+                    "left_arm": joint_positions["left_arm"],
+                    "right_arm": joint_positions["right_arm"]
+                }
+                self.motion_in_progress = True
+            
+            # Check if motion is complete
+            if self._is_arms_motion_complete():
+                self.motion_in_progress = False
+                return True
+            return False
         
         def move_to_pre_pick_state():
             """Move to pre-pick position"""
-            if self.state_first_entry:
-                cube_state = self.simulator.get_object_state("/World/Cube")
-                self.cube_position = cube_state["position"].copy()
-                self.cube_orientation = cube_state["orientation"].copy()
-                self.state_first_entry = False
-            left_target_position = self.cube_position + np.array([0, 0, 0.15])
-            left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.5, -0.3, 0.7])
-            right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
+            if not self.motion_in_progress:
+                if self.state_first_entry:
+                    cube_state = self.simulator.get_object_state("/World/Cube")
+                    self.cube_position = cube_state["position"].copy()
+                    self.state_first_entry = False
+                    
+                joint_positions = self.solve_ik(
+                    left_target_position=self.cube_position + np.array([0, 0, 0.15]),
+                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
+                    right_target_position=np.array([0.5, -0.3, 0.7]),
+                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
+                )
+                
+                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
+                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                
+                self.target_joint_positions = {
+                    "left_arm": joint_positions["left_arm"],
+                    "right_arm": joint_positions["right_arm"]
+                }
+                self.motion_in_progress = True
             
-            # Solve IK for left arm
-            joint_positions = self.solve_ik(
-                left_target_position=left_target_position,
-                left_target_orientation=left_target_orientation,
-                right_target_position=right_target_position,
-                right_target_orientation=right_target_orientation,
-            )
-            
-            # Move left arm to pick position
-            self.interface.left_arm.set_joint_positions(joint_positions["left_arm"])
-            self.interface.right_arm.set_joint_positions(joint_positions["right_arm"])
-            self.interface.head.set_joint_positions(joint_positions["head"])
-            self.interface.leg.set_joint_positions(joint_positions["leg"])
-            
-            left_gripper_pose = self.get_left_gripper_pose()
-
-            # Check if left gripper is close to target position
-            if not np.allclose(left_gripper_pose[0], left_target_position, atol=5e-2):
-                return False
-            if not np.allclose(left_gripper_pose[1], left_target_orientation, atol=5e-2):
-                return False
-            return True
+            if self._is_arms_motion_complete():
+                self.motion_in_progress = False
+                return True
+            return False
 
         def move_to_pick_state():
             """Move to pick position"""
-            if self.state_first_entry:
-                cube_state = self.simulator.get_object_state("/World/Cube")
-                self.cube_position = cube_state["position"].copy()
-                self.cube_orientation = cube_state["orientation"].copy()
-
-                self.state_first_entry = False
-            left_target_position = self.cube_position + np.array([0, 0, 0.03])
-            left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.5, -0.3, 0.7])
-            right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
+            if not self.motion_in_progress:
+                joint_positions = self.solve_ik(
+                    left_target_position=self.cube_position + np.array([0, 0, 0.03]),
+                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
+                    right_target_position=np.array([0.5, -0.3, 0.7]),
+                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
+                )
+                
+                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
+                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                
+                self.target_joint_positions = {
+                    "left_arm": joint_positions["left_arm"],
+                    "right_arm": joint_positions["right_arm"]
+                }
+                self.motion_in_progress = True
             
-            # Solve IK for left arm
-            joint_positions = self.solve_ik(
-                left_target_position=left_target_position,
-                left_target_orientation=left_target_orientation,
-                right_target_position=right_target_position,
-                right_target_orientation=right_target_orientation,
-            )
-            
-            # Move left arm to pick position
-            self.interface.left_arm.set_joint_positions(joint_positions["left_arm"])
-            self.interface.right_arm.set_joint_positions(joint_positions["right_arm"])
-            self.interface.head.set_joint_positions(joint_positions["head"])
-            self.interface.leg.set_joint_positions(joint_positions["leg"])
-            
-            left_gripper_pose = self.get_left_gripper_pose()
-
-            # Check if left gripper is close to target position
-            if not np.allclose(left_gripper_pose[0], left_target_position, atol=5e-2):
-                return False
-            if not np.allclose(left_gripper_pose[1], left_target_orientation, atol=5e-2):
-                return False
-            return True
+            if self._is_arms_motion_complete():
+                self.motion_in_progress = False
+                return True
+            return False
         
         def grasp_state():
             """Grasp the object"""
-            # Close gripper
-            self.interface.left_gripper.set_gripper_close()
-            return True
+            if self.state_first_entry:
+                self.interface.left_gripper.set_gripper_close()
+                self.grasp_start_time = time.time()
+                self.state_first_entry = False
+            
+            # Stay in grasp state for 2 seconds
+            if time.time() - self.grasp_start_time >= 2.0:
+                return True
+            return False
 
         def move_to_pre_place_state():
-            """Move to place position"""
-
-            left_target_position = self.cube_position + np.array([-0.1, 0, 0.4])
-            left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.5, -0.3, 0.7])
-            right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
+            """Move to pre-place position"""
+            if not self.motion_in_progress:
+                joint_positions = self.solve_ik(
+                    left_target_position=self.cube_position + np.array([-0.1, 0, 0.4]),
+                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
+                    right_target_position=np.array([0.5, -0.3, 0.7]),
+                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
+                )
+                
+                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
+                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                
+                self.target_joint_positions = {
+                    "left_arm": joint_positions["left_arm"],
+                    "right_arm": joint_positions["right_arm"]
+                }
+                self.motion_in_progress = True
             
-            # Solve IK for left arm 
-            joint_positions = self.solve_ik(
-                left_target_position=left_target_position,
-                left_target_orientation=left_target_orientation,
-                right_target_position=right_target_position,
-                right_target_orientation=right_target_orientation,
-            )
-            
-            # Move left arm to pick position
-            self.interface.left_arm.set_joint_positions(joint_positions["left_arm"])
-            self.interface.right_arm.set_joint_positions(joint_positions["right_arm"])
-            self.interface.head.set_joint_positions(joint_positions["head"])
-            self.interface.leg.set_joint_positions(joint_positions["leg"])
-            
-            left_gripper_pose = self.get_left_gripper_pose()
-
-            # Check if left gripper is close to target position
-            if not np.allclose(left_gripper_pose[0], left_target_position, atol=5e-2):
-                return False
-            if not np.allclose(left_gripper_pose[1], left_target_orientation, atol=5e-2):
-                return False
-            return True
+            if self._is_arms_motion_complete():
+                self.motion_in_progress = False
+                return True
+            return False
 
         def move_to_place_state():
             """Move to place position"""
-            if self.state_first_entry:
-                bucket_state = self.simulator.get_object_state("/World/bucket")
-                self.bucket_position = bucket_state["position"].copy()
-                self.state_first_entry = False
+            if not self.motion_in_progress:
+                if self.state_first_entry:
+                    bucket_state = self.simulator.get_object_state("/World/bucket")
+                    self.bucket_position = bucket_state["position"].copy()
+                    self.state_first_entry = False
 
-            left_target_position = self.bucket_position + np.array([0, 0, 0.3])
-            left_target_orientation = np.array([0, 0.7071, 0, 0.7071])
-            right_target_position = np.array([0.5, -0.3, 0.7])
-            right_target_orientation = np.array([0, 0.7071, 0, 0.7071])
+                joint_positions = self.solve_ik(
+                    left_target_position=self.bucket_position + np.array([0, 0, 0.3]),
+                    left_target_orientation=np.array([0, 0.7071, 0, 0.7071]),
+                    right_target_position=np.array([0.5, -0.3, 0.7]),
+                    right_target_orientation=np.array([0, 0.7071, 0, 0.7071])
+                )
+                
+                self._move_joints_to_target(self.interface.left_arm, joint_positions["left_arm"])
+                self._move_joints_to_target(self.interface.right_arm, joint_positions["right_arm"])
+                
+                self.target_joint_positions = {
+                    "left_arm": joint_positions["left_arm"],
+                    "right_arm": joint_positions["right_arm"]
+                }
+                self.motion_in_progress = True
             
-            # Solve IK for left arm
-            joint_positions = self.solve_ik(
-                left_target_position=left_target_position,
-                left_target_orientation=left_target_orientation,
-                right_target_position=right_target_position,
-                right_target_orientation=right_target_orientation,
-            )
-            
-            # Move left arm to pick position
-            self.interface.left_arm.set_joint_positions(joint_positions["left_arm"])
-            self.interface.right_arm.set_joint_positions(joint_positions["right_arm"])
-            self.interface.head.set_joint_positions(joint_positions["head"])
-            self.interface.leg.set_joint_positions(joint_positions["leg"])
-            
-            left_gripper_pose = self.get_left_gripper_pose()
-
-            # Check if left gripper is close to target position
-            if not np.allclose(left_gripper_pose[0], left_target_position, atol=5e-2):
-                return False
-            if not np.allclose(left_gripper_pose[1], left_target_orientation, atol=5e-2):
-                return False
-            return True
+            if self._is_arms_motion_complete():
+                self.motion_in_progress = False
+                return True
+            return False
         
         def release_state():
             """Release the object"""
-            # Open gripper
-            self.interface.left_gripper.set_gripper_open()
-            return True
+            if self.state_first_entry:
+                self.interface.left_gripper.set_gripper_open()
+                self.grasp_start_time = time.time()
+                self.state_first_entry = False
+            
+            # Stay in release state for 1 second
+            if time.time() - self.grasp_start_time >= 1.0:
+                return True
+            return False
         
         def return_to_init_state():
             """Return to initial pose"""
@@ -649,14 +629,13 @@ class IoaiGraspEnv:
         # Execute current state
         if self.state_machine.trigger():
             self.state_first_entry = True
+            self.motion_in_progress = False
             print(f"Current state: {self.state_machine.get_state_name()}")
         
-        # Check if current state is complete and move to next state
+        # Execute current state and move to next when complete
         if self.state_machine.execute_current_state():
-            current_time = time.time()
-            if current_time - self.last_state_transition_time >= 1.0:
-                self.state_machine.next()
-                self.last_state_transition_time = current_time
+            self.state_machine.next()
+            self.state_first_entry = True
 
 if __name__ == "__main__":
     env = IoaiGraspEnv(headless=False)
