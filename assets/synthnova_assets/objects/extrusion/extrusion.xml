@@ -1,0 +1,52 @@
+<mujoco model="extrusion">
+  <default>
+    <default class="visual">
+      <geom group="1" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="0" type="mesh"/>
+    </default>
+  </default>
+  <asset>
+    <mesh name="extrusion" file="extrusion.obj"/>
+    <mesh name="extrusion_collision_0" file="extrusion_collision_0.obj"/>
+    <mesh name="extrusion_collision_1" file="extrusion_collision_1.obj"/>
+    <mesh name="extrusion_collision_2" file="extrusion_collision_2.obj"/>
+    <mesh name="extrusion_collision_3" file="extrusion_collision_3.obj"/>
+    <mesh name="extrusion_collision_4" file="extrusion_collision_4.obj"/>
+    <mesh name="extrusion_collision_5" file="extrusion_collision_5.obj"/>
+    <mesh name="extrusion_collision_6" file="extrusion_collision_6.obj"/>
+    <mesh name="extrusion_collision_7" file="extrusion_collision_7.obj"/>
+    <mesh name="extrusion_collision_8" file="extrusion_collision_8.obj"/>
+    <mesh name="extrusion_collision_9" file="extrusion_collision_9.obj"/>
+    <mesh name="extrusion_collision_10" file="extrusion_collision_10.obj"/>
+    <mesh name="extrusion_collision_11" file="extrusion_collision_11.obj"/>
+    <mesh name="extrusion_collision_12" file="extrusion_collision_12.obj"/>
+    <mesh name="extrusion_collision_13" file="extrusion_collision_13.obj"/>
+    <mesh name="extrusion_collision_14" file="extrusion_collision_14.obj"/>
+    <mesh name="extrusion_collision_15" file="extrusion_collision_15.obj"/>
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom mesh="extrusion" class="visual"/>
+        <geom mesh="extrusion_collision_0" rgba="0.5887515596533974 0.42957441633260407 0.01279665800891494 1" class="collision"/>
+        <geom mesh="extrusion_collision_1" rgba="0.15411581990408396 0.8505456618659609 0.03756064299144124 1" class="collision"/>
+        <geom mesh="extrusion_collision_2" rgba="0.6920962373683504 0.7591167234049788 0.10741475253522681 1" class="collision"/>
+        <geom mesh="extrusion_collision_3" rgba="0.13659865878908628 0.31593320408090075 0.07968407162671831 1" class="collision"/>
+        <geom mesh="extrusion_collision_4" rgba="0.4242115588901806 0.5683996247551601 0.2851322710811871 1" class="collision"/>
+        <geom mesh="extrusion_collision_5" rgba="0.4299095816288625 0.9019492785715046 0.5424608743788504 1" class="collision"/>
+        <geom mesh="extrusion_collision_6" rgba="0.12835776701420365 0.999536563468173 0.533722549720958 1" class="collision"/>
+        <geom mesh="extrusion_collision_7" rgba="0.23954779805969384 0.9146014155985058 0.553395747778039 1" class="collision"/>
+        <geom mesh="extrusion_collision_8" rgba="0.11579630072164637 0.9075634963446958 0.45288452994530193 1" class="collision"/>
+        <geom mesh="extrusion_collision_9" rgba="0.8803281875426503 0.079382462707146 0.5067947068804949 1" class="collision"/>
+        <geom mesh="extrusion_collision_10" rgba="0.42877010369879676 0.9396975238681909 0.9065043909344062 1" class="collision"/>
+        <geom mesh="extrusion_collision_11" rgba="0.4385120591106746 0.3191989853944117 0.4149457160646359 1" class="collision"/>
+        <geom mesh="extrusion_collision_12" rgba="0.8046914321846371 0.8913736039487712 0.1455556828689124 1" class="collision"/>
+        <geom mesh="extrusion_collision_13" rgba="0.6699312845427355 0.3969156776828555 0.8370852996035244 1" class="collision"/>
+        <geom mesh="extrusion_collision_14" rgba="0.8382121181852447 0.8397860332738406 0.9831965080681804 1" class="collision"/>
+        <geom mesh="extrusion_collision_15" rgba="0.7942783547740278 0.6239090916335326 0.5632227805993039 1" class="collision"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>
