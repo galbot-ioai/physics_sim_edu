@@ -89,6 +89,11 @@ class IoaiTestEnv:
             f"{robot_name}/mobile_yaw_joint",
         ]
 
+        # sensor configurations
+        config.modules_manager.enabled_modules.append("front_head_camera")
+        config.front_head_camera.prim_path_rgb = "/World/Galbot/head_link2/head_end_effector_mount_link/front_head_rgb_camera"
+        config.front_head_camera.prim_path_depth = "/World/Galbot/head_link2/head_end_effector_mount_link/front_head_depth_camera"
+
         self.interface = GalbotInterface(galbot_interface_config=config, simulator=self.simulator)
         self.interface.initialize()
 
