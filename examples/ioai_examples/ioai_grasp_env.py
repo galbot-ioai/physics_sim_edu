@@ -122,19 +122,19 @@ class IoaiGraspEnv:
         )
         self.simulator.add_object(table_config)
 
-        # Add bucket
-        bucket_config = MeshConfig(
-            prim_path="/World/bucket",
+        # Add bin
+        bin_config = MeshConfig(
+            prim_path="/World/bin",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects")
-            .joinpath("bucket")
-            .joinpath("bucket.xml"),
+            .joinpath("bin")
+            .joinpath("bin.xml"),
             position=[0.7, -0.1, 0.55],
             orientation=[0, 0, 0.70711, 0.70711],
         )
-        self.simulator.add_object(bucket_config)
+        self.simulator.add_object(bin_config)
 
         # Add cube
         cube_config = CuboidConfig(
@@ -149,9 +149,9 @@ class IoaiGraspEnv:
         # Initialize the simulator
         self.simulator.initialize()
 
-        bucket_state = self.simulator.get_object_state("/World/bucket")
-        self.bucket_position = bucket_state["position"]
-        self.bucket_orientation = bucket_state["orientation"]
+        bin_state = self.simulator.get_object_state("/World/bin")
+        self.bin_position = bin_state["position"]
+        self.bin_orientation = bin_state["orientation"]
 
 
     def _setup_interface(self):
@@ -575,11 +575,11 @@ class IoaiGraspEnv:
         def move_to_place_state():
             """Move to place position"""
             if self.state_first_entry:
-                bucket_state = self.simulator.get_object_state("/World/bucket")
-                self.bucket_position = bucket_state["position"].copy()
+                bin_state = self.simulator.get_object_state("/World/bin")
+                self.bin_position = bin_state["position"].copy()
                 self.state_first_entry = False
 
-            return self._move_left_arm_to_pose(self.bucket_position + np.array([0, 0, 0.3]), [0, 0.7071, 0, 0.7071])
+            return self._move_left_arm_to_pose(self.bin_position + np.array([0, 0, 0.3]), [0, 0.7071, 0, 0.7071])
         
         def release_state():
             """Release the object"""

@@ -173,21 +173,21 @@ def main():
     )
     cube_path = synthnova_physics_simulator.add_object(cube_config)
 
-    # Add bucket
-    bucket_config = MeshConfig(
-        name="bucket_1",
-        prim_path=os.path.join("/World", "bucket"),
+    # Add bin
+    bin_config = MeshConfig(
+        name="bin_1",
+        prim_path=os.path.join("/World", "bin"),
         mjcf_path=Path()
             .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects_aigc")
-            .joinpath("bucket")
-            .joinpath("bucket.xml"),
+            .joinpath("bin")
+            .joinpath("bin.xml"),
         position=table_position + np.array([0.15, -0.3, 0.5]),
         orientation=table_orientation,
         scale=[0.249, 0.249, 0.249],
     )
-    bucket_path = synthnova_physics_simulator.add_object(bucket_config)
+    bin_path = synthnova_physics_simulator.add_object(bin_config)
 
     # Initialize the simulator
     synthnova_physics_simulator.initialize()

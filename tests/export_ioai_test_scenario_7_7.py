@@ -254,21 +254,21 @@ def main():
     )
     cone_5_path = synthnova_physics_simulator.add_object(cone_5_config)
 
-    # Add bucket 1
-    bucket_1_config = MeshConfig(
-        name="bucket_1",
-        prim_path=os.path.join("/World", "bucket_1"),
+    # Add bin 1
+    bin_1_config = MeshConfig(
+        name="bin_1",
+        prim_path=os.path.join("/World", "bin_1"),
         mjcf_path=Path()
             .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects_aigc")
-            .joinpath("bucket")
-            .joinpath("bucket.xml"),
+            .joinpath("bin")
+            .joinpath("bin.xml"),
         position=[-6.16, -0.56, 1],
         orientation=[0, 0, 0, 1],
         scale=[0.249, 0.249, 0.249],
     )
-    bucket_1_path = synthnova_physics_simulator.add_object(bucket_1_config)
+    bin_1_path = synthnova_physics_simulator.add_object(bin_1_config)
 
     # Add left wall (x=-5)
     wall_left_config = CuboidConfig(
