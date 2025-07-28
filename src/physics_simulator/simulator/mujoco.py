@@ -346,18 +346,29 @@ class MujocoSimulator(BaseSim):
         ctrl_dt = 0.004
         sim_dt = self.config.mujoco_config.timestep
 
-        num_steps = int(ctrl_dt / sim_dt)
+        # TODO@Cheyu: Hard code for fixed render frequency
+        render_dt = 0.05
 
+        num_steps = int(ctrl_dt / sim_dt)
         realtime_sync = self.config.mujoco_config.realtime_sync
+
+        last_render_time = time.time()
 
         while self._running:
             start_time = time.time()
-            self.step(num_steps)
+            self.step(num_steps, render=False)
 
             if self._physics_callbacks:
                 callbacks = list(self._physics_callbacks.values())
                 for callback in callbacks:
                     callback()
+
+            # render
+            current_time = time.time()
+            if current_time - last_render_time >= render_dt:
+                if self.viewer is not None:
+                    self.viewer.sync()
+                last_render_time = current_time
 
             elapsed = time.time() - start_time
             if realtime_sync and elapsed < ctrl_dt:
