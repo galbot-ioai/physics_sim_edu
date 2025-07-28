@@ -266,6 +266,7 @@ class IoaiGraspEnv:
         )
         
         self.solver = "daqp"
+        self.damping = 1e-3
         self.rate_limiter = RateLimiter(frequency=1000, warn=False)
         
         # Set targets for torso, posture, and chassis tasks
@@ -299,15 +300,18 @@ class IoaiGraspEnv:
                  limit_velocity=False
                  ):
         """
-        Solve IK for specified arm(s)
+        Solve IK for specified arm(s) and return final joint positions
         
         Args:
             left_target_position: Target position for left arm [x, y, z]
             left_target_orientation: Target orientation for left arm as quaternion [x, y, z, w]
             right_target_position: Target position for right arm [x, y, z]
             right_target_orientation: Target orientation for right arm as quaternion [x, y, z, w]
+            limit_velocity: Whether to apply velocity limits
+            
+        Returns:
+            Dictionary containing final joint positions for each module
         """
-
         # Set targets for left and right arm
         if left_target_position is not None and left_target_orientation is not None:
             target = mink.SE3.from_rotation_and_translation(
@@ -328,18 +332,44 @@ class IoaiGraspEnv:
             tasks.append(self.tasks["left_arm"])
         if right_target_position is not None and right_target_orientation is not None:
             tasks.append(self.tasks["right_arm"])
+        
+        # Iterative IK solving to get final positions
+        dt = 1e-3
+        max_iterations = 50
+        position_tolerance = 1e-4
+        orientation_tolerance = 1e-4
+        
+        for iteration in range(max_iterations):
+            # Solve IK for velocity
+            vel = mink.solve_ik(
+                self.mink_config,
+                tasks,
+                dt,
+                self.solver,
+                self.damping,
+                limits=[self.velocity_limit] if limit_velocity else None
+            )
+            
+            # Integrate to update configuration
+            self.mink_config.integrate_inplace(vel, dt)
+            
+            # Check convergence for left arm
+            if left_target_position is not None and left_target_orientation is not None:
+                error = self.tasks["left_arm"].compute_error(self.mink_config)
+                pos_error = np.linalg.norm(error[:3])
+                ori_error = np.linalg.norm(error[3:])
+                if pos_error < position_tolerance and ori_error < orientation_tolerance:
+                    break
+            
+            # Check convergence for right arm
+            if right_target_position is not None and right_target_orientation is not None:
+                error = self.tasks["right_arm"].compute_error(self.mink_config)
+                pos_error = np.linalg.norm(error[:3])
+                ori_error = np.linalg.norm(error[3:])
+                if pos_error < position_tolerance and ori_error < orientation_tolerance:
+                    break
 
-        # Solve IK
-        vel = mink.solve_ik(
-            self.mink_config,
-            tasks,
-            self.rate_limiter.dt,
-            self.solver,
-            0.01,
-            limits=[self.velocity_limit] if limit_velocity else None
-        )
-
-        self.mink_config.integrate_inplace(vel, self.rate_limiter.dt * 0.02)
+        # Get final joint positions
         joint_positions = self.mink_config.q
 
         # Extract joint positions for each module
