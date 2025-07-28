@@ -180,7 +180,7 @@ def main():
         mjcf_path=Path()
             .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("objects_aigc")
+            .joinpath("objects")
             .joinpath("bin")
             .joinpath("bin.xml"),
         position=table_position + np.array([0.15, -0.3, 0.5]),

@@ -261,7 +261,7 @@ def main():
         mjcf_path=Path()
             .joinpath(synthnova_physics_simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath("objects_aigc")
+            .joinpath("objects")
             .joinpath("bin")
             .joinpath("bin.xml"),
         position=[-6.16, -0.56, 1],
