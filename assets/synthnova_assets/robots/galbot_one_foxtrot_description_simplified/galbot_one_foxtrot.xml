@@ -406,7 +406,7 @@
                                                 </body>
                                                 <body name="left_gripper_r_knuckle_link" pos="0.0745 0 0.0385" quat="0.5741606635851662 0.5741606635851662 -0.41272210068209536 0.4127221006820953">
                                                   <inertial pos="0.024101 0 0" quat="1.0 0.0 0.0 0.0" mass="0.0070682" diaginertia="9.2131e-08 1.559e-06 1.4931e-06" />
-                                                  <joint name="left_gripper_r_knuckle_joint" type="hinge" class="gripper_joint" range="0.0 1.645" axis="0 0 -1" />
+                                                  <joint name="left_gripper_r_knuckle_joint" type="hinge" class="gripper_joint" range="0.0 1.703" axis="0 0 -1" />
                                                   <geom name="left_gripper_r_knuckle_link_collision_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_1_convex_decomposition_0.stl" class="collision" />
                                                   <geom name="left_gripper_r_knuckle_link_collision_1" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_1_convex_decomposition_1.stl" class="collision" />
                                                   <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="left_gripper_r_knuckle_link_visual_0" mesh="r_link_1_0" material="l_link_2_light_silver" />
@@ -691,7 +691,7 @@
                                                 </body>
                                                 <body name="right_gripper_r_knuckle_link" pos="0.0745 0 0.0385" quat="0.5741606635851662 0.5741606635851662 -0.41272210068209536 0.4127221006820953">
                                                   <inertial pos="0.024101 0 0" quat="1.0 0.0 0.0 0.0" mass="0.0070682" diaginertia="9.2131e-08 1.559e-06 1.4931e-06" />
-                                                  <joint name="right_gripper_r_knuckle_joint" type="hinge" class="gripper_joint" range="0.0 1.645" axis="0 0 -1" />
+                                                  <joint name="right_gripper_r_knuckle_joint" type="hinge" class="gripper_joint" range="0.0 1.703" axis="0 0 -1" />
                                                   <geom name="right_gripper_r_knuckle_link_collision_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_1_convex_decomposition_0.stl" class="collision" />
                                                   <geom name="right_gripper_r_knuckle_link_collision_1" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_1_convex_decomposition_1.stl" class="collision" />
                                                   <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="right_gripper_r_knuckle_link_visual_0" mesh="r_link_1_0" material="l_link_2_light_silver" />
@@ -1321,8 +1321,8 @@
     <position name="left_arm_joint5" joint="left_arm_joint5" class="arm_joint_lower" ctrlrange="-2.9213400000000003 2.9213400000000003" forcerange="-10.0 10.0" />
     <position name="left_arm_joint6" joint="left_arm_joint6" class="arm_joint_lower" ctrlrange="-0.842808 0.755543" forcerange="-10.0 10.0" />
     <position name="left_arm_joint7" joint="left_arm_joint7" class="arm_joint_lower" ctrlrange="-1.56408 1.56408" forcerange="-10.0 10.0" />
-    <position name="right_gripper_r_knuckle_joint" joint="right_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 1.645" />
-    <position name="left_gripper_r_knuckle_joint" joint="left_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 1.645" />
+    <position name="right_gripper_r_knuckle_joint" joint="right_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 1.703" />
+    <position name="left_gripper_r_knuckle_joint" joint="left_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 1.703" />
     <velocity ctrllimited="true" ctrlrange="-1.00 1.00" joint="mobile_forward_joint" kv="1000" name="mobile_forward_joint" forcelimited="true" forcerange="-600 600" />
     <velocity ctrllimited="true" ctrlrange="-1.00 1.00" joint="mobile_side_joint" kv="1000" name="mobile_side_joint" forcelimited="true" forcerange="-600 600" />
     <velocity ctrllimited="true" ctrlrange="-4.00 4.00" joint="mobile_yaw_joint" kv="1000" name="mobile_yaw_joint" forcelimited="true" forcerange="-600 600" />

@@ -366,8 +366,8 @@ class BasicGripper(BasicLimb):
         value_min, value_max = 0.0, 1.0  # Input range [0,1]
         width_min, width_max = (
             0,
-            1.645,
-        )  # Mapped range [0, 1.645] m
+            1.703,
+        )  # Mapped range [0, 1.703] m
         # Inverse the value
         normalized_width = 1 - normalized_width
 
