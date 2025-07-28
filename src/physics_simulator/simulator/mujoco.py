@@ -347,7 +347,7 @@ class MujocoSimulator(BaseSim):
         sim_dt = self.config.mujoco_config.timestep
 
         # TODO@Cheyu: Hard code for fixed render frequency
-        render_dt = 0.05
+        render_dt = 0.1
 
         num_steps = int(ctrl_dt / sim_dt)
         realtime_sync = self.config.mujoco_config.realtime_sync
