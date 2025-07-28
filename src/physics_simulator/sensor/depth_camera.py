@@ -65,14 +65,40 @@ class MujocoDepthCamera(MujocoRgbCamera):
             np.ndarray: Depth map as a numpy array, with values representing
                        distance from the camera in meters
         """
+        # Get depth map from MuJoCo
         _, depth = self.render(depth=True, segmentation=False)
+        
+        # Convert MuJoCo depth to real depth
         from physics_simulator.utils.camera_utils import get_real_depth_map
-
         depth = get_real_depth_map(self.simulator, depth)
-
+        
+        # Flip vertically to match standard image coordinates
         depth = np.flipud(depth)
             
         return depth
+    
+    def _calculate_intrinsics_from_fovy(self):
+        """Calculate camera intrinsics from MuJoCo fovy parameter.
+        
+        MuJoCo cameras only have fovy (field of view in y direction).
+        We calculate fx, fy, cx, cy from fovy and image dimensions.
+        """
+        # Get camera ID and fovy from MuJoCo
+        cam_id = self.simulator.model.camera_name2id(self.name)
+        fovy_rad = self.simulator.model.cam_fovy[cam_id] * np.pi / 180.0  # Convert to radians
+        
+        # Calculate focal length from fovy
+        # f = height / (2 * tan(fovy/2))
+        focal_length = self.height / (2 * np.tan(fovy_rad / 2))
+        
+        # For square pixels, fx = fy = focal_length
+        fx = fy = focal_length
+        
+        # Principal point at image center
+        cx = self.width / 2
+        cy = self.height / 2
+        
+        return fx, fy, cx, cy
     
     def get_point_cloud(self) -> np.ndarray:
         """Generate a 3D point cloud from the depth data in world coordinates.
@@ -91,13 +117,16 @@ class MujocoDepthCamera(MujocoRgbCamera):
         # Get depth map
         depth_map = self.get_depth()
         
-        # Generate point cloud in camera frame using intrinsic parameters
+        # Calculate intrinsics from MuJoCo fovy
+        fx, fy, cx, cy = self._calculate_intrinsics_from_fovy()
+        
+        # Generate point cloud in camera frame using calculated intrinsic parameters
         point_cloud_camera = get_point_cloud_from_depth(
             depth_image=depth_map,
-            fx=self.fx,
-            fy=self.fy,
-            cx=self.cx,
-            cy=self.cy
+            fx=fx,
+            fy=fy,
+            cx=cx,
+            cy=cy
         )
         
         # Filter the point cloud to remove invalid points
@@ -154,15 +183,21 @@ class MujocoDepthCamera(MujocoRgbCamera):
         from physics_simulator.utils.camera_utils import get_real_depth_map
         depth_map = get_real_depth_map(self.simulator, depth_map)
         
+        # Flip vertically to match standard image coordinates (same as get_depth method)
+        depth_map = np.flipud(depth_map)
+        
+        # Calculate intrinsics from MuJoCo fovy first
+        fx, fy, cx, cy = self._calculate_intrinsics_from_fovy()
+        
         # Downsample for performance if requested
         if downsample_factor > 1:
             depth_map = depth_map[::downsample_factor, ::downsample_factor]
-            fx_scaled = self.fx / downsample_factor
-            fy_scaled = self.fy / downsample_factor
-            cx_scaled = self.cx / downsample_factor
-            cy_scaled = self.cy / downsample_factor
+            fx_scaled = fx / downsample_factor
+            fy_scaled = fy / downsample_factor
+            cx_scaled = cx / downsample_factor
+            cy_scaled = cy / downsample_factor
         else:
-            fx_scaled, fy_scaled, cx_scaled, cy_scaled = self.fx, self.fy, self.cx, self.cy
+            fx_scaled, fy_scaled, cx_scaled, cy_scaled = fx, fy, cx, cy
         
         # Generate point cloud in camera frame (optimized)
         height, width = depth_map.shape

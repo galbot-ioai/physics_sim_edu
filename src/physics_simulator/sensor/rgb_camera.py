@@ -159,10 +159,14 @@ class MujocoRgbCamera:
         self.width = sensor_config.width
         self.height = sensor_config.height
         self.frequency = sensor_config.frequency
+        
+        # For MuJoCo cameras, we'll calculate intrinsics from fovy later
+        # Store config values but they may be overridden
         self.fx = sensor_config.fx
         self.fy = sensor_config.fy
         self.cx = sensor_config.cx
         self.cy = sensor_config.cy
+        
         self.pixel_size = sensor_config.pixel_size
         self.f_stop = sensor_config.f_stop
         self.focus_distance = sensor_config.focus_distance
@@ -250,6 +254,40 @@ class MujocoRgbCamera:
             "prim_path": self.prim_path,
             "frequency": self.frequency,
         }
+
+    def _calculate_intrinsics_from_fovy(self):
+        """Calculate camera intrinsics from MuJoCo fovy parameter.
+        
+        MuJoCo cameras only have fovy (field of view in y direction).
+        We calculate fx, fy, cx, cy from fovy and image dimensions.
+        
+        Returns:
+            tuple: (fx, fy, cx, cy) camera intrinsics
+        """
+        # Get camera ID and fovy from MuJoCo
+        cam_id = self.simulator.model.camera_name2id(self.name)
+        fovy_rad = self.simulator.model.cam_fovy[cam_id] * np.pi / 180.0  # Convert to radians
+        
+        # Calculate focal length from fovy
+        # f = height / (2 * tan(fovy/2))
+        focal_length = self.height / (2 * np.tan(fovy_rad / 2))
+        
+        # For square pixels, fx = fy = focal_length
+        fx = fy = focal_length
+        
+        # Principal point at image center
+        cx = self.width / 2
+        cy = self.height / 2
+        
+        return fx, fy, cx, cy
+    
+    def get_mujoco_intrinsics(self):
+        """Get camera intrinsics calculated from MuJoCo fovy.
+        
+        Returns:
+            tuple: (fx, fy, cx, cy) camera intrinsics from MuJoCo
+        """
+        return self._calculate_intrinsics_from_fovy()
 
     def rotation_matrix_to_quaternion(self, R):
         """Convert a 3x3 rotation matrix to a quaternion using scipy.
