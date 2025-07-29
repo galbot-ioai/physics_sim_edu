@@ -54,76 +54,72 @@ from dataclasses import dataclass
 from physics_simulator.utils.state_machine import SimpleStateMachine
 
 @dataclass
-class DetectedObject:
-    """Data class for detected object information"""
+class PoseEstimationResult:
+    """Data class for pose estimation result"""
     class_name: str
     position: np.ndarray  # [x, y, z] in camera frame
     orientation: np.ndarray  # [qx, qy, qz, qw] in camera frame
     confidence: float
+    segmentation_mask: Optional[np.ndarray] = None  # Segmentation mask if available
     bbox: Optional[np.ndarray] = None  # [x1, y1, x2, y2] if available
 
-class VisionModelInterface:
-    """Interface for vision model that detects objects and returns their poses"""
+class PoseEstimationModel:
+    """Interface for pose estimation model using YOLO segmentation"""
     
     def __init__(self):
-        """Initialize the vision model interface"""
+        """Initialize the pose estimation model interface"""
         pass
     
-    def detect_objects(self, rgb_image: np.ndarray, depth_image: Optional[np.ndarray] = None) -> List[DetectedObject]:
+    def estimate_poses(self, rgb_image: np.ndarray, depth_image: Optional[np.ndarray] = None) -> List[PoseEstimationResult]:
         """
-        Detect objects in the image and return their poses in camera frame
+        Estimate object poses using YOLO segmentation and pose estimation
         
         Args:
             rgb_image: RGB image from camera
             depth_image: Depth image from camera (optional)
             
         Returns:
-            List of detected objects with their poses in camera frame
+            List of pose estimation results in camera frame
         """
-        # This is a placeholder implementation
-        # Replace this with your actual vision model
-        raise NotImplementedError("Subclass must implement detect_objects method")
+        raise NotImplementedError("Subclass must implement estimate_poses method")
 
-class DummyYoloSegmentationModel(VisionModelInterface):
-    """Dummy YOLO segmentation model that uses ground truth from simulator"""
+class DummyPoseEstimationModel(PoseEstimationModel):
+    """Dummy pose estimation model using ground truth from simulator"""
     
     def __init__(self, simulator, robot):
         super().__init__()
         self.simulator = simulator
         self.robot = robot
-        self.object_classes = ["cube", "bin"]  # Supported object classes
+        self.supported_objects = ["cube", "bin"]
     
-    def detect_objects(self, rgb_image: np.ndarray, depth_image: Optional[np.ndarray] = None) -> List[DetectedObject]:
-        """
-        Dummy YOLO segmentation detection using ground truth
-        """
-        detected_objects = []
+    def estimate_poses(self, rgb_image: np.ndarray, depth_image: Optional[np.ndarray] = None) -> List[PoseEstimationResult]:
+        """Estimate poses using ground truth from simulator"""
+        pose_results = []
         
-        # Get ground truth poses for supported objects
-        for obj_class in self.object_classes:
-            # Get object state from simulator
+        for obj_class in self.supported_objects:
+            # Get ground truth pose from simulator
             obj_state = self.simulator.get_object_state(f"/World/{obj_class.capitalize()}")
             world_position = obj_state["position"]
             world_orientation = obj_state["orientation"]
             
-            # Transform from world frame to camera frame
-            camera_position, camera_orientation = self._world_to_camera_frame(
+            # Transform to camera frame
+            camera_position, camera_orientation = self._transform_to_camera_frame(
                 world_position, world_orientation
             )
             
-            # Create detected object
-            detected_obj = DetectedObject(
+            # Create pose estimation result
+            pose_result = PoseEstimationResult(
                 class_name=obj_class,
                 position=camera_position,
                 orientation=camera_orientation,
                 confidence=0.95,  # High confidence for ground truth
                 bbox=np.array([100, 100, 200, 200])  # Dummy bbox
             )
-            detected_objects.append(detected_obj)
+            pose_results.append(pose_result)
         
-        return detected_objects
+        return pose_results
     
-    def _world_to_camera_frame(self, world_position, world_orientation):
+    def _transform_to_camera_frame(self, world_position, world_orientation):
         """Transform pose from world frame to camera frame"""
         from scipy.spatial.transform import Rotation
         
@@ -150,31 +146,31 @@ def interpolate_joint_positions(start_positions, end_positions, steps):
     return np.linspace(start_positions, end_positions, steps).tolist()
 
 class IoaiGraspEnv:
-    def __init__(self, headless=False, vision_model: Optional[VisionModelInterface] = None):
+    def __init__(self, headless=False, pose_estimation_model: Optional[PoseEstimationModel] = None):
         """
         Initialize the Olympic environment.
         
         Args:
             headless: Whether to run in headless mode (without visualization)
-            vision_model: Vision model for object detection (optional)
+            pose_estimation_model: Pose estimation model for object detection (optional)
         """
         self.simulator = None
         self.robot = None
         
-        # Initialize vision model
-        self.vision_model = vision_model if vision_model is not None else None
+        # Initialize pose estimation model
+        self.pose_estimation_model = pose_estimation_model if pose_estimation_model is not None else None
         
-        # Vision-related variables
-        self.detected_objects = []
-        self.last_detection_time = 0
-        self.detection_interval = 0.1  # Detection frequency in seconds
+        # Pose estimation related variables
+        self.pose_estimation_results = []
+        self.last_estimation_time = 0
+        self.estimation_interval = 0.1  # Estimation frequency in seconds
 
         # Setup the simulator
         self._setup_simulator(headless=headless)
         
-        # Initialize vision model after simulator setup
-        if self.vision_model is None:
-            self.vision_model = DummyYoloSegmentationModel(self.simulator, self.robot)
+        # Initialize pose estimation model after simulator setup
+        if self.pose_estimation_model is None:
+            self.pose_estimation_model = DummyPoseEstimationModel(self.simulator, self.robot)
         
         # Setup the interface
         self._setup_interface()
@@ -584,48 +580,48 @@ class IoaiGraspEnv:
             print(f"Error getting camera images: {e}")
             return None, None
 
-    def detect_objects_vision(self) -> List[DetectedObject]:
-        """Detect objects using vision model"""
+    def estimate_object_poses(self) -> List[PoseEstimationResult]:
+        """Estimate object poses using pose estimation model"""
         current_time = time.time()
         
-        # Check detection frequency
-        if current_time - self.last_detection_time < self.detection_interval:
-            return self.detected_objects
+        # Check estimation frequency
+        if current_time - self.last_estimation_time < self.estimation_interval:
+            return self.pose_estimation_results
         
         # Get camera images
         rgb_image, depth_image = self.get_camera_images()
         
         if rgb_image is None:
-            return self.detected_objects
+            return self.pose_estimation_results
         
-        # Run vision model detection
-        detected_objects = self.vision_model.detect_objects(rgb_image, depth_image)
+        # Run pose estimation
+        pose_results = self.pose_estimation_model.estimate_poses(rgb_image, depth_image)
         
-        # Update detection results
-        self.detected_objects = detected_objects
-        self.last_detection_time = current_time
+        # Update estimation results
+        self.pose_estimation_results = pose_results
+        self.last_estimation_time = current_time
         
-        return detected_objects
+        return pose_results
 
-    def get_object_pose_from_vision(self, target_class: str = "cube") -> Optional[Tuple[np.ndarray, np.ndarray]]:
-        """Get object pose from vision detection"""
-        # Detect objects using vision
-        detected_objects = self.detect_objects_vision()
+    def get_object_pose_from_estimation(self, target_class: str = "cube") -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """Get object pose from pose estimation"""
+        # Estimate object poses
+        pose_results = self.estimate_object_poses()
         
         # Find target object
-        target_object = None
-        for obj in detected_objects:
-            if obj.class_name.lower() == target_class.lower():
-                target_object = obj
+        target_result = None
+        for result in pose_results:
+            if result.class_name.lower() == target_class.lower():
+                target_result = result
                 break
         
-        if target_object is None:
-            print(f"Target object '{target_class}' not detected")
+        if target_result is None:
+            print(f"Target object '{target_class}' not found in pose estimation")
             return None
         
         # Transform from camera frame to world frame
         world_position, world_orientation = self.camera_to_world_frame(
-            target_object.position, target_object.orientation
+            target_result.position, target_result.orientation
         )
         
         return world_position, world_orientation
@@ -907,15 +903,15 @@ class IoaiGraspEnv:
         def move_to_pre_pick_state():
             """Move to pre-pick position"""
             if self.state_first_entry:
-                # Use vision model to detect object pose instead of ground truth
-                vision_result = self.get_object_pose_from_vision("cube")
-                if vision_result is not None:
-                    world_pos, world_ori = vision_result
+                # Use pose estimation to get object pose instead of ground truth
+                pose_result = self.get_object_pose_from_estimation("cube")
+                if pose_result is not None:
+                    world_pos, world_ori = pose_result
                     self.cube_position = world_pos.copy()
                     self.cube_orientation = world_ori.copy()
-                    print(f"Vision detected cube at position: {world_pos}")
+                    print(f"Pose estimation detected cube at position: {world_pos}")
                 else:
-                    # Fallback to ground truth if vision fails
+                    # Fallback to ground truth if pose estimation fails
                     cube_state = self.simulator.get_object_state("/World/Cube")
                     self.cube_position = cube_state["position"].copy()
                     self.cube_orientation = cube_state["orientation"].copy()
@@ -930,11 +926,11 @@ class IoaiGraspEnv:
 
         def move_to_pick_state():
             """Move to pick position"""
-            # Re-detect object position for more accurate pick
-            vision_result = self.get_object_pose_from_vision("cube")
-            if vision_result is not None:
-                world_pos, world_ori = vision_result
-                # Use detected position for more accurate pick
+            # Re-estimate object position for more accurate pick
+            pose_result = self.get_object_pose_from_estimation("cube")
+            if pose_result is not None:
+                world_pos, world_ori = pose_result
+                # Use estimated position for more accurate pick
                 pick_pos = world_pos + np.array([0, 0, 0.03])
             else:
                 # Fallback to stored position
@@ -968,15 +964,15 @@ class IoaiGraspEnv:
         def move_to_place_state():
             """Move to place position"""
             if self.state_first_entry:
-                # Use vision model to detect bin pose instead of ground truth
-                vision_result = self.get_object_pose_from_vision("bin")
-                if vision_result is not None:
-                    world_pos, world_ori = vision_result
+                # Use pose estimation to get bin pose instead of ground truth
+                pose_result = self.get_object_pose_from_estimation("bin")
+                if pose_result is not None:
+                    world_pos, world_ori = pose_result
                     self.bin_position = world_pos.copy()
                     self.bin_orientation = world_ori.copy()
-                    print(f"Vision detected bin at position: {world_pos}")
+                    print(f"Pose estimation detected bin at position: {world_pos}")
                 else:
-                    # Fallback to ground truth if vision fails
+                    # Fallback to ground truth if pose estimation fails
                     bin_state = self.simulator.get_object_state("/World/Bin")
                     self.bin_position = bin_state["position"].copy()
                     self.bin_orientation = bin_state["orientation"].copy()
