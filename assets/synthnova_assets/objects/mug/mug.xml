@@ -1,15 +1,13 @@
 <mujoco model="mug">
   <default>
     <default class="visual">
-      <geom group="1" type="mesh" contype="0" conaffinity="0"/>
+      <geom group="2" type="mesh" contype="0" conaffinity="0"/>
     </default>
     <default class="collision">
-      <geom group="0" type="mesh"/>
+      <geom group="3" type="mesh"/>
     </default>
   </default>
   <asset>
-    <texture type="2d" name="texture_map" file="texture_map.png"/>
-    <material name="material_0" texture="texture_map" specular="0.5" shininess="0.5"/>
     <mesh name="mug" file="mug.obj"/>
     <mesh name="mug_collision_0" file="mug_collision_0.obj"/>
     <mesh name="mug_collision_1" file="mug_collision_1.obj"/>
@@ -55,115 +53,55 @@
     <mesh name="mug_collision_41" file="mug_collision_41.obj"/>
     <mesh name="mug_collision_42" file="mug_collision_42.obj"/>
     <mesh name="mug_collision_43" file="mug_collision_43.obj"/>
-    <mesh name="mug_collision_44" file="mug_collision_44.obj"/>
-    <mesh name="mug_collision_45" file="mug_collision_45.obj"/>
-    <mesh name="mug_collision_46" file="mug_collision_46.obj"/>
-    <mesh name="mug_collision_47" file="mug_collision_47.obj"/>
-    <mesh name="mug_collision_48" file="mug_collision_48.obj"/>
-    <mesh name="mug_collision_49" file="mug_collision_49.obj"/>
-    <mesh name="mug_collision_50" file="mug_collision_50.obj"/>
-    <mesh name="mug_collision_51" file="mug_collision_51.obj"/>
-    <mesh name="mug_collision_52" file="mug_collision_52.obj"/>
-    <mesh name="mug_collision_53" file="mug_collision_53.obj"/>
-    <mesh name="mug_collision_54" file="mug_collision_54.obj"/>
-    <mesh name="mug_collision_55" file="mug_collision_55.obj"/>
-    <mesh name="mug_collision_56" file="mug_collision_56.obj"/>
-    <mesh name="mug_collision_57" file="mug_collision_57.obj"/>
-    <mesh name="mug_collision_58" file="mug_collision_58.obj"/>
-    <mesh name="mug_collision_59" file="mug_collision_59.obj"/>
-    <mesh name="mug_collision_60" file="mug_collision_60.obj"/>
-    <mesh name="mug_collision_61" file="mug_collision_61.obj"/>
-    <mesh name="mug_collision_62" file="mug_collision_62.obj"/>
-    <mesh name="mug_collision_63" file="mug_collision_63.obj"/>
-    <mesh name="mug_collision_64" file="mug_collision_64.obj"/>
-    <mesh name="mug_collision_65" file="mug_collision_65.obj"/>
-    <mesh name="mug_collision_66" file="mug_collision_66.obj"/>
-    <mesh name="mug_collision_67" file="mug_collision_67.obj"/>
-    <mesh name="mug_collision_68" file="mug_collision_68.obj"/>
-    <mesh name="mug_collision_69" file="mug_collision_69.obj"/>
-    <mesh name="mug_collision_70" file="mug_collision_70.obj"/>
-    <mesh name="mug_collision_71" file="mug_collision_71.obj"/>
-    <mesh name="mug_collision_72" file="mug_collision_72.obj"/>
-    <mesh name="mug_collision_73" file="mug_collision_73.obj"/>
   </asset>
   <worldbody>
     <body>
       <body name="object">
-        <geom material="material_0" mesh="mug" class="visual"/>
-        <geom mesh="mug_collision_0" rgba="0.2459202340045703 0.4118707409443345 0.7467203646200116 1" class="collision"/>
-        <geom mesh="mug_collision_1" rgba="0.004778007732296308 0.4877265634093646 0.05661668309478185 1" class="collision"/>
-        <geom mesh="mug_collision_2" rgba="0.8548193950189726 0.8115772880590221 0.7318281984612814 1" class="collision"/>
-        <geom mesh="mug_collision_3" rgba="0.35490200680205086 0.5101204374669941 0.2536903744661232 1" class="collision"/>
-        <geom mesh="mug_collision_4" rgba="0.6515900131678415 0.5890529344282501 0.9617838543496967 1" class="collision"/>
-        <geom mesh="mug_collision_5" rgba="0.797395811252376 0.32054164794805984 0.368025788782139 1" class="collision"/>
-        <geom mesh="mug_collision_6" rgba="0.8882000565893666 0.5784473757391065 0.933005652576166 1" class="collision"/>
-        <geom mesh="mug_collision_7" rgba="0.7195946715996919 0.9431629912644253 0.1843212114909052 1" class="collision"/>
-        <geom mesh="mug_collision_8" rgba="0.5009376281071987 0.31460200239191893 0.04772961476477389 1" class="collision"/>
-        <geom mesh="mug_collision_9" rgba="0.6564273110132596 0.2946059951624944 0.40333111389043597 1" class="collision"/>
-        <geom mesh="mug_collision_10" rgba="0.9842400009879703 0.4213592412852495 0.5958603261262468 1" class="collision"/>
-        <geom mesh="mug_collision_11" rgba="0.048886833772931904 0.12158405550724305 0.8139241782284475 1" class="collision"/>
-        <geom mesh="mug_collision_12" rgba="0.7094190648978583 0.941338386934511 0.5112221702776856 1" class="collision"/>
-        <geom mesh="mug_collision_13" rgba="0.46092851524890954 0.8260779193249433 0.6590422923826336 1" class="collision"/>
-        <geom mesh="mug_collision_14" rgba="0.4228718294614766 0.036133955837651666 0.7605552949104756 1" class="collision"/>
-        <geom mesh="mug_collision_15" rgba="0.034943073550201875 0.9876015663087607 0.12295785043094243 1" class="collision"/>
-        <geom mesh="mug_collision_16" rgba="0.24431138620540116 0.24022331972054045 0.9346181528959853 1" class="collision"/>
-        <geom mesh="mug_collision_17" rgba="0.9311536427231768 0.12668692229711354 0.13543779803122258 1" class="collision"/>
-        <geom mesh="mug_collision_18" rgba="0.7340977865859916 0.19715426416889203 0.047184292870680045 1" class="collision"/>
-        <geom mesh="mug_collision_19" rgba="0.7645610167183369 0.8406754590977824 0.5296695582800117 1" class="collision"/>
-        <geom mesh="mug_collision_20" rgba="0.7594116683195887 0.5898510769559321 0.9134259084163369 1" class="collision"/>
-        <geom mesh="mug_collision_21" rgba="0.6669146134907297 0.5322596896908794 0.03966976573587566 1" class="collision"/>
-        <geom mesh="mug_collision_22" rgba="0.2559063690228961 0.04184236133408814 0.31496688811795504 1" class="collision"/>
-        <geom mesh="mug_collision_23" rgba="0.19578571642226894 0.7176281880666768 0.015146767361714941 1" class="collision"/>
-        <geom mesh="mug_collision_24" rgba="0.6118982134656861 0.8514695657272191 0.06890557960452603 1" class="collision"/>
-        <geom mesh="mug_collision_25" rgba="0.19173967890638688 0.3352611825838572 0.9577150292341372 1" class="collision"/>
-        <geom mesh="mug_collision_26" rgba="0.47863407089546817 0.7685427052942349 0.6167831686749978 1" class="collision"/>
-        <geom mesh="mug_collision_27" rgba="0.473123221862897 0.9670050765921782 0.8967444070229641 1" class="collision"/>
-        <geom mesh="mug_collision_28" rgba="0.02414140840080181 0.9401266767297366 0.3482291165197239 1" class="collision"/>
-        <geom mesh="mug_collision_29" rgba="0.1540203928159406 0.019960436974737816 0.6405287285475016 1" class="collision"/>
-        <geom mesh="mug_collision_30" rgba="0.12248569765723705 0.5610825242245597 0.1378662042958939 1" class="collision"/>
-        <geom mesh="mug_collision_31" rgba="0.7688580656809669 0.8918611278172615 0.10052559724958543 1" class="collision"/>
-        <geom mesh="mug_collision_32" rgba="0.9557900840791951 0.4993603121661373 0.9787773410199555 1" class="collision"/>
-        <geom mesh="mug_collision_33" rgba="0.6149414522979196 0.45904372453394693 0.33554406122575264 1" class="collision"/>
-        <geom mesh="mug_collision_34" rgba="0.9714672663446929 0.6713105320091899 0.806828710741088 1" class="collision"/>
-        <geom mesh="mug_collision_35" rgba="0.10454838761965024 0.7779817435883852 0.23354936696823636 1" class="collision"/>
-        <geom mesh="mug_collision_36" rgba="0.2446862326373983 0.8451922971788338 0.33252317045637847 1" class="collision"/>
-        <geom mesh="mug_collision_37" rgba="0.4654785823504278 0.19039869489862615 0.036336281202027254 1" class="collision"/>
-        <geom mesh="mug_collision_38" rgba="0.20403581722256503 0.6246628973249073 0.2132201550800351 1" class="collision"/>
-        <geom mesh="mug_collision_39" rgba="0.19314156670407634 0.44430974131600376 0.15546121448667272 1" class="collision"/>
-        <geom mesh="mug_collision_40" rgba="0.47405402294184107 0.5025490626415632 0.20277350068198252 1" class="collision"/>
-        <geom mesh="mug_collision_41" rgba="0.23732477317613787 0.11969262536838599 0.9231551962755661 1" class="collision"/>
-        <geom mesh="mug_collision_42" rgba="0.5380769252251308 0.24969936521395786 0.9379272228087578 1" class="collision"/>
-        <geom mesh="mug_collision_43" rgba="0.5069538316416322 0.2717796719427399 0.7971742436821689 1" class="collision"/>
-        <geom mesh="mug_collision_44" rgba="0.5207626018292741 0.10659218203545884 0.3869031250725803 1" class="collision"/>
-        <geom mesh="mug_collision_45" rgba="0.3079404247740687 0.005152603932720323 0.18220214688162029 1" class="collision"/>
-        <geom mesh="mug_collision_46" rgba="0.6932236817846321 0.012609105990488367 0.5190222585577818 1" class="collision"/>
-        <geom mesh="mug_collision_47" rgba="0.5974613993880085 0.5085916737225785 0.1375011823100114 1" class="collision"/>
-        <geom mesh="mug_collision_48" rgba="0.8107324944347087 0.8331229731870143 0.8670699939629231 1" class="collision"/>
-        <geom mesh="mug_collision_49" rgba="0.866565939457584 0.7130492418000764 0.4051433529220787 1" class="collision"/>
-        <geom mesh="mug_collision_50" rgba="0.9021784817825667 0.4606438823513225 0.74624010007106 1" class="collision"/>
-        <geom mesh="mug_collision_51" rgba="0.6571719886672724 0.3321475246947265 0.8999745335356287 1" class="collision"/>
-        <geom mesh="mug_collision_52" rgba="0.0866173398552571 0.45793698400959326 0.804599911844568 1" class="collision"/>
-        <geom mesh="mug_collision_53" rgba="0.3658013177351257 0.705250001270781 0.20893856866511595 1" class="collision"/>
-        <geom mesh="mug_collision_54" rgba="0.3420029969728301 0.027254037401432507 0.32801597307494457 1" class="collision"/>
-        <geom mesh="mug_collision_55" rgba="0.667797168356568 0.9237517896110194 0.4267456692731324 1" class="collision"/>
-        <geom mesh="mug_collision_56" rgba="0.7096166968717945 0.2982751647302958 0.0947240751826457 1" class="collision"/>
-        <geom mesh="mug_collision_57" rgba="0.0834896714233182 0.6370766662577642 0.8419837972762821 1" class="collision"/>
-        <geom mesh="mug_collision_58" rgba="0.4962498409668312 0.5026080399577438 0.22070216162840872 1" class="collision"/>
-        <geom mesh="mug_collision_59" rgba="0.9854212971483669 0.14012880486229806 0.03961487652205431 1" class="collision"/>
-        <geom mesh="mug_collision_60" rgba="0.4999310009569322 0.27347132612086444 0.7850622638801271 1" class="collision"/>
-        <geom mesh="mug_collision_61" rgba="0.6277923046140389 0.9467371645376698 0.1431786932437965 1" class="collision"/>
-        <geom mesh="mug_collision_62" rgba="0.33801761013739484 0.2766999788771949 0.4314636378045956 1" class="collision"/>
-        <geom mesh="mug_collision_63" rgba="0.22242065026556868 0.7526430832770917 0.5238487721485869 1" class="collision"/>
-        <geom mesh="mug_collision_64" rgba="0.9743802707625427 0.06275292109274988 0.7179618349855098 1" class="collision"/>
-        <geom mesh="mug_collision_65" rgba="0.48351172207350923 0.7485705775598774 0.9257250150272893 1" class="collision"/>
-        <geom mesh="mug_collision_66" rgba="0.36085887860095434 0.3117916867097732 0.7178424870106015 1" class="collision"/>
-        <geom mesh="mug_collision_67" rgba="0.70357803750623 0.8511578092187674 0.6217777797497275 1" class="collision"/>
-        <geom mesh="mug_collision_68" rgba="0.47260921755217067 0.49692050820545863 0.6170566886624907 1" class="collision"/>
-        <geom mesh="mug_collision_69" rgba="0.8724710099326876 0.6574503266003177 0.5127185732384876 1" class="collision"/>
-        <geom mesh="mug_collision_70" rgba="0.9421569314901644 0.3041187195833541 0.9628757632246046 1" class="collision"/>
-        <geom mesh="mug_collision_71" rgba="0.6841170082434964 0.020682715685099384 0.6525571382236591 1" class="collision"/>
-        <geom mesh="mug_collision_72" rgba="0.044390563388217896 0.32783935961619637 0.006250584112278412 1" class="collision"/>
-        <geom mesh="mug_collision_73" rgba="0.2735968042078999 0.9705743983278089 0.6885542024754822 1" class="collision"/>
+        <geom mesh="mug" class="visual"/>
+        <geom mesh="mug_collision_0" rgba="0.38319361769751237 0.7918773000255394 0.8021895683783113 1" class="collision"/>
+        <geom mesh="mug_collision_1" rgba="0.8194685040662993 0.2818696366437101 0.12244181136583598 1" class="collision"/>
+        <geom mesh="mug_collision_2" rgba="0.46481361903422047 0.2243438306837845 0.132941552830681 1" class="collision"/>
+        <geom mesh="mug_collision_3" rgba="0.5725015223506659 0.04115248453540832 0.4656092865225455 1" class="collision"/>
+        <geom mesh="mug_collision_4" rgba="0.697005093002741 0.7213860347785152 0.6571888392444927 1" class="collision"/>
+        <geom mesh="mug_collision_5" rgba="0.4678218678482404 0.5123843654144553 0.05111286059801923 1" class="collision"/>
+        <geom mesh="mug_collision_6" rgba="0.6172340597414584 0.6613733307413646 0.12324079214546413 1" class="collision"/>
+        <geom mesh="mug_collision_7" rgba="0.4168091828785241 0.14025717999818488 0.9559439638561764 1" class="collision"/>
+        <geom mesh="mug_collision_8" rgba="0.7709110606116212 0.2722873357874295 0.05685060438622036 1" class="collision"/>
+        <geom mesh="mug_collision_9" rgba="0.30479840350554244 0.3181586526293323 0.8198595053970439 1" class="collision"/>
+        <geom mesh="mug_collision_10" rgba="0.2704558653341661 0.6481255775211388 0.8329307931813641 1" class="collision"/>
+        <geom mesh="mug_collision_11" rgba="0.4501561176222193 0.26388505196714274 0.41865563216328705 1" class="collision"/>
+        <geom mesh="mug_collision_12" rgba="0.31819591676443404 0.041782154606289645 0.012036777324470727 1" class="collision"/>
+        <geom mesh="mug_collision_13" rgba="0.524025535578948 0.019976788285448133 0.7301371251716057 1" class="collision"/>
+        <geom mesh="mug_collision_14" rgba="0.4480056192875581 0.45464607831813875 0.9819968264529708 1" class="collision"/>
+        <geom mesh="mug_collision_15" rgba="0.49796353134904314 0.008943745198369712 0.4604895793750129 1" class="collision"/>
+        <geom mesh="mug_collision_16" rgba="0.19316073831758662 0.4251408467670984 0.4764975036679746 1" class="collision"/>
+        <geom mesh="mug_collision_17" rgba="0.6283901596808249 0.9802547036635133 0.8449090401780703 1" class="collision"/>
+        <geom mesh="mug_collision_18" rgba="0.417206402026735 0.5007376652563854 0.6608916725381347 1" class="collision"/>
+        <geom mesh="mug_collision_19" rgba="0.5299690833013481 0.8430342565584041 0.7271890133438578 1" class="collision"/>
+        <geom mesh="mug_collision_20" rgba="0.06915718032867502 0.10058428744399062 0.008777101266450371 1" class="collision"/>
+        <geom mesh="mug_collision_21" rgba="0.3725116913405947 0.5310711503110109 0.42934716873364365 1" class="collision"/>
+        <geom mesh="mug_collision_22" rgba="0.5818538452551074 0.9119872042243108 0.15078535380097458 1" class="collision"/>
+        <geom mesh="mug_collision_23" rgba="0.48035679368718043 0.029535646629745838 0.28360339061728645 1" class="collision"/>
+        <geom mesh="mug_collision_24" rgba="0.492638445517935 0.7311477004146337 0.4767722068590542 1" class="collision"/>
+        <geom mesh="mug_collision_25" rgba="0.8665649141061355 0.3469342832600004 0.8802404831342926 1" class="collision"/>
+        <geom mesh="mug_collision_26" rgba="0.46447458303110256 0.30356557769423964 0.21419459889895232 1" class="collision"/>
+        <geom mesh="mug_collision_27" rgba="0.2027817822662764 0.07284315935857821 0.6006307379873392 1" class="collision"/>
+        <geom mesh="mug_collision_28" rgba="0.28446564620812 0.06981998791404631 0.246530908271137 1" class="collision"/>
+        <geom mesh="mug_collision_29" rgba="0.5595251444047229 0.8150742866173686 0.5999208785246781 1" class="collision"/>
+        <geom mesh="mug_collision_30" rgba="0.14739355890669648 0.4128144106487277 0.4209337809040188 1" class="collision"/>
+        <geom mesh="mug_collision_31" rgba="0.3862945579572593 0.6593494953813259 0.9759031473381273 1" class="collision"/>
+        <geom mesh="mug_collision_32" rgba="0.7817451375800379 0.7212816023764446 0.40844325187425634 1" class="collision"/>
+        <geom mesh="mug_collision_33" rgba="0.09556983853945489 0.6290627225732576 0.059828951994755686 1" class="collision"/>
+        <geom mesh="mug_collision_34" rgba="0.08082411676637158 0.23363484660354006 0.1364676264027973 1" class="collision"/>
+        <geom mesh="mug_collision_35" rgba="0.7287940905950343 0.2500680348775465 0.74921165357907 1" class="collision"/>
+        <geom mesh="mug_collision_36" rgba="0.48157789667435746 0.5915111550244448 0.4132983901855203 1" class="collision"/>
+        <geom mesh="mug_collision_37" rgba="0.42112594874404696 0.223720690283724 0.03603781815010265 1" class="collision"/>
+        <geom mesh="mug_collision_38" rgba="0.7578577052207788 0.022648830600440872 0.20720222916951758 1" class="collision"/>
+        <geom mesh="mug_collision_39" rgba="0.045644480787661146 0.2828035558643788 0.9990323310480758 1" class="collision"/>
+        <geom mesh="mug_collision_40" rgba="0.7275492255377127 0.08614573081121568 0.5626540771663124 1" class="collision"/>
+        <geom mesh="mug_collision_41" rgba="0.2285565160675893 0.7025233128277099 0.03375322623459842 1" class="collision"/>
+        <geom mesh="mug_collision_42" rgba="0.52811111012202 0.15713494929369298 0.160457889316021 1" class="collision"/>
+        <geom mesh="mug_collision_43" rgba="0.24656682530326723 0.5550335683094876 0.05751532282692029 1" class="collision"/>
       </body>
     </body>
   </worldbody>

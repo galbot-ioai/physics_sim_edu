@@ -8,8 +8,7 @@
     </default>
   </default>
   <asset>
-    <texture type="2d" name="texture_map" file="texture_map.png"/>
-    <material name="material_0" texture="texture_map" specular="0.5" shininess="0.5"/>
+    <material name="material_0" specular="0.0" shininess="0.0" rgba="0.800000 0.800000 0.800000 1.000000"/>
     <mesh name="power_drill" file="power_drill.obj"/>
     <mesh name="power_drill_collision_0" file="power_drill_collision_0.obj"/>
     <mesh name="power_drill_collision_1" file="power_drill_collision_1.obj"/>
@@ -25,26 +24,29 @@
     <mesh name="power_drill_collision_11" file="power_drill_collision_11.obj"/>
     <mesh name="power_drill_collision_12" file="power_drill_collision_12.obj"/>
     <mesh name="power_drill_collision_13" file="power_drill_collision_13.obj"/>
+    <mesh name="power_drill_collision_14" file="power_drill_collision_14.obj"/>
+    <mesh name="power_drill_collision_15" file="power_drill_collision_15.obj"/>
   </asset>
   <worldbody>
     <body>
       <body name="object">
-        <!-- <geom material="material_0" mesh="power_drill" class="visual"/> -->
-        <geom mesh="power_drill" class="visual"/>
-        <geom mesh="power_drill_collision_0" rgba="0.009385127057412457 0.5913731444558021 0.2185053113514941 1" class="collision"/>
-        <geom mesh="power_drill_collision_1" rgba="0.12306346622183273 0.9872147974775598 0.868313537941251 1" class="collision"/>
-        <geom mesh="power_drill_collision_2" rgba="0.4890287715956503 0.01093640749678837 0.370560437787433 1" class="collision"/>
-        <geom mesh="power_drill_collision_3" rgba="0.8302414750790504 0.40594565385920445 0.19928658668332988 1" class="collision"/>
-        <geom mesh="power_drill_collision_4" rgba="0.37434570294562297 0.3418127518070232 0.6843986109138692 1" class="collision"/>
-        <geom mesh="power_drill_collision_5" rgba="0.6860818738358005 0.6047678972273565 0.2756853240811653 1" class="collision"/>
-        <geom mesh="power_drill_collision_6" rgba="0.6283164557548971 0.8224702203464211 0.7709315912810064 1" class="collision"/>
-        <geom mesh="power_drill_collision_7" rgba="0.9736402326616411 0.1557872236128508 0.33170188880457674 1" class="collision"/>
-        <geom mesh="power_drill_collision_8" rgba="0.3855862219718895 0.2965564095745227 0.16792667662182237 1" class="collision"/>
-        <geom mesh="power_drill_collision_9" rgba="0.03888300150734869 0.9061411810825728 0.38542420741955585 1" class="collision"/>
-        <geom mesh="power_drill_collision_10" rgba="0.3799444214199609 0.7604366960650005 0.8592286395973965 1" class="collision"/>
-        <geom mesh="power_drill_collision_11" rgba="0.7121630306198365 0.20395050624352828 0.14913467136880154 1" class="collision"/>
-        <geom mesh="power_drill_collision_12" rgba="0.30701224914709735 0.4313756664229633 0.5519922234182094 1" class="collision"/>
-        <geom mesh="power_drill_collision_13" rgba="0.9152024225104273 0.25069722852882337 0.4428337893994675 1" class="collision"/>
+        <geom material="material_0" mesh="power_drill" class="visual"/>
+        <geom mesh="power_drill_collision_0" rgba="0.9778038433729702 0.5313122733413662 0.5320754469806913 1" class="collision"/>
+        <geom mesh="power_drill_collision_1" rgba="0.26175382319324625 0.5386582900782007 0.4904746319968889 1" class="collision"/>
+        <geom mesh="power_drill_collision_2" rgba="0.579601633073333 0.38896279615947493 0.8035699158156704 1" class="collision"/>
+        <geom mesh="power_drill_collision_3" rgba="0.4402115400001201 0.1336295934859827 0.23418405550099686 1" class="collision"/>
+        <geom mesh="power_drill_collision_4" rgba="0.29891637389098435 0.3752201390564105 0.6997729204703027 1" class="collision"/>
+        <geom mesh="power_drill_collision_5" rgba="0.8106704089759585 0.7249167337538956 0.2721700442254582 1" class="collision"/>
+        <geom mesh="power_drill_collision_6" rgba="0.9076937285924436 0.22601049976023369 0.3083401064170437 1" class="collision"/>
+        <geom mesh="power_drill_collision_7" rgba="0.2541274356583556 0.4729253524363416 0.6422765104508645 1" class="collision"/>
+        <geom mesh="power_drill_collision_8" rgba="0.5307437661674116 0.14061738799644596 0.9072927203945556 1" class="collision"/>
+        <geom mesh="power_drill_collision_9" rgba="0.5935921479855598 0.3668759866276138 0.7948217993283037 1" class="collision"/>
+        <geom mesh="power_drill_collision_10" rgba="0.9596538348905652 0.7335826664695604 0.8187498182124566 1" class="collision"/>
+        <geom mesh="power_drill_collision_11" rgba="0.10493237787029375 0.4952654524629272 0.04073088980505779 1" class="collision"/>
+        <geom mesh="power_drill_collision_12" rgba="0.4384399860181737 0.4684522627275032 0.6050750796954381 1" class="collision"/>
+        <geom mesh="power_drill_collision_13" rgba="0.7953698684416379 0.8313660455486428 0.48576900931209366 1" class="collision"/>
+        <geom mesh="power_drill_collision_14" rgba="0.14119076224425775 0.9749876616392558 0.6455913668150313 1" class="collision"/>
+        <geom mesh="power_drill_collision_15" rgba="0.41746608775350924 0.9618174610942302 0.07723358259557278 1" class="collision"/>
       </body>
     </body>
   </worldbody>
