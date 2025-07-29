@@ -1,27 +1,31 @@
 import argparse
+import os
 from ultralytics import YOLO
 import cv2
 import numpy as np
 
 def parse_args():
     """Parse command line arguments."""
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
     parser = argparse.ArgumentParser(description="YOLO segmentation prediction with visualization")
     parser.add_argument(
         "--model_path", 
         type=str, 
-        default="assets/yolo_seg/best.pt",
+        default=os.path.join(script_dir, "best.pt"),
         help="Path to the trained YOLO segmentation model"
     )
     parser.add_argument(
         "--img_path", 
         type=str, 
-        default="assets/yolo_seg/test_image.png",
+        default=os.path.join(script_dir, "test_image.png"),
         help="Path to the input image for prediction"
     )
     parser.add_argument(
         "--output_path", 
         type=str, 
-        default="output_with_masks.png",
+        default=os.path.join(script_dir, "output_with_masks.png"),
         help="Path to save the output image"
     )
     parser.add_argument(

@@ -53,6 +53,12 @@ dependencies = [
 pyroki = [
     "pyroki @ git+https://github.com/chungmin99/pyroki.git"
 ]
+pose_est = [
+    "opencv-python",
+    "numpy",
+    "open3d",
+    "pybind11",
+]
 
 # Configure Hatch to automatically determine the project version.
 [tool.hatch.version]
