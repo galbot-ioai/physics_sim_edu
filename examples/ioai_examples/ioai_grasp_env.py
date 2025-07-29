@@ -48,25 +48,134 @@ import numpy as np
 from physics_simulator.utils.data_types import JointTrajectory
 import time
 import os
+from typing import Dict, List, Tuple, Optional, Any
+from dataclasses import dataclass
 
 from physics_simulator.utils.state_machine import SimpleStateMachine
+
+@dataclass
+class DetectedObject:
+    """Data class for detected object information"""
+    class_name: str
+    position: np.ndarray  # [x, y, z] in camera frame
+    orientation: np.ndarray  # [qx, qy, qz, qw] in camera frame
+    confidence: float
+    bbox: Optional[np.ndarray] = None  # [x1, y1, x2, y2] if available
+
+class VisionModelInterface:
+    """Interface for vision model that detects objects and returns their poses"""
+    
+    def __init__(self):
+        """Initialize the vision model interface"""
+        pass
+    
+    def detect_objects(self, rgb_image: np.ndarray, depth_image: Optional[np.ndarray] = None) -> List[DetectedObject]:
+        """
+        Detect objects in the image and return their poses in camera frame
+        
+        Args:
+            rgb_image: RGB image from camera
+            depth_image: Depth image from camera (optional)
+            
+        Returns:
+            List of detected objects with their poses in camera frame
+        """
+        # This is a placeholder implementation
+        # Replace this with your actual vision model
+        raise NotImplementedError("Subclass must implement detect_objects method")
+
+class DummyYoloSegmentationModel(VisionModelInterface):
+    """Dummy YOLO segmentation model that uses ground truth from simulator"""
+    
+    def __init__(self, simulator, robot):
+        super().__init__()
+        self.simulator = simulator
+        self.robot = robot
+        self.object_classes = ["cube", "bin"]  # Supported object classes
+    
+    def detect_objects(self, rgb_image: np.ndarray, depth_image: Optional[np.ndarray] = None) -> List[DetectedObject]:
+        """
+        Dummy YOLO segmentation detection using ground truth
+        """
+        detected_objects = []
+        
+        # Get ground truth poses for supported objects
+        for obj_class in self.object_classes:
+            # Get object state from simulator
+            obj_state = self.simulator.get_object_state(f"/World/{obj_class.capitalize()}")
+            world_position = obj_state["position"]
+            world_orientation = obj_state["orientation"]
+            
+            # Transform from world frame to camera frame
+            camera_position, camera_orientation = self._world_to_camera_frame(
+                world_position, world_orientation
+            )
+            
+            # Create detected object
+            detected_obj = DetectedObject(
+                class_name=obj_class,
+                position=camera_position,
+                orientation=camera_orientation,
+                confidence=0.95,  # High confidence for ground truth
+                bbox=np.array([100, 100, 200, 200])  # Dummy bbox
+            )
+            detected_objects.append(detected_obj)
+        
+        return detected_objects
+    
+    def _world_to_camera_frame(self, world_position, world_orientation):
+        """Transform pose from world frame to camera frame"""
+        from scipy.spatial.transform import Rotation
+        
+        # Get camera pose in world frame
+        camera_prim_path = "/World/Galbot/head_link2/head_end_effector_mount_link/front_head_rgb_camera"
+        camera_state = self.simulator.get_sensor_state(camera_prim_path)
+        camera_world_position = camera_state["transform_to_base_link"]["position"]
+        camera_world_orientation = camera_state["transform_to_base_link"]["orientation"]
+        
+        # Create transformation matrices
+        camera_world_rot = Rotation.from_quat(camera_world_orientation)
+        world_rot = Rotation.from_quat(world_orientation)
+        
+        # Transform position: subtract camera position and rotate
+        relative_position = world_position - camera_world_position
+        camera_position = camera_world_rot.inv().apply(relative_position)
+        
+        # Transform orientation: compose rotations
+        camera_orientation = (camera_world_rot.inv() * world_rot).as_quat()
+        
+        return camera_position, camera_orientation
 
 def interpolate_joint_positions(start_positions, end_positions, steps):
     return np.linspace(start_positions, end_positions, steps).tolist()
 
 class IoaiGraspEnv:
-    def __init__(self, headless=False):
+    def __init__(self, headless=False, vision_model: Optional[VisionModelInterface] = None):
         """
         Initialize the Olympic environment.
         
         Args:
             headless: Whether to run in headless mode (without visualization)
+            vision_model: Vision model for object detection (optional)
         """
         self.simulator = None
         self.robot = None
+        
+        # Initialize vision model
+        self.vision_model = vision_model if vision_model is not None else None
+        
+        # Vision-related variables
+        self.detected_objects = []
+        self.last_detection_time = 0
+        self.detection_interval = 0.1  # Detection frequency in seconds
 
         # Setup the simulator
         self._setup_simulator(headless=headless)
+        
+        # Initialize vision model after simulator setup
+        if self.vision_model is None:
+            self.vision_model = DummyYoloSegmentationModel(self.simulator, self.robot)
+        
         # Setup the interface
         self._setup_interface()
         self._init_pose()
@@ -181,7 +290,7 @@ class IoaiGraspEnv:
 
         # Add bin
         bin_config = MeshConfig(
-            prim_path="/World/bin",
+            prim_path="/World/Bin",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
@@ -206,7 +315,7 @@ class IoaiGraspEnv:
         # Initialize the simulator
         self.simulator.initialize()
 
-        bin_state = self.simulator.get_object_state("/World/bin")
+        bin_state = self.simulator.get_object_state("/World/Bin")
         self.bin_position = bin_state["position"]
         self.bin_orientation = bin_state["orientation"]
 
@@ -389,6 +498,135 @@ class IoaiGraspEnv:
         
         # Transform orientation: compose rotations
         world_orientation = (base_rot * robot_rot).as_quat()
+        
+        return world_position, world_orientation
+
+    def camera_to_world_frame(self, camera_position, camera_orientation):
+        """Transform pose from camera frame to world frame.
+        
+        Args:
+            camera_position: Position in camera frame [x, y, z]
+            camera_orientation: Orientation in camera frame [qx, qy, qz, qw]
+            
+        Returns:
+            Tuple of (world_position, world_orientation) in world frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get camera pose in world frame
+        camera_prim_path = self.front_head_rgb_camera_path
+        camera_state = self.simulator.get_sensor_state(camera_prim_path)
+        camera_world_position = camera_state["transform_to_base_link"]["position"]
+        camera_world_orientation = camera_state["transform_to_base_link"]["orientation"]
+        
+        # Create transformation matrices
+        camera_world_rot = Rotation.from_quat(camera_world_orientation)
+        camera_local_rot = Rotation.from_quat(camera_orientation)
+        
+        # Transform position: rotate and add camera world position
+        world_position = camera_world_rot.apply(camera_position) + camera_world_position
+        
+        # Transform orientation: compose rotations
+        world_orientation = (camera_world_rot * camera_local_rot).as_quat()
+        
+        return world_position, world_orientation
+
+    def world_to_camera_frame(self, world_position, world_orientation):
+        """Transform pose from world frame to camera frame.
+        
+        Args:
+            world_position: Position in world frame [x, y, z]
+            world_orientation: Orientation in world frame [qx, qy, qz, qw]
+            
+        Returns:
+            Tuple of (camera_position, camera_orientation) in camera frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get camera pose in world frame
+        camera_prim_path = self.front_head_rgb_camera_path
+        camera_state = self.simulator.get_sensor_state(camera_prim_path)
+        camera_world_position = camera_state["position"]
+        camera_world_orientation = camera_state["orientation"]
+        
+        # Create transformation matrices
+        camera_world_rot = Rotation.from_quat(camera_world_orientation)
+        world_rot = Rotation.from_quat(world_orientation)
+        
+        # Transform position: subtract camera position and rotate
+        relative_position = world_position - camera_world_position
+        camera_position = camera_world_rot.inv().apply(relative_position)
+        
+        # Transform orientation: compose rotations
+        camera_orientation = (camera_world_rot.inv() * world_rot).as_quat()
+        
+        return camera_position, camera_orientation
+
+    def get_camera_images(self):
+        """Get RGB and depth images from the front head camera.
+        
+        Returns:
+            Tuple of (rgb_image, depth_image) or (rgb_image, None) if depth not available
+        """
+        try:
+            # Get RGB image
+            rgb_image = self.interface.front_head_camera.get_rgb()
+            
+            # Get depth image if available
+            depth_image = None
+            try:
+                depth_image = self.interface.front_head_camera.get_depth()
+            except:
+                pass  # Depth image not available
+                
+            return rgb_image, depth_image
+        except Exception as e:
+            print(f"Error getting camera images: {e}")
+            return None, None
+
+    def detect_objects_vision(self) -> List[DetectedObject]:
+        """Detect objects using vision model"""
+        current_time = time.time()
+        
+        # Check detection frequency
+        if current_time - self.last_detection_time < self.detection_interval:
+            return self.detected_objects
+        
+        # Get camera images
+        rgb_image, depth_image = self.get_camera_images()
+        
+        if rgb_image is None:
+            return self.detected_objects
+        
+        # Run vision model detection
+        detected_objects = self.vision_model.detect_objects(rgb_image, depth_image)
+        
+        # Update detection results
+        self.detected_objects = detected_objects
+        self.last_detection_time = current_time
+        
+        return detected_objects
+
+    def get_object_pose_from_vision(self, target_class: str = "cube") -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """Get object pose from vision detection"""
+        # Detect objects using vision
+        detected_objects = self.detect_objects_vision()
+        
+        # Find target object
+        target_object = None
+        for obj in detected_objects:
+            if obj.class_name.lower() == target_class.lower():
+                target_object = obj
+                break
+        
+        if target_object is None:
+            print(f"Target object '{target_class}' not detected")
+            return None
+        
+        # Transform from camera frame to world frame
+        world_position, world_orientation = self.camera_to_world_frame(
+            target_object.position, target_object.orientation
+        )
         
         return world_position, world_orientation
 
@@ -669,22 +907,42 @@ class IoaiGraspEnv:
         def move_to_pre_pick_state():
             """Move to pre-pick position"""
             if self.state_first_entry:
-                cube_state = self.simulator.get_object_state("/World/Cube")
-                self.cube_position = cube_state["position"].copy()
+                # Use vision model to detect object pose instead of ground truth
+                vision_result = self.get_object_pose_from_vision("cube")
+                if vision_result is not None:
+                    world_pos, world_ori = vision_result
+                    self.cube_position = world_pos.copy()
+                    self.cube_orientation = world_ori.copy()
+                    print(f"Vision detected cube at position: {world_pos}")
+                else:
+                    # Fallback to ground truth if vision fails
+                    cube_state = self.simulator.get_object_state("/World/Cube")
+                    self.cube_position = cube_state["position"].copy()
+                    self.cube_orientation = cube_state["orientation"].copy()
+                    print("Using ground truth fallback for cube position")
                 self.state_first_entry = False
             
             # Convert world frame pose to robot frame
             world_pos = self.cube_position + np.array([0, 0, 0.15])
-            world_ori = np.array([0, 0.7071, 0, 0.7071])
+            world_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for grasping
             robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
             return self._move_left_arm_to_pose(robot_pos, robot_ori)
 
         def move_to_pick_state():
             """Move to pick position"""
+            # Re-detect object position for more accurate pick
+            vision_result = self.get_object_pose_from_vision("cube")
+            if vision_result is not None:
+                world_pos, world_ori = vision_result
+                # Use detected position for more accurate pick
+                pick_pos = world_pos + np.array([0, 0, 0.03])
+            else:
+                # Fallback to stored position
+                pick_pos = self.cube_position + np.array([0, 0, 0.03])
+            
             # Convert world frame pose to robot frame
-            world_pos = self.cube_position + np.array([0, 0, 0.03])
-            world_ori = np.array([0, 0.7071, 0, 0.7071])
-            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
+            world_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for grasping
+            robot_pos, robot_ori = self.world_to_robot_frame(pick_pos, world_ori)
             return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
         def grasp_state():
@@ -710,13 +968,24 @@ class IoaiGraspEnv:
         def move_to_place_state():
             """Move to place position"""
             if self.state_first_entry:
-                bin_state = self.simulator.get_object_state("/World/bin")
-                self.bin_position = bin_state["position"].copy()
+                # Use vision model to detect bin pose instead of ground truth
+                vision_result = self.get_object_pose_from_vision("bin")
+                if vision_result is not None:
+                    world_pos, world_ori = vision_result
+                    self.bin_position = world_pos.copy()
+                    self.bin_orientation = world_ori.copy()
+                    print(f"Vision detected bin at position: {world_pos}")
+                else:
+                    # Fallback to ground truth if vision fails
+                    bin_state = self.simulator.get_object_state("/World/Bin")
+                    self.bin_position = bin_state["position"].copy()
+                    self.bin_orientation = bin_state["orientation"].copy()
+                    print("Using ground truth fallback for bin position")
                 self.state_first_entry = False
 
             # Convert world frame pose to robot frame
             world_pos = self.bin_position + np.array([0, 0, 0.3])
-            world_ori = np.array([0, 0.7071, 0, 0.7071])
+            world_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for placing
             robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
             return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
