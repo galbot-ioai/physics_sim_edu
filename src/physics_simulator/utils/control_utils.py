@@ -3,7 +3,6 @@ Control utilities for physics simulation including PID controllers and path foll
 """
 
 import math
-import numpy as np
 
 
 class PIDController:

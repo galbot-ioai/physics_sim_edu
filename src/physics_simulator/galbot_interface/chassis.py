@@ -29,7 +29,6 @@
 
 from typing import List
 from physics_simulator.galbot_interface.basic_part import BasicLimb
-from physics_simulator.utils.data_types import JointTrajectory
 from physics_simulator import PhysicsSimulator
 from physics_simulator.galbot_interface.config import GalbotInterfaceConfig
 

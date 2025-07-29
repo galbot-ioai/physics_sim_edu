@@ -38,7 +38,6 @@ import mujoco
 from physics_simulator.utils import XMLError
 from physics_simulator.utils.mjcf_utils import (
     _element_filter,
-    add_material,
     add_prefix,
     find_elements,
     recolor_collision_geoms,

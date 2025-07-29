@@ -28,17 +28,10 @@
 #
 #####################################################################################
 
-from threading import Lock
 from tempfile import TemporaryDirectory
-from threading import Lock
 
 import mujoco
-import numpy as np
-import ctypes
-import ctypes.util
 import os
-import platform
-import subprocess
 
 
 class _MjModelMeta(type):

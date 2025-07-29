@@ -31,7 +31,7 @@
 
 
 import mujoco
-from auro_utils.math.transform import xyzw_to_wxyz, wxyz_to_xyzw
+from auro_utils.math.transform import xyzw_to_wxyz
 from physics_simulator.object import MujocoXMLModel
 # from physics_simulator.robot.gripper_model import GripperModel
 from physics_simulator.utils.mjcf_utils import (
@@ -39,7 +39,6 @@ from physics_simulator.utils.mjcf_utils import (
     array_to_string
 )
 import numpy as np
-from typing import Dict, List, Tuple, Optional
 
 
 class MujocoRobotModel(MujocoXMLModel):

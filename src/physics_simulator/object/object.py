@@ -31,7 +31,6 @@
 #####################################################################################
 
 
-import copy
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 
@@ -55,7 +54,6 @@ from physics_simulator.utils.mjcf_utils import (
     new_site
 )
 
-from auro_utils.math.transform import wxyz_to_xyzw
 
 # Dict mapping geom type string keywords to group number
 GEOMTYPE2GROUP = {

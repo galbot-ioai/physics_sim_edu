@@ -7,10 +7,8 @@ This module includes:
 camera matrices and transforming from world to camera frame or vice-versa.
 """
 
-import json
 import xml.etree.ElementTree as ET
 
-import h5py
 import numpy as np
 
 import physics_simulator.utils.transform_utils as T

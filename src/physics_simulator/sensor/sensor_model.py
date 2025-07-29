@@ -30,14 +30,12 @@
 #####################################################################################
 
 
-import mujoco
 from auro_utils.math.transform import xyzw_to_wxyz
 from auro_utils.math.transform import wxyz_to_xyzw
 from physics_simulator.utils.mjcf_utils import (
     MOUNT_COLLISION_COLOR,
     array_to_string,
     find_elements,
-    find_parent,
     new_body,
     new_site,
 )

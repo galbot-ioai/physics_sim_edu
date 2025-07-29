@@ -27,20 +27,17 @@
 #
 #####################################################################################
 
-import traceback
 import time
 import os
-import gc
 import signal
-from typing import List, Dict
+from typing import Dict
 from typing import Callable, Any
 
 # MuJoCo imports
 import mujoco
-from mujoco import viewer
 
 # Third-party imports
-from auro_utils import xyzw_to_wxyz, wxyz_to_xyzw, Logger
+from auro_utils import wxyz_to_xyzw, Logger
 from threading import RLock
 
 import pathlib
@@ -62,6 +59,7 @@ from synthnova_config import (
 from pathlib import Path
 
 from physics_simulator.utils.path_manager import PathManager
+import mujoco.viewer
 
 class MujocoSimulator(BaseSim):
     def __init__(self, physics_simulator_config: PhysicsSimulatorConfig):
@@ -505,7 +503,7 @@ class MujocoSimulator(BaseSim):
             Path()
             .joinpath(self.synthnova_assets_directory)
             .joinpath("synthnova_assets")
-            .joinpath(f"default_ground_plane.xml")
+            .joinpath("default_ground_plane.xml")
         ).as_posix()
 
         if not Path(ground_plane_xml_path).exists():

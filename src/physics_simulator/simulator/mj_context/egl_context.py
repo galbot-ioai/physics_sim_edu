@@ -30,7 +30,6 @@ elif PYOPENGL_PLATFORM.lower() != "egl":
     )
 
 from mujoco.egl import egl_ext as EGL
-from OpenGL import error
 
 
 def create_initialized_egl_device_display(device_id=0):

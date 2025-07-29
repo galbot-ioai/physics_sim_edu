@@ -27,8 +27,7 @@
 #
 #####################################################################################
 
-import numpy as np
-from typing import Union, Optional, List, Any
+from typing import Union, Any
 
 # Config
 from synthnova_config import (

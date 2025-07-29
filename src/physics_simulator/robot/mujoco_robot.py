@@ -34,7 +34,6 @@ from physics_simulator.robot.robot_model import MujocoRobotModel
 # from physics_simulator import PhysicsSimulator
 import numpy as np
 from synthnova_config import RobotConfig
-from typing import Dict, List, Tuple, Optional
 from auro_utils import wxyz_to_xyzw
 
 class MujocoRobot(object):

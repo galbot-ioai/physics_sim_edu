@@ -27,19 +27,13 @@
 #
 #####################################################################################
 
-from typing import TYPE_CHECKING
 
 from physics_simulator import PhysicsSimulator as GalbotEduSim
 from synthnova_config import RgbCameraConfig
 import numpy as np
 
-from auro_utils.math.transform import wxyz_to_xyzw
 from auro_utils.math.transform import xyzw_to_wxyz
 from auro_utils.math.transform import position_and_orientation_to_pose
-from auro_utils.math.transform import pose_to_position_and_orientation
-import auro_utils.manager as au
-from auro_utils import Logger
-import numpy as np
 import math
 from scipy.spatial.transform import Rotation as R
 

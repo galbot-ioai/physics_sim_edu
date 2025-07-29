@@ -16,10 +16,8 @@ from __future__ import annotations
 
 import argparse
 import time
-from typing import Literal
 
 import numpy as np
-import tyro
 
 import viser
 from viser.extras import ViserUrdf
