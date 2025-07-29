@@ -165,7 +165,6 @@ class IOAIEnv:
             .joinpath("table.xml"),
             position=[0.65, 0, 0],
             orientation=[0, 0, 0.70711, 0.70711],
-            # scale=[0.5, 0.7, 0.5]
         )
         self.simulator.add_object(table_config)
 
@@ -186,27 +185,26 @@ class IOAIEnv:
         # Add cube
         cube_config = CuboidConfig(
             prim_path="/World/Cube",
-            position=[0.65, -0.3, 0.56],
+            position=[0.6, -0.3, 0.56],
             orientation=[0, 0, 0, 1],
             scale=[0.05, 0.05, 0.05],
             color=[0.5, 0.5, 0.5],  # Gray color
         )
         self.simulator.add_object(cube_config)
 
-        # # Add toy
-        # toy_config = MeshConfig(
-        #     prim_path="/World/toy",
-        #     mjcf_path=Path()
-        #     .joinpath(self.simulator.synthnova_assets_directory)
-        #     .joinpath("synthnova_assets")
-        #     .joinpath("objects")
-        #     .joinpath("toy")
-        #     .joinpath("toy.xml"),
-        #     position=[0.6, 0, 0.5],
-        #     orientation=[0, 0.70711, 0, 0.70711],
-        #     scale=[0.2, 0.2, 0.2],
-        # )
-        # self.simulator.add_object(toy_config)
+        # Add toy
+        toy_config = MeshConfig(
+            prim_path="/World/toy",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("toy")
+            .joinpath("toy.xml"),
+            position=[0.7, -0.2, 0.5],
+            orientation=[0, 0, 0, 1],
+        )
+        self.simulator.add_object(toy_config)
 
         # Add extrusion
         extrusion_config = MeshConfig(
@@ -218,8 +216,7 @@ class IOAIEnv:
             .joinpath("extrusion")
             .joinpath("extrusion.xml"),
             position=[0.7, 0, 0.55],
-            orientation=[0, 0.70711, 0, 0.70711],
-            scale=[0.001, 0.001, 0.001],
+            orientation=[0, 0, 0, 1],
         )   
         self.simulator.add_object(extrusion_config)
 
@@ -232,10 +229,24 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("power_drill")
             .joinpath("power_drill.xml"),
-            position=[0.7, -0.1, 0.55],
-            orientation=[0, 0, 0.70711, 0.70711],
+            position=[0.6, -0.1, 0.55],
+            orientation=[0, 0, 0, 1],
         )
         self.simulator.add_object(power_drill_config)
+
+        # Add mug
+        mug_config = MeshConfig(
+            prim_path="/World/Mug",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("mug")
+            .joinpath("mug.xml"),
+            position=[0.7, 0, 0.55],
+            orientation=[0, 0, 0, 1],
+        )
+        self.simulator.add_object(mug_config)
 
         center_x = 2
         center_y = 2
@@ -697,39 +708,15 @@ class IOAIEnv:
             return True
         return False
 
-    def get_left_gripper_pose(self):
-        tmat = np.eye(4)
-        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp").xmat.reshape((3,3))
-        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp").xpos
-        
-        # Extract position
-        position = tmat[:3, 3]
-        
-        # Extract orientation as quaternion (x, y, z, w)
-        from scipy.spatial.transform import Rotation
-        rotation_matrix = tmat[:3, :3]
-        quaternion = Rotation.from_matrix(rotation_matrix).as_quat()
-        
-        return position, quaternion
-    
-    def get_right_gripper_pose(self):
-        tmat = np.eye(4)
-        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp").xmat.reshape((3,3))
-        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp").xpos
-        
-        # Extract position
-        position = tmat[:3, 3]
 
-        # Extract orientation as quaternion (x, y, z, w)
-        from scipy.spatial.transform import Rotation
-        rotation_matrix = tmat[:3, :3]
-        quaternion = Rotation.from_matrix(rotation_matrix).as_quat()
-        
-        return position, quaternion
-    
     def run(self):
         self.simulator.loop()
 
 if __name__ == "__main__":
     env = IOAIEnv(headless=False)
+    #TODO: Define your callbacks here
+    def demo_callback():
+        print("demo callback")
+    env.simulator.add_physics_callback("demo_callback", demo_callback)
+
     env.run()
