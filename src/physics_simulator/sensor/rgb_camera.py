@@ -210,7 +210,7 @@ class MujocoRgbCamera:
         # Create sensor model
         from physics_simulator.sensor.sensor_model import MujocoSensorModel
 
-        # NOTE@Chenyu Cao: 
+        # NOTE@Chenyu Cao: Mujoco use fovy to calculate other intrinsic params, needs to simplify
         self.sensor_model = MujocoSensorModel(
             name=self.name,
             camera_name=self.name,
