@@ -335,17 +335,79 @@ class IoaiGraspEnv:
         self.damping = 1e-3
         self.rate_limiter = RateLimiter(frequency=1000, warn=False)
 
+    def world_to_robot_frame(self, world_position, world_orientation):
+        """Transform pose from world frame to robot base frame.
+        
+        Args:
+            world_position: Position in world frame [x, y, z]
+            world_orientation: Orientation in world frame [qx, qy, qz, qw]
+            
+        Returns:
+            Tuple of (robot_position, robot_orientation) in robot base frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get robot base pose in world frame
+        base_position = self.robot.get_position()
+        base_orientation = self.robot.get_orientation()
+        
+        # Create transformation matrices
+        base_rot = Rotation.from_quat(base_orientation)
+        world_rot = Rotation.from_quat(world_orientation)
+        
+        # Transform position: subtract base position and rotate
+        relative_position = world_position - base_position
+        robot_position = base_rot.inv().apply(relative_position)
+        
+        # Transform orientation: compose rotations
+        robot_orientation = (base_rot.inv() * world_rot).as_quat()
+        
+        return robot_position, robot_orientation
+
+    def robot_to_world_frame(self, robot_position, robot_orientation):
+        """Transform pose from robot base frame to world frame.
+        
+        Args:
+            robot_position: Position in robot base frame [x, y, z]
+            robot_orientation: Orientation in robot base frame [qx, qy, qz, qw]
+            
+        Returns:
+            Tuple of (world_position, world_orientation) in world frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get robot base pose in world frame
+        base_position = self.robot.get_position()
+        base_orientation = self.robot.get_orientation()
+        
+        # Create transformation matrices
+        base_rot = Rotation.from_quat(base_orientation)
+        robot_rot = Rotation.from_quat(robot_orientation)
+        
+        # Transform position: rotate and add base position
+        world_position = base_rot.apply(robot_position) + base_position
+        
+        # Transform orientation: compose rotations
+        world_orientation = (base_rot * robot_rot).as_quat()
+        
+        return world_position, world_orientation
+
     def compute_simple_ik(self, start_joint, target_pose, arm_id="left_arm"):
         """Compute inverse kinematics using Mink.
         
         Args:
             start_joint: Initial joint configuration (not used in current implementation)
-            target_pose: Target pose [x, y, z, qx, qy, qz, qw] in world coordinates
+            target_pose: Target pose [x, y, z, qx, qy, qz, qw] in robot base frame
             arm_id: The ID of the arm, either "left_arm" or "right_arm"
             
         Returns:
             Target joint configuration for the specified arm
         """
+        # Transform target pose from robot frame to world frame for IK
+        target_position = target_pose[:3]
+        target_orientation = target_pose[3:7]
+        world_position, world_orientation = self.robot_to_world_frame(target_position, target_orientation)
+        
         # Set target for chassis
         chassis_target = mink.SE3.from_rotation_and_translation(
             rotation=mink.SO3(wxyz=xyzw_to_wxyz(self.robot.get_orientation())),
@@ -365,22 +427,18 @@ class IoaiGraspEnv:
         # Set target for posture
         self.tasks["posture"].set_target_from_configuration(self.mink_config)
 
-        # Extract position and orientation from target pose
-        target_position = target_pose[:3]
-        target_orientation = target_pose[3:7]  # [qx, qy, qz, qw]
-
-        # Set target for the specified arm
+        # Set target for the specified arm using world frame pose
         if arm_id == "left_arm":
             target = mink.SE3.from_rotation_and_translation(
-                rotation=mink.SO3(wxyz=xyzw_to_wxyz(target_orientation)),
-                translation=target_position
+                rotation=mink.SO3(wxyz=xyzw_to_wxyz(world_orientation)),
+                translation=world_position
             )
             self.tasks["left_arm"].set_target(target)
             tasks = [self.tasks["torso"], self.tasks["posture"], self.tasks["chassis"], self.tasks["left_arm"]]
         elif arm_id == "right_arm":
             target = mink.SE3.from_rotation_and_translation(
-                rotation=mink.SO3(wxyz=xyzw_to_wxyz(target_orientation)),
-                translation=target_position
+                rotation=mink.SO3(wxyz=xyzw_to_wxyz(world_orientation)),
+                translation=world_position
             )
             self.tasks["right_arm"].set_target(target)
             tasks = [self.tasks["torso"], self.tasks["posture"], self.tasks["chassis"], self.tasks["right_arm"]]
@@ -513,14 +571,14 @@ class IoaiGraspEnv:
         """Move left arm to target pose with IK solving and motion control.
         
         Args:
-            target_position: Target position [x, y, z]
-            target_orientation: Target orientation [qx, qy, qz, qw]
+            target_position: Target position [x, y, z] in robot base frame
+            target_orientation: Target orientation [qx, qy, qz, qw] in robot base frame
             
         Returns:
             True if motion is complete, False otherwise
         """
         if not self.motion_in_progress:
-            # Prepare target pose
+            # Prepare target pose in robot frame
             target_pose = np.concatenate([target_position, target_orientation])
             
             # Solve IK and start motion
@@ -542,14 +600,14 @@ class IoaiGraspEnv:
         """Move right arm to target pose with IK solving and motion control.
         
         Args:
-            target_position: Target position [x, y, z]
-            target_orientation: Target orientation [qx, qy, qz, qw]
+            target_position: Target position [x, y, z] in robot base frame
+            target_orientation: Target orientation [qx, qy, qz, qw] in robot base frame
             
         Returns:
             True if motion is complete, False otherwise
         """
         if not self.motion_in_progress:
-            # Prepare target pose
+            # Prepare target pose in robot frame
             target_pose = np.concatenate([target_position, target_orientation])
             
             # Solve IK and start motion
@@ -602,7 +660,11 @@ class IoaiGraspEnv:
 
         def init_state():
             """Move to initial pose"""
-            return self._move_left_arm_to_pose([0.5, 0.3, 0.7], [0, 0.7071, 0, 0.7071])
+            # Convert world frame pose to robot frame
+            world_pos = np.array([0.5, 0.3, 0.7])
+            world_ori = np.array([0, 0.7071, 0, 0.7071])
+            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
+            return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
         def move_to_pre_pick_state():
             """Move to pre-pick position"""
@@ -611,11 +673,19 @@ class IoaiGraspEnv:
                 self.cube_position = cube_state["position"].copy()
                 self.state_first_entry = False
             
-            return self._move_left_arm_to_pose(self.cube_position + np.array([0, 0, 0.15]), [0, 0.7071, 0, 0.7071])
+            # Convert world frame pose to robot frame
+            world_pos = self.cube_position + np.array([0, 0, 0.15])
+            world_ori = np.array([0, 0.7071, 0, 0.7071])
+            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
+            return self._move_left_arm_to_pose(robot_pos, robot_ori)
 
         def move_to_pick_state():
             """Move to pick position"""
-            return self._move_left_arm_to_pose(self.cube_position + np.array([0, 0, 0.03]), [0, 0.7071, 0, 0.7071])
+            # Convert world frame pose to robot frame
+            world_pos = self.cube_position + np.array([0, 0, 0.03])
+            world_ori = np.array([0, 0.7071, 0, 0.7071])
+            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
+            return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
         def grasp_state():
             """Grasp the object"""
@@ -631,7 +701,11 @@ class IoaiGraspEnv:
 
         def move_to_pre_place_state():
             """Move to pre-place position"""
-            return self._move_left_arm_to_pose(self.cube_position + np.array([-0.1, 0, 0.4]), [0, 0.7071, 0, 0.7071])
+            # Convert world frame pose to robot frame
+            world_pos = self.cube_position + np.array([-0.1, 0, 0.4])
+            world_ori = np.array([0, 0.7071, 0, 0.7071])
+            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
+            return self._move_left_arm_to_pose(robot_pos, robot_ori)
 
         def move_to_place_state():
             """Move to place position"""
@@ -640,7 +714,11 @@ class IoaiGraspEnv:
                 self.bin_position = bin_state["position"].copy()
                 self.state_first_entry = False
 
-            return self._move_left_arm_to_pose(self.bin_position + np.array([0, 0, 0.3]), [0, 0.7071, 0, 0.7071])
+            # Convert world frame pose to robot frame
+            world_pos = self.bin_position + np.array([0, 0, 0.3])
+            world_ori = np.array([0, 0.7071, 0, 0.7071])
+            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
+            return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
         def release_state():
             """Release the object"""
