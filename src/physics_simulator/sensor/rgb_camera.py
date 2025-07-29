@@ -210,6 +210,7 @@ class MujocoRgbCamera:
         # Create sensor model
         from physics_simulator.sensor.sensor_model import MujocoSensorModel
 
+        # NOTE@Chenyu Cao: 
         self.sensor_model = MujocoSensorModel(
             name=self.name,
             camera_name=self.name,
@@ -218,7 +219,7 @@ class MujocoRgbCamera:
             orientation=self.orientation if use_global_pose else None,
             translation=self.translation if use_local_pose else None,
             rotation=self.rotation if use_local_pose else None,
-            fov=self.horizontal_fov,  # Use horizontal FOV as default
+            fov=self.vertical_fov,  # Use vertical FOV as default
             width=self.width,
             height=self.height,
         )
