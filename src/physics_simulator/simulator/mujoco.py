@@ -695,12 +695,137 @@ class MujocoSimulator(BaseSim):
             prim_path: Path to the sensor
             
         Returns:
-            Various: Sensor data (image for cameras, depth for depth sensors, etc.)
-            
+            dict: Sensor data including:
+                - For cameras: RGB image, depth map, and transform relative to base_link
+                - For other sensors: sensor-specific data
+                
         Raises:
             KeyError: If sensor does not exist at the specified path
+            ValueError: If sensor type is not supported
         """
-        raise NotImplementedError("Sensor state is not implemented yet")
+        if prim_path not in self._sensors:
+            raise KeyError(f"Sensor with path '{prim_path}' not found")
+            
+        sensor_info = self._sensors[prim_path]
+        sensor = sensor_info["instance"]
+        sensor_config = sensor_info["config"]
+        
+        # Get sensor data based on type
+        if sensor_config.type == "rgb_camera":
+            return self._get_camera_sensor_state(sensor, "rgb")
+        elif sensor_config.type == "depth_camera":
+            return self._get_camera_sensor_state(sensor, "depth")
+        else:
+            raise ValueError(f"Unsupported sensor type: {sensor_config.type}")
+    
+    def _get_camera_sensor_state(self, camera, camera_type: str):
+        """Get camera sensor state including transform relative to base_link.
+        
+        Args:
+            camera: Camera sensor instance
+            camera_type: Type of camera ("rgb" or "depth")
+            
+        Returns:
+            dict: Camera state with image data and transform
+        """
+        # Get camera data
+        if camera_type == "rgb":
+            image_data = camera.get_rgb()
+        elif camera_type == "depth":
+            image_data = camera.get_depth()
+        else:
+            raise ValueError(f"Unsupported camera type: {camera_type}")
+        
+        # Get transform relative to base_link
+        transform = self._get_camera_transform_to_base_link(camera)
+        
+        return {
+            "image": image_data,
+            "transform_to_base_link": transform,
+            "camera_type": camera_type,
+            "timestamp": self.get_simulation_time()
+        }
+    
+    def _get_camera_transform_to_base_link(self, camera):
+        """Get camera transform relative to base_link.
+        
+        Args:
+            camera: Camera sensor instance
+            
+        Returns:
+            dict: Transform with position and orientation relative to base_link
+        """
+        # Get camera pose in world frame
+        camera_pose_world = camera.get_world_pose(camera_axes="world")
+        camera_position = camera_pose_world[:3]
+        camera_orientation = camera_pose_world[3:]
+        
+        # Find robot with base_link
+        robot_with_base = None
+        for robot_path, robot_info in self._robots.items():
+            robot = robot_info["instance"]
+            try:
+                # Try to get base_link pose
+                base_pose = robot.get_body_world_poses().get("base_link")
+                if base_pose is not None:
+                    robot_with_base = robot
+                    break
+            except:
+                continue
+        
+        if robot_with_base is None:
+            # If no robot with base_link found, return world pose
+            return {
+                "position": camera_position.tolist(),
+                "orientation": camera_orientation.tolist(),
+                "frame": "world"
+            }
+        
+        # Get base_link pose in world frame
+        base_poses = robot_with_base.get_body_world_poses()
+        base_pose = base_poses.get("base_link")
+        
+        if base_pose is None:
+            # Fallback to robot root body
+            robot_position, robot_orientation = robot_with_base.get_world_pose()
+            base_position = robot_position
+            base_orientation = robot_orientation
+        else:
+            base_position = base_pose["position"]
+            base_orientation = base_pose["orientation"]
+        
+        # Calculate relative transform
+        from scipy.spatial.transform import Rotation as R
+        
+        # Create transformation matrices
+        base_rotation_matrix = R.from_quat(base_orientation).as_matrix()
+        camera_rotation_matrix = R.from_quat(camera_orientation).as_matrix()
+        
+        # Create transformation matrices
+        base_transform = np.eye(4)
+        base_transform[:3, :3] = base_rotation_matrix
+        base_transform[:3, 3] = base_position
+        
+        camera_transform = np.eye(4)
+        camera_transform[:3, :3] = camera_rotation_matrix
+        camera_transform[:3, 3] = camera_position
+        
+        # Calculate world-to-base transform
+        world_to_base_transform = np.linalg.inv(base_transform)
+        
+        # Calculate camera pose relative to base_link
+        camera_to_base_transform = world_to_base_transform @ camera_transform
+        
+        # Extract position and orientation
+        relative_position = camera_to_base_transform[:3, 3]
+        relative_rotation_matrix = camera_to_base_transform[:3, :3]
+        relative_orientation = R.from_matrix(relative_rotation_matrix).as_quat()
+        
+        return {
+            "position": relative_position.tolist(),
+            "orientation": relative_orientation.tolist(),
+            "frame": "base_link"
+        }
 
     def _load_logger(self, logger_config: LoggerConfig) -> Logger:
         """Load and configure the logging system.
