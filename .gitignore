@@ -27,8 +27,6 @@ logs
 # Install
 *.egg-info
 
-# Data
-data/
 # IDE
 .idea/
 .vscode/
