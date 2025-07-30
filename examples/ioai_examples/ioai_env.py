@@ -96,7 +96,7 @@ class IOAIEnv:
             .joinpath("robots")
             .joinpath("galbot_one_foxtrot_description_simplified")
             .joinpath("galbot_one_foxtrot.xml"),
-            position=[0, 0, 0],
+            position=[0, -0.2, 0],
             orientation=[0, 0, 0, 1]
         )
         self.simulator.add_robot(robot_config)
@@ -185,7 +185,7 @@ class IOAIEnv:
         # Add cube
         cube_config = CuboidConfig(
             prim_path="/World/Cube",
-            position=[0.6, -0.3, 0.56],
+            position=[0.5, -0.3, 0.56],
             orientation=[0, 0, 0, 1],
             scale=[0.05, 0.05, 0.05],
             color=[0.5, 0.5, 0.5],  # Gray color
@@ -201,8 +201,8 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("toy")
             .joinpath("toy.xml"),
-            position=[0.7, -0.2, 0.5],
-            orientation=[0, 0, 0, 1],
+            position=[0.65, -0.3, 0.55],
+            orientation=[0, 0, 0, -1],
         )
         self.simulator.add_object(toy_config)
 
@@ -215,7 +215,7 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("extrusion")
             .joinpath("extrusion.xml"),
-            position=[0.7, 0, 0.55],
+            position=[0.6, -0.2, 0.55],
             orientation=[0, 0, 0, 1],
         )   
         self.simulator.add_object(extrusion_config)
@@ -229,7 +229,7 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("power_drill")
             .joinpath("power_drill.xml"),
-            position=[0.6, -0.1, 0.55],
+            position=[0.65, -0.1, 0.55],
             orientation=[0, 0, 0, 1],
         )
         self.simulator.add_object(power_drill_config)
@@ -243,7 +243,7 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("mug")
             .joinpath("mug.xml"),
-            position=[0.7, 0, 0.55],
+            position=[0.5, 0, 0.55],
             orientation=[0, 0, 0, 1],
         )
         self.simulator.add_object(mug_config)
