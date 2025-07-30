@@ -409,42 +409,39 @@ class MujocoRgbCamera:
         """Get the camera's pose in world coordinates.
         
         Args:
-            camera_axes: Coordinate system for the returned pose ("world" or "camera")
+            camera_axes: Coordinate system for the returned pose ("world" or "ros")
             
         Returns:
-            tuple: (position, orientation) where position is a 3D vector and
+            np.ndarray: Camera pose as [position, orientation] where position is a 3D vector and
                   orientation is a quaternion in [w, x, y, z] format
         """
-        from physics_simulator.utils.camera_utils import get_camera_transform_matrix
+        from physics_simulator.utils.camera_utils import get_camera_extrinsic_matrix
         from scipy.spatial.transform import Rotation as R
 
         with self.simulator.lock:
-            world_to_camera_matrix = get_camera_transform_matrix(
+            # Get camera extrinsic matrix (camera pose in world frame)
+            camera_extrinsic = get_camera_extrinsic_matrix(
                 sim=self.simulator,
-                camera_name=self.name,
-                camera_height=self.height,
-                camera_width=self.width,
+                camera_name=self.name
             )
-            camera_to_world_matrix = np.linalg.inv(world_to_camera_matrix)
-            # Extract position from the last column of the matrix
-            position = camera_to_world_matrix[:3, 3]
-            # Extract rotation matrix and convert to quaternion
-            rotation_matrix = camera_to_world_matrix[:3, :3]
+            
+            # Extract position and rotation from the extrinsic matrix
+            position = camera_extrinsic[:3, 3]
+            rotation_matrix = camera_extrinsic[:3, :3]
             quaternion = R.from_matrix(rotation_matrix).as_quat()
 
-            inverse_transform = {
-                "world": MUJOCO_TO_WORLD_TRANSFORM,
-                "ros": MUJOCO_TO_ROS_TRANSFORM
-            }.get(camera_axes, np.eye(4))
-
-            # Transform position
-            homog_pos = np.append(position, 1)
-            position = (inverse_transform @ homog_pos)[:3]
-
-            # Transform rotation
-            rotation_matrix = R.from_quat(quaternion).as_matrix()
-            transformed_rot = rotation_matrix @ inverse_transform[:3, :3].T
-            quaternion = R.from_matrix(transformed_rot).as_quat()
+            # Apply coordinate system transformation if needed
+            if camera_axes == "ros":
+                # Transform from MuJoCo camera frame to ROS camera frame
+                ros_transform = ROS_TO_MUJOCO_TRANSFORM
+                
+                # Transform position
+                homog_pos = np.append(position, 1)
+                position = (ros_transform @ homog_pos)[:3]
+                
+                # Transform rotation
+                transformed_rot = rotation_matrix @ ros_transform[:3, :3].T
+                quaternion = R.from_matrix(transformed_rot).as_quat()
 
         return np.concatenate([position, quaternion])
 
@@ -455,16 +452,16 @@ class MujocoRgbCamera:
             robot: The robot to calculate the relative pose to
             
         Returns:
-            tuple: (position, orientation) relative to the robot's frame
+            np.ndarray: Camera pose relative to robot as [position, orientation] where 
+                  position is a 3D vector and orientation is a quaternion in [w, x, y, z] format
         """
+        from scipy.spatial.transform import Rotation as R
+        
         with self.simulator.lock:
             camera_pose_wrt_world = self.get_world_pose(camera_axes="world")
-
             robot_position, robot_orientation = robot.get_world_pose()
-            robot_pose_wrt_world = position_and_orientation_to_pose(
-                robot_position, robot_orientation
-            )
-        # Extract camera's position and orientation (as a quaternion)
+        
+        # Extract camera's position and orientation
         camera_position = camera_pose_wrt_world[:3]
         camera_orientation = camera_pose_wrt_world[3:]
 
@@ -472,30 +469,24 @@ class MujocoRgbCamera:
         robot_rotation_matrix = R.from_quat(robot_orientation).as_matrix()
         camera_rotation_matrix = R.from_quat(camera_orientation).as_matrix()
 
-        # Create the transformation matrix for the robot in world frame
+        # Create transformation matrices
         robot_transform = np.eye(4)
         robot_transform[:3, :3] = robot_rotation_matrix
         robot_transform[:3, 3] = robot_position
 
-        # Create the transformation matrix for the camera in world frame
         camera_transform = np.eye(4)
         camera_transform[:3, :3] = camera_rotation_matrix
         camera_transform[:3, 3] = camera_position
 
-        # Calculate the inverse of the robot transform to get world-to-robot transform
+        # Calculate world-to-robot transform
         world_to_robot_transform = np.linalg.inv(robot_transform)
 
-        # Calculate the camera pose relative to the robot
-        camera_pose2robot_transform = np.dot(world_to_robot_transform, camera_transform)
+        # Calculate camera pose relative to robot
+        camera_to_robot_transform = world_to_robot_transform @ camera_transform
 
-        # Extract the position and rotation from the resulting transformation matrix
-        camera_position2robot = camera_pose2robot_transform[:3, 3]
-        camera_rotation2robot = R.from_matrix(
-            camera_pose2robot_transform[:3, :3]
-        ).as_quat()
+        # Extract position and orientation
+        relative_position = camera_to_robot_transform[:3, 3]
+        relative_rotation_matrix = camera_to_robot_transform[:3, :3]
+        relative_orientation = R.from_matrix(relative_rotation_matrix).as_quat()
 
-        # Combine position and quaternion into a single array
-        camera_pose2robot = np.concatenate(
-            [camera_position2robot, camera_rotation2robot]
-        )
-        return camera_pose2robot
+        return np.concatenate([relative_position, relative_orientation])
