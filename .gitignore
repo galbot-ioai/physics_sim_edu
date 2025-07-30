@@ -1,3 +1,6 @@
+pose_est_temp/
+pose_estimation_results/
+
 # ignore mjmodel.xml
 mjmodel.xml
 
