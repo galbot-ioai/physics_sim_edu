@@ -21,6 +21,10 @@ Detailed documentation can be found at:
 
 - [Online Documentation](https://galbot-ioai.github.io/physics_sim_edu/)
 
+## 🙏 Acknowledgements
+
+- This project references the code framework from [robosuite](https://github.com/ARISE-Initiative/robosuite).
+
 ## 📜 License
 
 ```text
