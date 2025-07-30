@@ -185,6 +185,7 @@ class IoaiGraspEnv:
         self.motion_in_progress = False
         self.target_joint_positions = {}
         self.grasp_start_time = None
+        self.pick_pos = None  # Store pick position for move_to_pick_state
 
     def _setup_simulator(self, headless=False):
         """
@@ -268,6 +269,9 @@ class IoaiGraspEnv:
             parent_entity_name="galbot_one_foxtrot/head_end_effector_mount_link"
         )
         self.front_head_depth_camera_path = self.simulator.add_sensor(front_head_depth_camera_config)
+        
+        # Store camera intrinsic parameters for pose estimation
+        self.camera_intrinsics = [637.7254326533274, 637.7254326533274, 640.0, 360.0]  # [fx, fy, cx, cy]
 
         # Add table
         table_config = MeshConfig(
@@ -764,8 +768,8 @@ class IoaiGraspEnv:
     def _init_pose(self):
         # Initialize robot pose
         poses = {
-            self.interface.head: [0.0, 0.0],
-            self.interface.leg: [0.2, 0.756, 0.53, 0.0],
+            self.interface.head: [0.0, 0.26],
+            self.interface.leg: [0.0821758285164833, 0.6340972781181335,0.5227039456367493, -0.00001198422432935331],
             self.interface.left_arm: [-0.4654513936071508, 1.4785659313201904, -0.6235712173907869, 2.097979784011841, 1.3999720811843872, -0.009971064515411854, 1.0999830961227417],
             self.interface.right_arm: [0.4654513936071508, -1.4785659313201904, 0.6235712173907869, -2.097979784011841, -1.3999720811843872, 0.009971064515411854, -1.0999830961227417]
         }
@@ -905,17 +909,10 @@ class IoaiGraspEnv:
             if self.state_first_entry:
                 # Use pose estimation to get object pose instead of ground truth
                 pose_result = self.get_object_pose_from_estimation("cube")
-                if pose_result is not None:
-                    world_pos, world_ori = pose_result
-                    self.cube_position = world_pos.copy()
-                    self.cube_orientation = world_ori.copy()
-                    print(f"Pose estimation detected cube at position: {world_pos}")
-                else:
-                    # Fallback to ground truth if pose estimation fails
-                    cube_state = self.simulator.get_object_state("/World/Cube")
-                    self.cube_position = cube_state["position"].copy()
-                    self.cube_orientation = cube_state["orientation"].copy()
-                    print("Using ground truth fallback for cube position")
+                world_pos, world_ori = pose_result
+                self.cube_position = world_pos.copy()
+                self.cube_orientation = world_ori.copy()
+                print(f"Pose estimation detected cube at position: {world_pos}")
                 self.state_first_entry = False
             
             # Convert world frame pose to robot frame
@@ -926,19 +923,17 @@ class IoaiGraspEnv:
 
         def move_to_pick_state():
             """Move to pick position"""
-            # Re-estimate object position for more accurate pick
-            pose_result = self.get_object_pose_from_estimation("cube")
-            if pose_result is not None:
+            if self.state_first_entry:
+                # Re-estimate object position for more accurate pick (only once)
+                pose_result = self.get_object_pose_from_estimation("cube")
                 world_pos, world_ori = pose_result
                 # Use estimated position for more accurate pick
-                pick_pos = world_pos + np.array([0, 0, 0.03])
-            else:
-                # Fallback to stored position
-                pick_pos = self.cube_position + np.array([0, 0, 0.03])
+                self.pick_pos = world_pos + np.array([0, 0, 0.03])
+                self.state_first_entry = False
             
             # Convert world frame pose to robot frame
             world_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for grasping
-            robot_pos, robot_ori = self.world_to_robot_frame(pick_pos, world_ori)
+            robot_pos, robot_ori = self.world_to_robot_frame(self.pick_pos, world_ori)
             return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
         def grasp_state():
@@ -966,17 +961,10 @@ class IoaiGraspEnv:
             if self.state_first_entry:
                 # Use pose estimation to get bin pose instead of ground truth
                 pose_result = self.get_object_pose_from_estimation("bin")
-                if pose_result is not None:
-                    world_pos, world_ori = pose_result
-                    self.bin_position = world_pos.copy()
-                    self.bin_orientation = world_ori.copy()
-                    print(f"Pose estimation detected bin at position: {world_pos}")
-                else:
-                    # Fallback to ground truth if pose estimation fails
-                    bin_state = self.simulator.get_object_state("/World/Bin")
-                    self.bin_position = bin_state["position"].copy()
-                    self.bin_orientation = bin_state["orientation"].copy()
-                    print("Using ground truth fallback for bin position")
+                world_pos, world_ori = pose_result
+                self.bin_position = world_pos.copy()
+                self.bin_orientation = world_ori.copy()
+                print(f"Pose estimation detected bin at position: {world_pos}")
                 self.state_first_entry = False
 
             # Convert world frame pose to robot frame
@@ -1019,7 +1007,11 @@ class IoaiGraspEnv:
         
         # Execute current state and move to next when complete
         if self.state_machine.execute_current_state():
-            self.state_machine.next()
+            # Check if we can move to next state
+            if not self.state_machine.next():
+                # Task completed, reset state machine for next cycle
+                print("Pick and place task completed!")
+                self.state_machine.reset()
             self.state_first_entry = True
 
 if __name__ == "__main__":
