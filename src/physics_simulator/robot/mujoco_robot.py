@@ -185,13 +185,23 @@ class MujocoRobot(object):
                 - orientation: Quaternion [qx, qy, qz, qw]
         """
             
+    def get_world_pose(self):
+        """Get the position and orientation of the robot in world coordinates.
+
+        Returns:
+            tuple: (position, orientation) where:
+                - position: 3D position [x, y, z]
+                - orientation: Quaternion [qx, qy, qz, qw]
+        """
+            
         # Get position and orientation from the root body
-        position = self.data.xpos[self.root_body_id].copy()
-        orientation = self.data.xquat[self.root_body_id].copy()
+        # TODO@Chenyu Cao: Temp fix
+        position = self.data.get_body_xpos(self.name + "/omni_chassis_base_link")
+        orientation = self.data.get_body_xquat(self.name + "/omni_chassis_base_link")
         
         # Convert from wxyz to xyzw quaternion format
         orientation = wxyz_to_xyzw(orientation)
-            
+        
         return position, orientation
 
     def get_joint_dof_index(self, joint_name):
