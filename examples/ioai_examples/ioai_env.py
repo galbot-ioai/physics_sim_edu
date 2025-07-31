@@ -45,7 +45,7 @@ import numpy as np
 from physics_simulator.utils.data_types import JointTrajectory
 import time
 import os
-
+import math
 from physics_simulator.utils.state_machine import SimpleStateMachine
 
 def interpolate_joint_positions(start_positions, end_positions, steps):
@@ -86,6 +86,8 @@ class IOAIEnv:
         # Add default scene (default ground plane)
         self.simulator.add_default_scene()
 
+        self.robot_init_position = [0, 4, 0]
+        self.robot_init_orientation = [0, 0, 0.70711, -0.70711]
         # Add robot
         robot_config = RobotConfig(
             prim_path="/World/Galbot",
@@ -96,8 +98,8 @@ class IOAIEnv:
             .joinpath("robots")
             .joinpath("galbot_one_foxtrot_description_simplified")
             .joinpath("galbot_one_foxtrot.xml"),
-            position=[0, -0.2, 0],
-            orientation=[0, 0, 0, 1]
+            position=[0, 4, 0],
+            orientation=[0, 0, 0.70711, -0.70711]
         )
         self.simulator.add_robot(robot_config)
         self.robot = self.simulator.get_robot("/World/Galbot")
@@ -533,6 +535,97 @@ class IOAIEnv:
         
         return world_position, world_orientation
 
+    def world_to_robot_init_frame(self, world_position, world_orientation=None):
+        """Transform pose from world frame to robot initial frame.
+        
+        Args:
+            world_position: Position in world frame [x, y, z]
+            world_orientation: Orientation in world frame [qx, qy, qz, qw] (optional)
+            
+        Returns:
+            Tuple of (robot_init_position, robot_init_orientation) in robot initial frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get robot initial pose in world frame
+        init_position = self.robot_init_position
+        init_orientation = self.robot_init_orientation
+        
+        # Create transformation matrix for initial pose
+        init_rot = Rotation.from_quat(init_orientation)
+        
+        # Transform position: subtract initial position and rotate
+        relative_position = world_position - init_position
+        robot_init_position = init_rot.inv().apply(relative_position)
+        
+        # Transform orientation if provided
+        if world_orientation is not None:
+            world_rot = Rotation.from_quat(world_orientation)
+            robot_init_orientation = (init_rot.inv() * world_rot).as_quat()
+        else:
+            robot_init_orientation = None
+        
+        return robot_init_position, robot_init_orientation
+
+    def robot_init_to_world_frame(self, robot_init_position, robot_init_orientation=None):
+        """Transform pose from robot initial frame to world frame.
+        
+        Args:
+            robot_init_position: Position in robot initial frame [x, y, z]
+            robot_init_orientation: Orientation in robot initial frame [qx, qy, qz, qw] (optional)
+            
+        Returns:
+            Tuple of (world_position, world_orientation) in world frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get robot initial pose in world frame
+        init_position = self.robot_init_position
+        init_orientation = self.robot_init_orientation
+        
+        # Create transformation matrix for initial pose
+        init_rot = Rotation.from_quat(init_orientation)
+        
+        # Transform position: rotate and add initial position
+        world_position = init_rot.apply(robot_init_position) + init_position
+        
+        # Transform orientation if provided
+        if robot_init_orientation is not None:
+            robot_init_rot = Rotation.from_quat(robot_init_orientation)
+            world_orientation = (init_rot * robot_init_rot).as_quat()
+        else:
+            world_orientation = None
+        
+        return world_position, world_orientation
+    
+    def world_to_robot_init_frame_2d(self, world_position_2d):
+        """Transform 2D position from world frame to robot initial frame.
+        
+        Args:
+            world_position_2d: Position in world frame [x, y]
+            
+        Returns:
+            robot_init_position_2d: Position in robot initial frame [x, y]
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get robot initial pose in world frame
+        init_position = self.robot_init_position
+        init_orientation = self.robot_init_orientation
+        
+        # Create transformation matrix for initial pose
+        init_rot = Rotation.from_quat(init_orientation)
+        
+        # Convert 2D to 3D by adding z=0
+        world_position_3d = [world_position_2d[0], world_position_2d[1], 0]
+        
+        # Transform position: subtract initial position and rotate
+        relative_position = np.array(world_position_3d) - np.array(init_position)
+        robot_init_position_3d = init_rot.inv().apply(relative_position)
+        
+        # Return only 2D coordinates
+        return robot_init_position_3d[:2]
+
     def compute_simple_ik(self, start_joint, target_pose, arm_id="left_arm"):
         """Compute inverse kinematics using Mink.
         
@@ -668,13 +761,142 @@ class IOAIEnv:
         # Return pose in base link frame [x, y, z, qx, qy, qz, qw]
         return np.concatenate([tcp_position_base, tcp_orientation_base])
 
+    def get_left_gripper_pose(self):
+        """Get left gripper TCP pose in world frame"""
+        site_data = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp")
+        position = site_data.xpos
+        from scipy.spatial.transform import Rotation
+        quaternion = Rotation.from_matrix(site_data.xmat.reshape((3, 3))).as_quat()
+        return position, quaternion
+    
+    def get_right_gripper_pose(self):
+        """Get right gripper TCP pose in world frame"""
+        site_data = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp")
+        position = site_data.xpos
+        from scipy.spatial.transform import Rotation
+        quaternion = Rotation.from_matrix(site_data.xmat.reshape((3, 3))).as_quat()
+        return position, quaternion
+    
+    def move_arm_to_pose(self, arm_id, target_position, target_orientation):
+        # Prepare target pose in robot frame
+        target_pose = np.concatenate([target_position, target_orientation])
+        
+        # Solve IK and start motion
+        current_joints = self.mink_config.q
+        arm_joints = self.compute_simple_ik(current_joints, target_pose, arm_id)
+        arm_module = getattr(self.interface, arm_id)
+        self._move_joints_to_target(arm_module, arm_joints)
+
+    def move_left_arm_to_pose(self, target_position, target_orientation):
+        """Move left arm to target pose"""
+        return self.move_arm_to_pose("left_arm", target_position, target_orientation)
+    
+    def move_right_arm_to_pose(self, target_position, target_orientation):
+        """Move right arm to target pose"""
+        return self.move_arm_to_pose("right_arm", target_position, target_orientation)
+    
+    def move_chassis_follow_path(self, waypoints):
+        """Move chassis to follow a path defined by waypoints in world coordinates
+        
+        Args:
+            waypoints: List of 2D waypoints [(x1, y1), (x2, y2), ...] in world frame
+        """
+        if not waypoints or len(waypoints) < 2:
+            print("Invalid waypoints: need at least 2 points")
+            return
+        
+        # Convert waypoints to robot frame
+        robot_init_x, robot_init_y = self.robot_init_position[:2]
+        robot_init_theta = self.robot_init_orientation[2]
+        robot_waypoints = waypoints
+
+    def move_chassis_follow_path(self, waypoints):
+        """Move chassis to follow a path defined by waypoints in world coordinates
+        
+        Args:
+            waypoints: List of 2D waypoints [(x1, y1), (x2, y2), ...] in world frame
+        """
+        if not waypoints or len(waypoints) < 2:
+            print("Invalid waypoints: need at least 2 points")
+            return
+        
+        # Initialize path following components
+        from physics_simulator.utils.control_utils import BasicPathFollower
+        path_follower = BasicPathFollower(velocity=0.8)
+        waypoint_tolerance = 0.1
+        current_target_index = 0
+        path = waypoints
+
+        def follow_path_callback():
+            nonlocal current_target_index
+            
+            # Check if path is complete
+            if current_target_index >= len(path):
+                self.interface.chassis.set_joint_velocities([0.0, 0.0, 0.0])
+                self.simulator.remove_physics_callback("follow_path_callback")
+                print("Path following completed!")
+                return
+                
+            # Get current state
+            current_pos = self.interface.chassis.get_joint_positions()[:2]
+            current_heading = self.interface.chassis.get_joint_positions()[2]
+            
+            # Update target waypoint
+            if current_target_index < len(path):
+                target_pos = path[current_target_index]
+                target_pos = self.world_to_robot_init_frame_2d(target_pos)
+                
+                distance = math.sqrt(
+                    (target_pos[0] - current_pos[0])**2 + (target_pos[1] - current_pos[1])**2
+                )
+                if distance < waypoint_tolerance:
+                    current_target_index += 1
+                    if current_target_index < len(path):
+                        print(f"Reached waypoint {current_target_index-1}, moving to {current_target_index}")
+                    return
+            else:
+                target_pos = path[-1]
+                
+            # Calculate control commands
+            forward_vel, side_vel, yaw_vel = path_follower.calculate_control(
+                current_pos, current_heading, target_pos
+            )
+            
+            # Set chassis velocities
+            self.interface.chassis.set_joint_velocities([forward_vel, side_vel, yaw_vel])
+            
+        # Add physics callback for path following
+        self.simulator.add_physics_callback("follow_path_callback", follow_path_callback)
+
+    def get_camera_images(self):
+        """Get RGB and depth images from the front head camera.
+        
+        Returns:
+            Tuple of (rgb_image, depth_image) or (rgb_image, None) if depth not available
+        """
+        try:
+            # Get RGB image
+            rgb_image = self.interface.front_head_camera.get_rgb()
+            
+            # Get depth image if available
+            depth_image = None
+            try:
+                depth_image = self.interface.front_head_camera.get_depth()
+            except:
+                pass  # Depth image not available
+                
+            return rgb_image, depth_image
+        except Exception as e:
+            print(f"Error getting camera images: {e}")
+            return None, None
+
     def _init_pose(self):
         # Initialize robot pose
         poses = {
             self.interface.head: [0.0, 0.26],
             self.interface.leg: [0.0821758285164833, 0.6340972781181335,0.5227039456367493, -0.00001198422432935331],
-            self.interface.left_arm: [2.0020599365234375,-1.5977126359939575,-0.5948255658149719,-1.694089651107788,-0.0002879792882595211,-0.7909831404685974,-0.00016755158139858395],
-            self.interface.right_arm: [-2.001628875732422,1.6029852628707886,0.6024474501609802,1.6955766677856445,-0.0002391100861132145,0.7967827916145325,-0.00014311698032543063]
+            self.interface.left_arm: [-0.4654513936071508, 1.4785659313201904, -0.6235712173907869, 2.097979784011841, 1.3999720811843872, -0.009971064515411854, 1.0999830961227417],
+            self.interface.right_arm: [0.4654513936071508, -1.4785659313201904, 0.6235712173907869, -2.097979784011841, -1.3999720811843872, 0.009971064515411854, -1.0999830961227417]
         }
         
         for module, pose in poses.items():
@@ -691,81 +913,6 @@ class IOAIEnv:
         """Check if joint positions are reached within tolerance."""
         current_positions = module.get_joint_positions()
         return np.allclose(current_positions, target_positions, atol=atol)
-    
-    def _is_left_arm_motion_complete(self, atol=0.01):
-        """Check if left arm has reached its target position."""
-        for module_name, target_positions in self.target_joint_positions.items():
-            module = getattr(self.interface, module_name)
-            if not self._is_joint_positions_reached(module, target_positions, atol):
-                return False
-        return True
-    
-    def _is_right_arm_motion_complete(self, atol=0.01):
-        """Check if right arm has reached its target position."""
-        for module_name, target_positions in self.target_joint_positions.items():
-            module = getattr(self.interface, module_name)
-            if not self._is_joint_positions_reached(module, target_positions, atol):
-                return False
-        return True
-    
-    def _move_left_arm_to_pose(self, target_position, target_orientation):
-        """Move left arm to target pose with IK solving and motion control.
-        
-        Args:
-            target_position: Target position [x, y, z] in robot base frame
-            target_orientation: Target orientation [qx, qy, qz, qw] in robot base frame
-            
-        Returns:
-            True if motion is complete, False otherwise
-        """
-        if not self.motion_in_progress:
-            # Prepare target pose in robot frame
-            target_pose = np.concatenate([target_position, target_orientation])
-            
-            # Solve IK and start motion
-            current_joints = self.mink_config.q
-            left_arm_joints = self.compute_simple_ik(current_joints, target_pose, "left_arm")
-            self._move_joints_to_target(self.interface.left_arm, left_arm_joints)
-            
-            # Store target positions for completion check
-            self.target_joint_positions = {"left_arm": left_arm_joints}
-            self.motion_in_progress = True
-        
-        # Check if motion is complete
-        if self._is_left_arm_motion_complete():
-            self.motion_in_progress = False
-            return True
-        return False
-    
-    def _move_right_arm_to_pose(self, target_position, target_orientation):
-        """Move right arm to target pose with IK solving and motion control.
-        
-        Args:
-            target_position: Target position [x, y, z] in robot base frame
-            target_orientation: Target orientation [qx, qy, qz, qw] in robot base frame
-            
-        Returns:
-            True if motion is complete, False otherwise
-        """
-        if not self.motion_in_progress:
-            # Prepare target pose in robot frame
-            target_pose = np.concatenate([target_position, target_orientation])
-            
-            # Solve IK and start motion
-            current_joints = self.mink_config.q
-            right_arm_joints = self.compute_simple_ik(current_joints, target_pose, "right_arm")
-            self._move_joints_to_target(self.interface.right_arm, right_arm_joints)
-            
-            # Store target positions for completion check
-            self.target_joint_positions = {"right_arm": right_arm_joints}
-            self.motion_in_progress = True
-        
-        # Check if motion is complete
-        if self._is_right_arm_motion_complete():
-            self.motion_in_progress = False
-            return True
-        return False
-
 
     def run(self):
         self.simulator.loop()

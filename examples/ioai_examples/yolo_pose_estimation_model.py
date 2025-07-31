@@ -10,11 +10,8 @@ from ultralytics import YOLO
 from pathlib import Path
 
 # Import pose estimation module
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'pose_est_examples'))
-from pose_est import PoseEstimator
-
-from ioai_grasp_env import PoseEstimationResult, PoseEstimationModel
+from physics_simulator.utils.pose_estimation import PoseEstimator
+from physics_simulator.utils.pose_estimation import PoseEstimationResult, PoseEstimationModel
 
 from physics_simulator.utils import preprocess_depth
 
@@ -30,7 +27,6 @@ class YoloPoseEstimationModel(PoseEstimationModel):
             cad_models_dir: Directory containing CAD models (.obj files)
             camera_matrix: Camera intrinsic parameters [fx, fy, cx, cy]
         """
-        super().__init__()
         self.yolo_model_path = yolo_model_path
         self.cad_models_dir = Path(cad_models_dir)
         self.camera_matrix = camera_matrix
@@ -141,18 +137,15 @@ class YoloPoseEstimationModel(PoseEstimationModel):
             cv2.imwrite(str(mask_temp), mask_binary)
             
             # Get CAD model path
-            cad_path = self.available_models[class_name.lower()]
+            cad_name = class_name.lower()
             
             # Run pose estimation
             pose_matrix = self.pose_estimator.estimate_pose(
                 rgb_path=str(rgb_temp),
                 depth_path=str(depth_temp),
                 mask_path=str(mask_temp),
-                cad_path=cad_path
+                cad_name=cad_name
             )
-
-            if class_name == "cube":
-                print("1")
             
             # Clean up temporary files
             for temp_file in [rgb_temp, depth_temp, mask_temp]:
@@ -182,4 +175,31 @@ class YoloPoseEstimationModel(PoseEstimationModel):
             
         except Exception as e:
             print(f"Error estimating pose for {class_name}: {e}")
-            return None 
+            return None
+
+
+def create_yolo_pose_estimation_model(
+    yolo_model_path: str = "examples/yolo_seg_examples/best.pt",
+    cad_models_dir: str = "examples/pose_est_examples/models",
+    camera_matrix: List[float] = None
+) -> YoloPoseEstimationModel:
+    """
+    Factory function to create YOLO pose estimation model with default parameters
+    
+    Args:
+        yolo_model_path: Path to YOLO segmentation model
+        cad_models_dir: Directory containing CAD models (.obj files)
+        camera_matrix: Camera intrinsic parameters [fx, fy, cx, cy]
+        
+    Returns:
+        YoloPoseEstimationModel instance
+    """
+    # Default camera matrix for RealSense D436
+    if camera_matrix is None:
+        camera_matrix = [637.7254326533274, 637.7254326533274, 640.0, 360.0]  # [fx, fy, cx, cy]
+    
+    return YoloPoseEstimationModel(
+        yolo_model_path=yolo_model_path,
+        cad_models_dir=cad_models_dir,
+        camera_matrix=camera_matrix
+    ) 
