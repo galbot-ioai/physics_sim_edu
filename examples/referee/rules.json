@@ -1,0 +1,246 @@
+{
+    "成功移动到桌子面前": {
+        "task_index": 1,
+        "score": 5,
+        "type" : "in_2d_range",
+        "range" : {
+            "x" : [-0.35, 0.1],
+            "y" : [-0.35, 0.35]
+        }
+    },
+    "从出发区移动到桌子面前物体抓取区过程中没有碰撞行为" : {
+        "task_index": 2,
+        "score": 5,
+        "type" : "no_collision",
+        "until" : "成功移动到桌子面前",
+        "collision_group" : [
+            [["galbot_one_foxtrot/base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3"]]
+        ]
+    },
+    "成功抓取普通物品 power_drill" : {
+        "task_index": 3,
+        "score": 10,
+        "type" : "pick_up",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "object1_name" : "power_drill"
+    },
+    "成功抓取普通物品 cube" : {
+        "task_index": 3,
+        "score": 10,
+        "type" : "pick_up",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "object1_name" : "cube"
+    },
+    "成功抓取普通物品 extrusion" : {
+        "task_index": 3,
+        "score": 10,
+        "type" : "pick_up",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "object1_name" : "extrusion"
+    },
+    "成功放置物品 power_drill" : {
+        "task_index": 4,
+        "score": 5,
+        "type" : "in_3d_range",
+        "prerequisite" : [
+            "成功抓取普通物品 power_drill"
+        ],
+        "object1_name" : "power_drill",
+        "object2_name" : "bin",
+        "range" : {
+            "x" : [-0.2, 0.2],
+            "y" : [-0.3, 0.3],
+            "z" : [ 0.0, 0.5]
+        }
+    },
+    "成功放置物品 cube" : {
+        "task_index": 4,
+        "score": 5,
+        "type" : "in_3d_range",
+        "prerequisite" : [
+            "成功抓取普通物品 cube"
+        ],
+        "object1_name" : "cube",
+        "object2_name" : "bin",
+        "range" : {
+            "x" : [-0.2, 0.2],
+            "y" : [-0.3, 0.3],
+            "z" : [ 0.0, 0.5]
+        }
+    },
+    "成功放置物品 extrusion" : {
+        "task_index": 4,
+        "score": 5,
+        "type" : "in_3d_range",
+        "prerequisite" : [
+            "成功抓取普通物品 extrusion"
+        ],
+        "object1_name" : "extrusion",
+        "object2_name" : "bin",
+        "range" : {
+            "x" : [-0.2, 0.2],
+            "y" : [-0.3, 0.3],
+            "z" : [ 0.0, 0.5]
+        }
+    },
+    "抓取到放置中没有碰撞（桌子、料框、围挡）" : {
+        "task_index": 5,
+        "score": 5,
+        "type" : "no_collision",
+        "prerequisite" : [
+            "成功抓取普通物品 power_drill",
+            "成功抓取普通物品 cube",
+            "成功抓取普通物品 extrusion"
+        ],
+        "until" : "成功移动到料框抓取区（桌子侧面）",
+        "collision_group" : [
+            [["galbot_one_foxtrot/base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3"]]
+        ]
+    },
+    "成功抓取神秘物体": {
+        "task_index": 6,
+        "score": 30,
+        "type" : "pick_up",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "object1_name" : "toy"
+    },
+    "成功把神秘物体放置到料框里" : {
+        "task_index": 7,
+        "score": 5,
+        "type" : "in_3d_range",
+        "prerequisite" : [
+            "成功抓取神秘物体"
+        ],
+        "object1_name" : "toy",
+        "object2_name" : "bin",
+        "range" : {
+            "x" : [-0.2, 0.2],
+            "y" : [-0.3, 0.3],
+            "z" : [ 0.0, 0.5]
+        }
+    },
+    "神秘物体放置到料框的过程中没有碰撞行为" : {
+        "task_index": 8,
+        "score": 5,
+        "type" : "no_collision",
+        "prerequisite" : [
+            "成功抓取神秘物体"
+        ],
+        "until" : "成功移动到料框抓取区（桌子侧面）",
+        "collision_group" : [
+            [["galbot_one_foxtrot/base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3"]]
+        ]
+    },
+    "成功移动到料框抓取区（桌子侧面）": {
+        "task_index": 9,
+        "score": 5,
+        "type" : "in_2d_range",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "range" : {
+            "x" : [0.4, 0.9],
+            "y" : [0.7, 0.9]
+        }
+    },
+    "从物体抓取区移动到料框抓取区过程中没有碰撞行为": {
+        "task_index": 10,
+        "score": 5,
+        "type" : "no_collision",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "until" : "成功移动到料框抓取区（桌子侧面）",
+        "collision_group" : [
+            [["galbot_one_foxtrot/base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3"]]
+        ]
+    },
+    "成功抓起料框" : {
+        "task_index": 11,
+        "score": 10,
+        "type" : "pick_up_dual",
+        "prerequisite" : [
+            "成功移动到料框抓取区（桌子侧面）"
+        ],
+        "object1_name" : "bin"
+    },
+    "成功移动到货架面前" : {
+        "task_index": 13,
+        "score": 5,
+        "type" : "in_2d_range",
+        "prerequisite" : [
+            "成功移动到料框抓取区（桌子侧面）"
+        ],
+        "range" : {
+            "x" : [2.5, 3.5],
+            "y" : [3.5, 4.5]
+        }
+    },
+    "从料框抓取区移动到料框放置区（货架）过程中没有碰撞行为": {
+        "task_index": 14,
+        "score": 5,
+        "type" : "no_collision",
+        "prerequisite" : [
+            "成功抓起料框"
+        ],
+        "until" : "成功移动到货架面前",
+        "collision_group" : [
+            [["galbot_one_foxtrot/base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3", "cone_1", "cone_2"]]
+        ]
+    },
+    "成功将箱子放置到货架上": {
+        "task_index": 15,
+        "score": 10,
+        "type" : "in_3d_range",
+        "prerequisite" : [
+            "成功移动到货架面前"
+        ],
+        "object1_name" : "bin",
+        "object2_name" : "shelf",
+        "range" : {
+            "x" : [-1.0, 1.0],
+            "y" : [-0.5, 0.5],
+            "z" : [ 0.0, 2.0]
+        }
+    },
+    "将箱子放置到货架的过程中没有碰撞行为（桌子、料框、围挡）" : {
+        "task_index": 16,
+        "score": 10,
+        "type" : "no_collision",
+        "prerequisite" : [
+            "成功移动到货架面前"
+        ],
+        "until" : "成功移动到任务结束点",
+        "collision_group" : [
+            [["galbot_one_foxtrot/base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3"]]
+        ]
+    },
+    "成功移动到任务结束点": {
+        "score": 5,
+        "task_index": 17,
+        "type" : "in_2d_range",
+        "prerequisite" : [
+            "成功移动到货架面前"
+        ]
+    },
+    "从料框放置区移动到任务结束区过程中没有碰撞行为（桌子、料框、围挡）": {
+        "task_index": 18,
+        "score": 5,
+        "type" : "no_collision",
+        "prerequisite" : [
+            "成功移动到货架面前"
+        ],
+        "until" : "成功移动到任务结束点",
+        "collision_group" : [
+            [["galbot_one_foxtrot/base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3"]]
+        ]
+    }
+}

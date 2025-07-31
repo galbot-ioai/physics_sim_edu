@@ -53,6 +53,9 @@ from dataclasses import dataclass
 
 from physics_simulator.utils.state_machine import SimpleStateMachine
 
+from grasp_reg import GraspRegistration
+grasp_reg = GraspRegistration()
+
 @dataclass
 class PoseEstimationResult:
     """Data class for pose estimation result"""
@@ -254,7 +257,7 @@ class IoaiGraspEnv:
                 "front_head_depth_camera",
             ),
             translation=[
-                0.10084319533055261,
+                0.10084319533055261,# grasp power_drill
                 -0.059042081352783105,
                 0.03184978861787491
             ],
@@ -501,15 +504,15 @@ class IoaiGraspEnv:
         
         return world_position, world_orientation
 
-    def camera_to_world_frame(self, camera_position, camera_orientation):
-        """Transform pose from camera frame to world frame.
+    def camera_to_robot_frame(self, camera_position, camera_orientation):
+        """Transform pose from camera frame to robot base frame.
         
         Args:
             camera_position: Position in camera frame [x, y, z]
             camera_orientation: Orientation in camera frame [qx, qy, qz, qw]
             
         Returns:
-            Tuple of (world_position, world_orientation) in world frame
+            Tuple of (robot_position, robot_orientation) in robot base frame
         """
         from scipy.spatial.transform import Rotation
         
@@ -519,26 +522,33 @@ class IoaiGraspEnv:
         camera_world_position = camera_state["transform_to_base_link"]["position"]
         camera_world_orientation = camera_state["transform_to_base_link"]["orientation"]
         
+        # Get robot base pose in world frame
+        base_position = self.robot.get_position()
+        base_orientation = self.robot.get_orientation()
+        
         # Create transformation matrices
         camera_world_rot = Rotation.from_quat(camera_world_orientation)
         camera_local_rot = Rotation.from_quat(camera_orientation)
+        base_rot = Rotation.from_quat(base_orientation)
         
-        # Transform position: rotate and add camera world position
+        # Transform position: camera frame -> world frame -> robot frame
         world_position = camera_world_rot.apply(camera_position) + camera_world_position
+        relative_position = world_position - base_position
+        robot_position = base_rot.inv().apply(relative_position)
         
-        # Transform orientation: compose rotations
+        # Transform orientation: camera frame -> world frame -> robot frame
         world_orientation = (camera_world_rot * camera_local_rot).as_quat()
+        robot_orientation = (base_rot.inv() * Rotation.from_quat(world_orientation)).as_quat()
         
-        return world_position, world_orientation
+        return robot_position, robot_orientation
 
-    def world_to_camera_frame(self, world_position, world_orientation):
-        """Transform pose from world frame to camera frame.
+    def robot_to_camera_frame(self, robot_position, robot_orientation):
+        """Transform pose from robot base frame to camera frame.
         
         Args:
-            world_position: Position in world frame [x, y, z]
-            world_orientation: Orientation in world frame [qx, qy, qz, qw]
-            
-        Returns:
+            robot_position: Position in robot base frame [x, y, z]
+            robot_orientation: Orientation in robot base frame [qx, qy, qz, qw]
+                        # orientation=[0, 0, 0.7071, 0.7071]
             Tuple of (camera_position, camera_orientation) in camera frame
         """
         from scipy.spatial.transform import Rotation
@@ -546,19 +556,26 @@ class IoaiGraspEnv:
         # Get camera pose in world frame
         camera_prim_path = self.front_head_rgb_camera_path
         camera_state = self.simulator.get_sensor_state(camera_prim_path)
-        camera_world_position = camera_state["position"]
-        camera_world_orientation = camera_state["orientation"]
+        camera_world_position = camera_state["transform_to_base_link"]["position"]
+        camera_world_orientation = camera_state["transform_to_base_link"]["orientation"]
+        
+        # Get robot base pose in world frame
+        base_position = self.robot.get_position()
+        base_orientation = self.robot.get_orientation()
         
         # Create transformation matrices
         camera_world_rot = Rotation.from_quat(camera_world_orientation)
-        world_rot = Rotation.from_quat(world_orientation)
+        base_rot = Rotation.from_quat(base_orientation)
+        robot_rot = Rotation.from_quat(robot_orientation)
         
-        # Transform position: subtract camera position and rotate
+        # Transform position: robot frame -> world frame -> camera frame
+        world_position = base_rot.apply(robot_position) + base_position
         relative_position = world_position - camera_world_position
         camera_position = camera_world_rot.inv().apply(relative_position)
         
-        # Transform orientation: compose rotations
-        camera_orientation = (camera_world_rot.inv() * world_rot).as_quat()
+        # Transform orientation: robot frame -> world frame -> camera frame
+        world_orientation = (base_rot * robot_rot).as_quat()
+        camera_orientation = (camera_world_rot.inv() * Rotation.from_quat(world_orientation)).as_quat()
         
         return camera_position, camera_orientation
 
@@ -608,10 +625,10 @@ class IoaiGraspEnv:
         return pose_results
 
     def get_object_pose_from_estimation(self, target_class: str = "cube") -> Optional[Tuple[np.ndarray, np.ndarray]]:
-        """Get object pose from pose estimation"""
+        """Get object pose from pose estimation in robot base frame"""
         # Estimate object poses
         pose_results = self.estimate_object_poses()
-        
+
         # Find target object
         target_result = None
         for result in pose_results:
@@ -623,12 +640,18 @@ class IoaiGraspEnv:
             print(f"Target object '{target_class}' not found in pose estimation")
             return None
         
-        # Transform from camera frame to world frame
-        world_position, world_orientation = self.camera_to_world_frame(
-            target_result.position, target_result.orientation
+        target_pose = np.concatenate([target_result.position, target_result.orientation])
+        grasp_pose = grasp_reg.predict_grasp(target_class, target_pose)["grasp_pose"]
+
+        gripper_position = grasp_pose[:3]
+        gripper_orientation = grasp_pose[3:7]
+
+        # Transform from camera frame to robot base frame
+        robot_position, robot_orientation = self.camera_to_robot_frame(
+            gripper_position, gripper_orientation
         )
         
-        return world_position, world_orientation
+        return robot_position, robot_orientation
 
     def compute_simple_ik(self, start_joint, target_pose, arm_id="left_arm"):
         """Compute inverse kinematics using Mink.
@@ -729,40 +752,28 @@ class IoaiGraspEnv:
             arm_id: The ID of the arm, either "left_arm" or "right_arm"
             
         Returns:
-            TCP pose in base link frame [x, y, z, qx, qy, qz, qw]
+            TCP pose in robot base frame [x, y, z, qx, qy, qz, qw]
         """
         if arm_id == "left_arm":
-            # Get left gripper TCP pose from simulator
             position, quaternion = self.get_left_gripper_pose()
         elif arm_id == "right_arm":
-            # Get right gripper TCP pose from simulator
             position, quaternion = self.get_right_gripper_pose()
         else:
             raise ValueError(f"Invalid arm_id: {arm_id}")
         
-        # Transform from world frame to base link frame
+        # Transform from world frame to robot base frame
         base_position = self.robot.get_position()
         base_orientation = self.robot.get_orientation()
         
-        # Create transformation matrices
         from scipy.spatial.transform import Rotation
-        
-        # World to base transformation
         base_rot = Rotation.from_quat(base_orientation)
-        base_rot_matrix = base_rot.as_matrix()
-        
-        # TCP in world frame
         tcp_rot = Rotation.from_quat(quaternion)
-        tcp_rot_matrix = tcp_rot.as_matrix()
         
-        # Transform position: subtract base position and rotate
+        # Transform position and orientation
         relative_position = position - base_position
         tcp_position_base = base_rot.inv().apply(relative_position)
-        
-        # Transform orientation: compose rotations
         tcp_orientation_base = (base_rot.inv() * tcp_rot).as_quat()
         
-        # Return pose in base link frame [x, y, z, qx, qy, qz, qw]
         return np.concatenate([tcp_position_base, tcp_orientation_base])
 
     def _init_pose(self):
@@ -789,108 +800,67 @@ class IoaiGraspEnv:
         current_positions = module.get_joint_positions()
         return np.allclose(current_positions, target_positions, atol=atol)
     
-    def _is_left_arm_motion_complete(self, atol=0.01):
-        """Check if left arm has reached its target position."""
+    def _is_arm_motion_complete(self, atol=0.01):
+        """Check if arm has reached its target position."""
         for module_name, target_positions in self.target_joint_positions.items():
             module = getattr(self.interface, module_name)
             if not self._is_joint_positions_reached(module, target_positions, atol):
                 return False
         return True
     
-    def _is_right_arm_motion_complete(self, atol=0.01):
-        """Check if right arm has reached its target position."""
-        for module_name, target_positions in self.target_joint_positions.items():
-            module = getattr(self.interface, module_name)
-            if not self._is_joint_positions_reached(module, target_positions, atol):
-                return False
-        return True
+    def _move_arm_to_pose(self, target_position, target_orientation, arm_id="left_arm"):
+        """Move arm to target pose with IK solving and motion control.
+        
+        Args:
+            target_position: Target position [x, y, z] in robot base frame
+            target_orientation: Target orientation [qx, qy, qz, qw] in robot base frame
+            arm_id: The ID of the arm, either "left_arm" or "right_arm"
+            
+        Returns:
+            True if motion is complete, False otherwise
+        """
+        if not self.motion_in_progress:
+            # Prepare target pose in robot frame
+            target_pose = np.concatenate([target_position, target_orientation])
+            
+            # Solve IK and start motion
+            current_joints = self.mink_config.q
+            arm_joints = self.compute_simple_ik(current_joints, target_pose, arm_id)
+            arm_module = getattr(self.interface, arm_id)
+            self._move_joints_to_target(arm_module, arm_joints)
+            
+            # Store target positions for completion check
+            self.target_joint_positions = {arm_id: arm_joints}
+            self.motion_in_progress = True
+        
+        # Check if motion is complete
+        if self._is_arm_motion_complete():
+            self.motion_in_progress = False
+            return True
+        return False
     
     def _move_left_arm_to_pose(self, target_position, target_orientation):
-        """Move left arm to target pose with IK solving and motion control.
-        
-        Args:
-            target_position: Target position [x, y, z] in robot base frame
-            target_orientation: Target orientation [qx, qy, qz, qw] in robot base frame
-            
-        Returns:
-            True if motion is complete, False otherwise
-        """
-        if not self.motion_in_progress:
-            # Prepare target pose in robot frame
-            target_pose = np.concatenate([target_position, target_orientation])
-            
-            # Solve IK and start motion
-            current_joints = self.mink_config.q
-            left_arm_joints = self.compute_simple_ik(current_joints, target_pose, "left_arm")
-            self._move_joints_to_target(self.interface.left_arm, left_arm_joints)
-            
-            # Store target positions for completion check
-            self.target_joint_positions = {"left_arm": left_arm_joints}
-            self.motion_in_progress = True
-        
-        # Check if motion is complete
-        if self._is_left_arm_motion_complete():
-            self.motion_in_progress = False
-            return True
-        return False
+        """Move left arm to target pose"""
+        return self._move_arm_to_pose(target_position, target_orientation, "left_arm")
     
     def _move_right_arm_to_pose(self, target_position, target_orientation):
-        """Move right arm to target pose with IK solving and motion control.
-        
-        Args:
-            target_position: Target position [x, y, z] in robot base frame
-            target_orientation: Target orientation [qx, qy, qz, qw] in robot base frame
-            
-        Returns:
-            True if motion is complete, False otherwise
-        """
-        if not self.motion_in_progress:
-            # Prepare target pose in robot frame
-            target_pose = np.concatenate([target_position, target_orientation])
-            
-            # Solve IK and start motion
-            current_joints = self.mink_config.q
-            right_arm_joints = self.compute_simple_ik(current_joints, target_pose, "right_arm")
-            self._move_joints_to_target(self.interface.right_arm, right_arm_joints)
-            
-            # Store target positions for completion check
-            self.target_joint_positions = {"right_arm": right_arm_joints}
-            self.motion_in_progress = True
-        
-        # Check if motion is complete
-        if self._is_right_arm_motion_complete():
-            self.motion_in_progress = False
-            return True
-        return False
+        """Move right arm to target pose"""
+        return self._move_arm_to_pose(target_position, target_orientation, "right_arm")
 
     def get_left_gripper_pose(self):
-        tmat = np.eye(4)
-        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp").xmat.reshape((3,3))
-        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp").xpos
-        
-        # Extract position
-        position = tmat[:3, 3]
-        
-        # Extract orientation as quaternion (x, y, z, w)
+        """Get left gripper TCP pose in world frame"""
+        site_data = self.simulator.data.site(self.robot.namespace + "left_gripper_tcp")
+        position = site_data.xpos
         from scipy.spatial.transform import Rotation
-        rotation_matrix = tmat[:3, :3]
-        quaternion = Rotation.from_matrix(rotation_matrix).as_quat()
-        
+        quaternion = Rotation.from_matrix(site_data.xmat.reshape((3, 3))).as_quat()
         return position, quaternion
     
     def get_right_gripper_pose(self):
-        tmat = np.eye(4)
-        tmat[:3,:3] = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp").xmat.reshape((3,3))
-        tmat[:3,3] = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp").xpos
-        
-        # Extract position
-        position = tmat[:3, 3]
-
-        # Extract orientation as quaternion (x, y, z, w)
+        """Get right gripper TCP pose in world frame"""
+        site_data = self.simulator.data.site(self.robot.namespace + "right_gripper_tcp")
+        position = site_data.xpos
         from scipy.spatial.transform import Rotation
-        rotation_matrix = tmat[:3, :3]
-        quaternion = Rotation.from_matrix(rotation_matrix).as_quat()
-        
+        quaternion = Rotation.from_matrix(site_data.xmat.reshape((3, 3))).as_quat()
         return position, quaternion
 
     def pick_and_place_callback(self):
@@ -898,42 +868,60 @@ class IoaiGraspEnv:
 
         def init_state():
             """Move to initial pose"""
-            # Convert world frame pose to robot frame
-            world_pos = np.array([0.5, 0.3, 0.7])
-            world_ori = np.array([0, 0.7071, 0, 0.7071])
-            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
+            robot_pos = np.array([0.5, 0.3, 0.7])
+            robot_ori = np.array([0, 0.7071, 0, 0.7071])
             return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
         def move_to_pre_pick_state():
             """Move to pre-pick position"""
+            # Get cube position from estimation or cached value
             if self.state_first_entry:
-                # Use pose estimation to get object pose instead of ground truth
+                # Estimate object position on first entry
                 pose_result = self.get_object_pose_from_estimation("cube")
-                world_pos, world_ori = pose_result
-                self.cube_position = world_pos.copy()
-                self.cube_orientation = world_ori.copy()
-                print(f"Pose estimation detected cube at position: {world_pos}")
+                if pose_result is None:
+                    print("Failed to estimate cube pose, cannot move to pick state.")
+                    return False
+                robot_pos, robot_ori = pose_result
+                # Cache for subsequent use
+                self.cube_position = robot_pos.copy()
+                self.cube_orientation = robot_ori.copy()
                 self.state_first_entry = False
-            
-            # Convert world frame pose to robot frame
-            world_pos = self.cube_position + np.array([0, 0, 0.15])
-            world_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for grasping
-            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
-            return self._move_left_arm_to_pose(robot_pos, robot_ori)
+            else:
+                # Use cached cube position
+                robot_pos = getattr(self, "cube_position", None)
+                robot_ori = getattr(self, "cube_orientation", None)
+                if robot_pos is None or robot_ori is None:
+                    print("Cube position/orientation not set, cannot move to pick state.")
+                    return False
+
+            # Move to pre-pick position (offset above cube)
+            pre_pick_pos = robot_pos + np.array([0, 0, 0.2])
+            return self._move_left_arm_to_pose(pre_pick_pos, robot_ori)
+        
 
         def move_to_pick_state():
             """Move to pick position"""
+            # Get cube position from estimation or cached value
             if self.state_first_entry:
-                # Re-estimate object position for more accurate pick (only once)
+                # Estimate object position on first entry
                 pose_result = self.get_object_pose_from_estimation("cube")
-                world_pos, world_ori = pose_result
-                # Use estimated position for more accurate pick
-                self.pick_pos = world_pos + np.array([0, 0, 0.03])
+                if pose_result is None:
+                    print("Failed to estimate cube pose, cannot move to pick state.")
+                    return False
+                robot_pos, robot_ori = pose_result
+                # Cache for subsequent use
+                self.cube_position = robot_pos.copy()
+                self.cube_orientation = robot_ori.copy()
                 self.state_first_entry = False
-            
-            # Convert world frame pose to robot frame
-            world_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for grasping
-            robot_pos, robot_ori = self.world_to_robot_frame(self.pick_pos, world_ori)
+            else:
+                # Use cached cube position
+                robot_pos = getattr(self, "cube_position", None)
+                robot_ori = getattr(self, "cube_orientation", None)
+                if robot_pos is None or robot_ori is None:
+                    print("Cube position/orientation not set, cannot move to pick state.")
+                    return False
+
+            # Move to pick position
             return self._move_left_arm_to_pose(robot_pos, robot_ori)
         
         def grasp_state():
@@ -950,28 +938,29 @@ class IoaiGraspEnv:
 
         def move_to_pre_place_state():
             """Move to pre-place position"""
-            # Convert world frame pose to robot frame
-            world_pos = self.cube_position + np.array([-0.1, 0, 0.4])
-            world_ori = np.array([0, 0.7071, 0, 0.7071])
-            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
-            return self._move_left_arm_to_pose(robot_pos, robot_ori)
+            # Move to pre-place position relative to cube
+            pre_place_pos = self.cube_position + np.array([-0.1, 0, 0.4])
+            pre_place_ori = np.array([0, 0.7071, 0, 0.7071])
+            return self._move_left_arm_to_pose(pre_place_pos, pre_place_ori)
 
         def move_to_place_state():
             """Move to place position"""
             if self.state_first_entry:
-                # Use pose estimation to get bin pose instead of ground truth
+                # Use pose estimation to get bin pose
                 pose_result = self.get_object_pose_from_estimation("bin")
-                world_pos, world_ori = pose_result
-                self.bin_position = world_pos.copy()
-                self.bin_orientation = world_ori.copy()
-                print(f"Pose estimation detected bin at position: {world_pos}")
+                if pose_result is None:
+                    print("Failed to estimate bin pose, cannot move to place state.")
+                    return False
+                robot_pos, robot_ori = pose_result
+                self.bin_position = robot_pos.copy()
+                self.bin_orientation = robot_ori.copy()
+                print(f"Pose estimation detected bin at position: {robot_pos}")
                 self.state_first_entry = False
 
-            # Convert world frame pose to robot frame
-            world_pos = self.bin_position + np.array([0, 0, 0.3])
-            world_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for placing
-            robot_pos, robot_ori = self.world_to_robot_frame(world_pos, world_ori)
-            return self._move_left_arm_to_pose(robot_pos, robot_ori)
+            # Move to place position above bin
+            place_pos = self.bin_position + np.array([0, 0, 0.3])
+            place_ori = np.array([0, 0.7071, 0, 0.7071])  # Fixed orientation for placing
+            return self._move_left_arm_to_pose(place_pos, place_ori)
         
         def release_state():
             """Release the object"""

@@ -15,7 +15,8 @@ def main():
     
     # Configuration paths
     # yolo_model_path = script_dir / ".." / "yolo_seg_examples" / "real_all_class_0730.pt"
-    yolo_model_path = script_dir / ".." / "yolo_seg_examples" / "best.pt"
+    # yolo_model_path = script_dir / ".." / "yolo_seg_examples" / "best.pt"
+    yolo_model_path = script_dir / ".." / "yolo_seg_examples" / "cotrain_all_class_0730.pt"
     cad_models_dir = script_dir / ".." / "pose_est_examples" / "models"
     
     # Camera intrinsic parameters (adjust based on your camera)
