@@ -190,42 +190,12 @@ class IOAIEnv:
         cube_config = CuboidConfig(
             name="cube",
             prim_path="/World/Cube",
-            position=[0.5, -0.3, 0.56],
+            position=[0.5, -0.1, 0.55],
             orientation=[0, 0, 0, 1],
             scale=[0.05, 0.05, 0.05],
             color=[0.5, 0.5, 0.5],  # Gray color
         )
         self.simulator.add_object(cube_config)
-
-        # Add toy
-        toy_config = MeshConfig(
-            name="toy",
-            prim_path="/World/toy",
-            mjcf_path=Path()
-            .joinpath(self.simulator.synthnova_assets_directory)
-            .joinpath("synthnova_assets")
-            .joinpath("objects")
-            .joinpath("toy")
-            .joinpath("toy.xml"),
-            position=[0.7, 0.1, 0.55],
-            orientation=[0, 0, 0, 1],
-        )
-        self.simulator.add_object(toy_config)
-
-        # Add extrusion
-        extrusion_config = MeshConfig(
-            name="extrusion",
-            prim_path="/World/Extrusion",
-            mjcf_path=Path()
-            .joinpath(self.simulator.synthnova_assets_directory)
-            .joinpath("synthnova_assets")
-            .joinpath("objects")
-            .joinpath("extrusion")
-            .joinpath("extrusion.xml"),
-            position=[0.6, 0, 0.55],
-            orientation=[0, 0, 0, 1],
-        )   
-        self.simulator.add_object(extrusion_config)
 
         # Add power drill
         power_drill_config = MeshConfig(
@@ -237,25 +207,40 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("power_drill")
             .joinpath("power_drill.xml"),
-            position=[0.65, 0, 0.55],
-            orientation=[0, 0, 0, 1],
+            position=[0.45, 0.05, 0.55],
+            orientation=[0, 0.7071, 0, 0.7071],
         )
         self.simulator.add_object(power_drill_config)
 
-        # Add mug
-        mug_config = MeshConfig(
-            name="mug",
-            prim_path="/World/Mug",
+        # Add extrusion
+        extrusion_config = MeshConfig(
+            name="extrusion",
+            prim_path="/World/Extrusion",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects")
-            .joinpath("mug")
-            .joinpath("mug.xml"),
-            position=[0.5, 0, 0.55],
+            .joinpath("extrusion")
+            .joinpath("extrusion.xml"),
+            position=[0.7, 0.05, 0.55],
             orientation=[0, 0, 0, 1],
+        )   
+        self.simulator.add_object(extrusion_config)
+
+        # Add toy
+        toy_config = MeshConfig(
+            name="toy",
+            prim_path="/World/toy",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("toy")
+            .joinpath("toy.xml"),
+            position=[0.65, -0.05, 0.45],
+            orientation=[0, 0.7071, 0, 0.7071],
         )
-        self.simulator.add_object(mug_config)
+        self.simulator.add_object(toy_config)
 
         center_x = 2
         center_y = 2

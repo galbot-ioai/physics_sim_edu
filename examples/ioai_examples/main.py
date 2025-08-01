@@ -63,31 +63,36 @@ class DummyPoseEstimator:
         if object_name == "cube":
             cube_prim_path = "/World/Cube"
             cube_state = env.simulator.get_object_state(cube_prim_path)
-            return cube_state["position"], cube_state["orientation"]
+            cube_state = env.world_to_robot_frame(cube_state["position"], cube_state["orientation"])
+            return cube_state[0], cube_state[1]
         elif object_name == "power_drill":
             power_drill_prim_path = "/World/PowerDrill"
             power_drill_state = env.simulator.get_object_state(power_drill_prim_path)
-            return power_drill_state["position"], power_drill_state["orientation"]
+            power_drill_state = env.world_to_robot_frame(power_drill_state["position"], power_drill_state["orientation"])
+            return power_drill_state[0], power_drill_state[1]
         elif object_name == "extrusion":
             extrusion_prim_path = "/World/Extrusion"
             extrusion_state = env.simulator.get_object_state(extrusion_prim_path)
-            return extrusion_state["position"], extrusion_state["orientation"]
+            extrusion_state = env.world_to_robot_frame(extrusion_state["position"], extrusion_state["orientation"])
+            return extrusion_state[0], extrusion_state[1]
         elif object_name == "cone":
             cone_prim_path = "/World/Cone"
             cone_state = env.simulator.get_object_state(cone_prim_path)
-            return cone_state["position"], cone_state["orientation"]
+            cone_state = env.world_to_robot_frame(cone_state["position"], cone_state["orientation"])
+            return cone_state[0], cone_state[1]
         elif object_name == "bin":
             bin_prim_path = "/World/Bin"
             bin_state = env.simulator.get_object_state(bin_prim_path)
-            return bin_state["position"], bin_state["orientation"]
+            bin_state = env.world_to_robot_frame(bin_state["position"], bin_state["orientation"])
+            return bin_state[0], bin_state[1]
         elif object_name == "toy":
-            bin_prim_path = "/World/Bin"
-            bin_state = env.simulator.get_object_state(bin_prim_path)
-            return bin_state["position"], bin_state["orientation"]
+            toy_prim_path = "/World/Toy"
+            toy_state = env.simulator.get_object_state(toy_prim_path)
+            toy_state = env.world_to_robot_frame(toy_state["position"], toy_state["orientation"])
+            return toy_state[0], toy_state[1]
         else:
-            raise ValueError(f"Unknown object name: {object_name}")
+            raise ValueError(f"Unknown object name: {object_name}")         
 
-    
 pose_estimator = DummyPoseEstimator()
 
 # ---- Init State Machine ------
@@ -98,7 +103,7 @@ state_machine.object_name = "cube"
 # You need to plan a set of waypoints
 def move_to_table_state():
     if state_machine.state_first_entry:
-        env.move_chassis_follow_path([[0, 4], [0, 2], [0, 0]])
+        env.move_chassis_follow_path([[0, 4], [0, 2], [0, -0.2]])
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("follow_path_callback")
 
@@ -121,14 +126,16 @@ def detect_object_state():
     pose = pose_estimator.estimate_pose(object_name)
     if pose is None:
         return False
-    state_machine.object_pose = poseenv.simulator.physics_callback_exists("follow_path_callback")
-    state_machine.grasp_pose = grasp_reg.predict_grasp(object_name, np.concatenate([pose[0], pose[1]]))['grasp_pose']
+    state_machine.object_pose = pose
+    # state_machine.grasp_pose = grasp_reg.predict_grasp(object_name, np.concatenate([pose[0], pose[1]]))['grasp_pose']
+    state_machine.grasp_pose = np.concatenate([pose[0], pose[1]])
     return True
 
 def pre_grasp_state():
     if state_machine.state_first_entry:
-        robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.2])
+        robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.3])
         robot_ori = [0, 0.7071, 0, 0.7071]
+        # robot_ori = state_machine.grasp_pose[3:]
         env.move_left_arm_to_pose(robot_pos, robot_ori)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
@@ -136,9 +143,13 @@ def pre_grasp_state():
 def grasp_state():
     if state_machine.state_first_entry:
         robot_pos = state_machine.grasp_pose[:3]
-        robot_ori = state_machine.grasp_pose[3:]
+        robot_ori = [0, 0.7071, 0, 0.7071]
+        # robot_ori = state_machine.grasp_pose[3:]
         env.move_left_arm_to_pose(robot_pos, robot_ori)
         state_machine.state_first_entry = False
+
+        print("object_name: ", state_machine.object_name)
+        print("grasp_pose: ", state_machine.grasp_pose)
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
 def grasp_object_state():
@@ -161,15 +172,16 @@ def detect_bin_state():
 
 def pre_place_state():
     if state_machine.state_first_entry:
-        robot_pos = state_machine.object_pose[0] + np.array([0, 0, 0.5])
-        robot_ori = state_machine.object_pose[1]
+        robot_pos = state_machine.object_pose[0] + np.array([0, 0, 0.4])
+        # robot_ori = state_machine.object_pose[1]
+        robot_ori = [0, 0.7071, 0, 0.7071]
         env.move_left_arm_to_pose(robot_pos, robot_ori)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
 def place_state():
     if state_machine.state_first_entry:
-        robot_pos = state_machine.bin_pose[0] + np.array([0, 0, 0.5])
+        robot_pos = state_machine.bin_pose[0] + np.array([0, 0, 0.4])
         robot_ori = [0, 0, 0, 1]
         env.move_left_arm_to_pose(robot_pos, robot_ori)
         state_machine.state_first_entry = False
@@ -183,7 +195,7 @@ def release_state():
     elapsed_time = time.time() - state_machine.wait_start_time
     return elapsed_time >= 3
 
-def retrun_to_init_state():
+def return_to_init_state():
     if state_machine.state_first_entry:
         robot_pos = np.array([0.5, 0.1, 0.8])
         robot_ori = np.array([0, 0.7071, 0, 0.7071])
@@ -226,6 +238,7 @@ def front_to_shelf_state():
 
 def place_bin_state():
     return True
+
 # ----- Initialize state machine -----
 state_machine.add_state(0, "Move to table", move_to_table_state)
 state_machine.add_state(1, "Init", init_state)
@@ -238,7 +251,7 @@ state_machine.add_state(7, "Detect bin", detect_bin_state)
 state_machine.add_state(8, "Move to Pre Place State", pre_place_state)
 state_machine.add_state(9, "Move to Place State", place_state)
 state_machine.add_state(10, "Release the object", release_state)
-state_machine.add_state(11, "Return to Init State", retrun_to_init_state)
+state_machine.add_state(11, "Return to Init State", return_to_init_state)
 state_machine.add_state(12, "Move to bin", move_to_bin_state)
 state_machine.add_state(13, "Front to bin", front_to_bin_state)
 state_machine.add_state(14, "Init left arm joints", init_left_arm_joints_state)
