@@ -181,14 +181,18 @@ state_machine = SimpleStateMachine(max_states=-1)
 state_machine.state_first_entry = True
 state_machine.object_name = "cube"
 
-# ----- define your states here -----
-# You need to plan a set of waypoints
+# ----- Define states and add them to state machine -----
+
+# Move to table
 def move_to_table_state():
     if state_machine.state_first_entry:
         env.move_chassis_follow_path([[0, 4], [0, 2], [0, -0.2]])
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("follow_path_callback")
 
+MOVE_TO_TABLE_IDX = state_machine.add_state("Move to table", move_to_table_state)
+
+# Initialize robot arm
 def init_state():
     if state_machine.state_first_entry:
         robot_pos = np.array([0.5, 0.1, 0.8])
@@ -197,12 +201,18 @@ def init_state():
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
+INIT_IDX = state_machine.add_state("Init", init_state)
+
+# Rotate to face table
 def front_to_table_state():
     if state_machine.state_first_entry:
         env.move_chassis_rotate(0)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("rotate_callback")
 
+FRONT_TO_TABLE_IDX = state_machine.add_state("Front to table", front_to_table_state)
+
+# Detect target object
 def detect_object_state():
     object_name = state_machine.object_name
     pose = pose_estimator.estimate_pose(object_name)
@@ -213,6 +223,9 @@ def detect_object_state():
     # state_machine.grasp_pose = np.concatenate([pose[0], pose[1]])
     return True
 
+DETECT_OBJECT_IDX = state_machine.add_state("Detect Object", detect_object_state)
+
+# Move to pre-grasp position
 def pre_grasp_state():
     if state_machine.state_first_entry:
         robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.3])
@@ -222,6 +235,9 @@ def pre_grasp_state():
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
+PRE_GRASP_IDX = state_machine.add_state("Move to Pre Grasp", pre_grasp_state)
+
+# Move to grasp position
 def grasp_state():
     if state_machine.state_first_entry:
         robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.02])  # A small offset
@@ -234,6 +250,9 @@ def grasp_state():
         print("grasp_pose: ", state_machine.grasp_pose)
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
+GRASP_IDX = state_machine.add_state("Move to Grasp State", grasp_state)
+
+# Grasp the object
 def grasp_object_state():
     if state_machine.state_first_entry:
         env.interface.left_gripper.set_gripper_close()
@@ -243,6 +262,9 @@ def grasp_object_state():
     elapsed_time = time.time() - state_machine.wait_start_time
     return elapsed_time >= 3
 
+GRASP_OBJECT_IDX = state_machine.add_state("Grasp the object", grasp_object_state)
+
+# Detect bin for placement
 def detect_bin_state():
     if state_machine.state_first_entry:
         pose = pose_estimator.estimate_pose("bin")
@@ -252,6 +274,9 @@ def detect_bin_state():
         state_machine.state_first_entry = False
         return True
 
+DETECT_BIN_IDX = state_machine.add_state("Detect bin", detect_bin_state)
+
+# Move to pre-place position
 def pre_place_state():
     if state_machine.state_first_entry:
         robot_pos = state_machine.object_pose[0] + np.array([0, 0, 0.4])
@@ -261,6 +286,9 @@ def pre_place_state():
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
+PRE_PLACE_IDX = state_machine.add_state("Move to Pre Place State", pre_place_state)
+
+# Move to place position
 def place_state():
     if state_machine.state_first_entry:
         robot_pos = state_machine.bin_pose[0] + np.array([0, 0, 0.4])
@@ -269,6 +297,9 @@ def place_state():
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
+PLACE_IDX = state_machine.add_state("Move to Place State", place_state)
+
+# Release the object
 def release_state():
     if state_machine.state_first_entry:
         env.interface.left_gripper.set_gripper_open()
@@ -277,6 +308,9 @@ def release_state():
     elapsed_time = time.time() - state_machine.wait_start_time
     return elapsed_time >= 3
 
+RELEASE_IDX = state_machine.add_state("Release the object", release_state)
+
+# Return to initial position
 def return_to_init_state():
     if state_machine.state_first_entry:
         robot_pos = np.array([0.5, 0.1, 0.8])
@@ -285,6 +319,9 @@ def return_to_init_state():
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
+RETURN_TO_INIT_IDX = state_machine.add_state("Return to Init State", return_to_init_state)
+
+# Move to bin area
 def move_to_bin_state():
     if state_machine.state_first_entry:
         waypoints_1 = np.linspace([0, 0], [0, 0.9], 30).tolist()
@@ -294,52 +331,51 @@ def move_to_bin_state():
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("follow_path_callback")
 
+MOVE_TO_BIN_IDX = state_machine.add_state("Move to bin", move_to_bin_state)
+
+# Rotate to face bin
 def front_to_bin_state():
     if state_machine.state_first_entry:
         env.move_chassis_rotate(-math.pi / 2)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("rotate_callback")
 
+FRONT_TO_BIN_IDX = state_machine.add_state("Front to bin", front_to_bin_state)
+
+# Initialize left arm joints
 def init_left_arm_joints_state():
     if state_machine.state_first_entry:
         env._move_joints_to_target(env.interface.left_arm, [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
+INIT_LEFT_ARM_JOINTS_IDX = state_machine.add_state("Init left arm joints", init_left_arm_joints_state)
+
+# Rotate to face shelf
 def rotate_to_shelf_state():
     if state_machine.state_first_entry:
         env.move_chassis_rotate(-math.pi / 2)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("rotate_callback")
 
+ROTATE_TO_SHELF_IDX = state_machine.add_state("Rotate to shelf", rotate_to_shelf_state)
+
+# Navigate to shelf
 def navigate_to_shelf_state():
     return True
 
+NAVIGATE_TO_SHELF_IDX = state_machine.add_state("Navigate to shelf", navigate_to_shelf_state)
+
+# Face shelf
 def front_to_shelf_state():
     return True
 
+FRONT_TO_SHELF_IDX = state_machine.add_state("Front to shelf", front_to_shelf_state)
+
+# Place bin
 def place_bin_state():
     return True
 
-# ----- Initialize state machine -----
-# States are added in execution order, indices are automatically assigned
-MOVE_TO_TABLE_IDX = state_machine.add_state("Move to table", move_to_table_state)
-INIT_IDX = state_machine.add_state("Init", init_state)
-FRONT_TO_TABLE_IDX = state_machine.add_state("Front to table", front_to_table_state)
-DETECT_OBJECT_IDX = state_machine.add_state("Detect Object", detect_object_state)
-PRE_GRASP_IDX = state_machine.add_state("Move to Pre Grasp", pre_grasp_state)
-GRASP_IDX = state_machine.add_state("Move to Grasp State", grasp_state)
-GRASP_OBJECT_IDX = state_machine.add_state("Grasp the object", grasp_object_state)
-DETECT_BIN_IDX = state_machine.add_state("Detect bin", detect_bin_state)
-PRE_PLACE_IDX = state_machine.add_state("Move to Pre Place State", pre_place_state)
-PLACE_IDX = state_machine.add_state("Move to Place State", place_state)
-RELEASE_IDX = state_machine.add_state("Release the object", release_state)
-RETURN_TO_INIT_IDX = state_machine.add_state("Return to Init State", return_to_init_state)
-MOVE_TO_BIN_IDX = state_machine.add_state("Move to bin", move_to_bin_state)
-FRONT_TO_BIN_IDX = state_machine.add_state("Front to bin", front_to_bin_state)
-INIT_LEFT_ARM_JOINTS_IDX = state_machine.add_state("Init left arm joints", init_left_arm_joints_state)
-NAVIGATE_TO_SHELF_IDX = state_machine.add_state("Navigate to shelf", navigate_to_shelf_state)
-FRONT_TO_SHELF_IDX = state_machine.add_state("Front to shelf", front_to_shelf_state)
 PLACE_BIN_IDX = state_machine.add_state("Place bin", place_bin_state)
 
 # ----- please define your callbacks here -----
