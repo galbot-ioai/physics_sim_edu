@@ -47,6 +47,7 @@ dependencies = [
     "ultralytics",
     # numpy version must < 2.0
     "numpy<2.0.0",
+    "transitions",
 ]
 
 [project.optional-dependencies]

@@ -191,7 +191,7 @@ class IOAIEnv:
         cube_config = CuboidConfig(
             name="cube",
             prim_path="/World/Cube",
-            position=[0.5, -0.2, 0.55],
+            position=[0.5, -0.1, 0.55],
             orientation=[0, 0, 0, 1],
             scale=[0.05, 0.05, 0.05],
             color=[0.5, 0.5, 0.5],  # Gray color
@@ -223,7 +223,7 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("extrusion")
             .joinpath("extrusion.xml"),
-            position=[0.5, -0.1, 0.55],
+            position=[0.7, 0.05, 0.55],
             orientation=[0, 0, 0, 1],
         )   
         self.simulator.add_object(extrusion_config)

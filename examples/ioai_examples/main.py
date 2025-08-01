@@ -246,90 +246,90 @@ def init_state():
 
 INIT_IDX = state_machine.add_state("Init", init_state)
 
-# Detect target object
-def detect_object_state():
-    object_name = state_machine.object_name
-    pose = pose_estimator.estimate_pose(object_name)
-    if pose is None:
-        return False
-    state_machine.object_pose = pose
-    state_machine.grasp_pose = grasp_reg.predict_grasp(object_name, np.concatenate([pose[0], pose[1]]))['grasp_pose']
-    return True
+# # Detect target object
+# def detect_object_state():
+#     object_name = state_machine.object_name
+#     pose = pose_estimator.estimate_pose(object_name)
+#     if pose is None:
+#         return False
+#     state_machine.object_pose = pose
+#     state_machine.grasp_pose = grasp_reg.predict_grasp(object_name, np.concatenate([pose[0], pose[1]]))['grasp_pose']
+#     return True
 
-DETECT_OBJECT_IDX = state_machine.add_state("Detect Object", detect_object_state)
+# DETECT_OBJECT_IDX = state_machine.add_state("Detect Object", detect_object_state)
 
-# Move to pre-grasp position
-def pre_grasp_state():
-    if state_machine.state_first_entry:
-        robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.4])
-        # robot_ori = [0, 0.7071, 0, 0.7071]
-        robot_ori = state_machine.grasp_pose[3:]
-        env.move_left_arm_to_pose(robot_pos, robot_ori)
-        state_machine.state_first_entry = False
-    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
+# # Move to pre-grasp position
+# def pre_grasp_state():
+#     if state_machine.state_first_entry:
+#         robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.4])
+#         # robot_ori = [0, 0.7071, 0, 0.7071]
+#         robot_ori = state_machine.grasp_pose[3:]
+#         env.move_left_arm_to_pose(robot_pos, robot_ori)
+#         state_machine.state_first_entry = False
+#     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
-PRE_GRASP_IDX = state_machine.add_state("Move to Pre Grasp", pre_grasp_state)
+# PRE_GRASP_IDX = state_machine.add_state("Move to Pre Grasp", pre_grasp_state)
 
-# Move to grasp position
-def grasp_state():
-    if state_machine.state_first_entry:
-        robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.02])  # A small offset
-        # robot_ori = [0, 0.7071, 0, 0.7071]
-        robot_ori = state_machine.grasp_pose[3:]
-        env.move_left_arm_to_pose(robot_pos, robot_ori)
-        state_machine.state_first_entry = False
+# # Move to grasp position
+# def grasp_state():
+#     if state_machine.state_first_entry:
+#         robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.03])  # A small offset
+#         # robot_ori = [0, 0.7071, 0, 0.7071]
+#         robot_ori = state_machine.grasp_pose[3:]
+#         env.move_left_arm_to_pose(robot_pos, robot_ori)
+#         state_machine.state_first_entry = False
 
-        print("object_name: ", state_machine.object_name)
-        print("grasp_pose: ", state_machine.grasp_pose)
-    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
+#         print("object_name: ", state_machine.object_name)
+#         print("grasp_pose: ", state_machine.grasp_pose)
+#     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
-GRASP_IDX = state_machine.add_state("Move to Grasp State", grasp_state)
+# GRASP_IDX = state_machine.add_state("Move to Grasp State", grasp_state)
 
-# Grasp the object
-def grasp_object_state():
-    if state_machine.state_first_entry:
-        env.interface.left_gripper.set_gripper_close()
-        state_machine.state_first_entry = False
-        state_machine.wait_start_time = time.time()
+# # Grasp the object
+# def grasp_object_state():
+#     if state_machine.state_first_entry:
+#         env.interface.left_gripper.set_gripper_close()
+#         state_machine.state_first_entry = False
+#         state_machine.wait_start_time = time.time()
 
-    elapsed_time = time.time() - state_machine.wait_start_time
-    return elapsed_time >= 3
+#     elapsed_time = time.time() - state_machine.wait_start_time
+#     return elapsed_time >= 3
 
-GRASP_OBJECT_IDX = state_machine.add_state("Grasp the object", grasp_object_state)
+# GRASP_OBJECT_IDX = state_machine.add_state("Grasp the object", grasp_object_state)
 
-# Move to pre-place position
-def pre_place_state():
-    if state_machine.state_first_entry:
-        robot_pos = state_machine.object_pose[0] + np.array([0, 0, 0.4])
-        # robot_ori = state_machine.object_pose[1]
-        robot_ori = [0, 0.7071, 0, 0.7071]
-        env.move_left_arm_to_pose(robot_pos, robot_ori)
-        state_machine.state_first_entry = False
-    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
+# # Move to pre-place position
+# def pre_place_state():
+#     if state_machine.state_first_entry:
+#         robot_pos = state_machine.object_pose[0] + np.array([0, 0, 0.4])
+#         # robot_ori = state_machine.object_pose[1]
+#         robot_ori = [0, 0.7071, 0, 0.7071]
+#         env.move_left_arm_to_pose(robot_pos, robot_ori)
+#         state_machine.state_first_entry = False
+#     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
-PRE_PLACE_IDX = state_machine.add_state("Move to Pre Place State", pre_place_state)
+# PRE_PLACE_IDX = state_machine.add_state("Move to Pre Place State", pre_place_state)
 
-# Move to place position
-def place_state():
-    if state_machine.state_first_entry:
-        robot_pos = state_machine.bin_pose[0] + np.array([0, 0, 0.4])
-        robot_ori = [0, 0.7071, 0, 0.7071]
-        env.move_left_arm_to_pose(robot_pos, robot_ori)
-        state_machine.state_first_entry = False
-    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
+# # Move to place position
+# def place_state():
+#     if state_machine.state_first_entry:
+#         robot_pos = state_machine.bin_pose[0] + np.array([0, 0, 0.4])
+#         robot_ori = [0, 0.7071, 0, 0.7071]
+#         env.move_left_arm_to_pose(robot_pos, robot_ori)
+#         state_machine.state_first_entry = False
+#     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
-PLACE_IDX = state_machine.add_state("Move to Place State", place_state)
+# PLACE_IDX = state_machine.add_state("Move to Place State", place_state)
 
-# Release the object
-def release_state():
-    if state_machine.state_first_entry:
-        env.interface.left_gripper.set_gripper_open()
-        state_machine.state_first_entry = False
-        state_machine.wait_start_time = time.time()
-    elapsed_time = time.time() - state_machine.wait_start_time
-    return elapsed_time >= 3
+# # Release the object
+# def release_state():
+#     if state_machine.state_first_entry:
+#         env.interface.left_gripper.set_gripper_open()
+#         state_machine.state_first_entry = False
+#         state_machine.wait_start_time = time.time()
+#     elapsed_time = time.time() - state_machine.wait_start_time
+#     return elapsed_time >= 3
 
-RELEASE_IDX = state_machine.add_state("Release the object", release_state)
+# RELEASE_IDX = state_machine.add_state("Release the object", release_state)
 
 # Return to initial position
 def return_to_init_state():
@@ -399,23 +399,25 @@ def ioai_main_callback():
     # Then execute current state and move to next when complete
     if state_machine.execute_current_state():
         # TODO: define your custom state transition logic
-        if state_machine.state_idx == RELEASE_IDX:
-            if state_machine.object_name == "cube":
-                state_machine.object_name = "power_drill"
-                state_machine.set_state(INIT_IDX)
-                state_machine.state_first_entry = True
-            elif state_machine.object_name == "power_drill":
-                state_machine.object_name = "extrusion"
-                state_machine.set_state(INIT_IDX)
-                state_machine.state_first_entry = True
-            elif state_machine.object_name == "extrusion":
-                state_machine.object_name = "toy"
-                state_machine.set_state(INIT_IDX)
-                state_machine.state_first_entry = True
-            elif state_machine.object_name == "toy":
-                # Move on
-                state_machine.set_state(MOVE_TO_BIN_IDX)
-                state_machine.state_first_entry = True
+        # if state_machine.state_idx == RELEASE_IDX:
+        #     if state_machine.object_name == "cube":
+        #         state_machine.object_name = "power_drill"
+        #         state_machine.set_state(INIT_IDX)
+        #         state_machine.state_first_entry = True
+        #     elif state_machine.object_name == "power_drill":
+        #         state_machine.object_name = "extrusion"
+        #         state_machine.set_state(INIT_IDX)
+        #         state_machine.state_first_entry = True
+        #     elif state_machine.object_name == "extrusion":
+        #         state_machine.object_name = "toy"
+        #         state_machine.set_state(INIT_IDX)
+        #         state_machine.state_first_entry = True
+        #     elif state_machine.object_name == "toy":
+        #         # Move on
+        #         state_machine.set_state(MOVE_TO_BIN_IDX)
+        #         state_machine.state_first_entry = True
+        if False:
+            pass
             
         # Default: normal state progression
         else:
@@ -424,7 +426,6 @@ def ioai_main_callback():
                 # Task completed, reset state machine for next cycle
                 print("Task completed!")
                 state_machine.reset()
-
 
 env.simulator.add_physics_callback("ioai_main_callback", ioai_main_callback)
 
