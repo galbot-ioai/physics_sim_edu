@@ -39,7 +39,7 @@ from physics_simulator.utils import preprocess_depth
 # ---------- Init env ---------
 env = IOAIEnv(headless=False)
 
-# ---------- Useful functions ----preprocess_depth --
+# ---------- Useful functions ---- --
 # It is a simple toolbox to generate a grsping pose from the detected pose
 # you can modify this as well
 from grasp_reg import GraspRegistration
@@ -109,7 +109,7 @@ pose_est = PoseEstimator(
     log_debug=True,
 )
 
-class YoloSegPoseEstimator:
+class YoloSegPoseEstimator(BasePoseEstimator):
     def __init__(self, env: IOAIEnv):
         self.env = env
 
@@ -192,17 +192,6 @@ def move_to_table_state():
 
 MOVE_TO_TABLE_IDX = state_machine.add_state("Move to table", move_to_table_state)
 
-# Initialize robot arm
-def init_state():
-    if state_machine.state_first_entry:
-        robot_pos = np.array([0.5, 0.1, 0.8])
-        robot_ori = np.array([0, 0.7071, 0, 0.7071])
-        env.move_left_arm_to_pose(robot_pos, robot_ori)
-        state_machine.state_first_entry = False
-    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
-
-INIT_IDX = state_machine.add_state("Init", init_state)
-
 # Rotate to face table
 def front_to_table_state():
     if state_machine.state_first_entry:
@@ -211,6 +200,30 @@ def front_to_table_state():
     return not env.simulator.physics_callback_exists("rotate_callback")
 
 FRONT_TO_TABLE_IDX = state_machine.add_state("Front to table", front_to_table_state)
+
+# Initialize robot arm
+def init_state():
+    if state_machine.state_first_entry:
+        # robot_pos = np.array([0.5, 0.1, 0.8])
+        # robot_ori = np.array([0, 0.7071, 0, 0.7071])
+        # env.move_left_arm_to_pose(robot_pos, robot_ori)
+        env._move_joints_to_target(env.interface.left_arm, [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
+        state_machine.state_first_entry = False
+    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
+
+INIT_IDX = state_machine.add_state("Init", init_state)
+
+# Detect bin for placement
+def detect_bin_state():
+    if state_machine.state_first_entry:
+        pose = pose_estimator.estimate_pose("bin")
+        if pose is None:
+            return False
+        state_machine.bin_pose = pose
+        state_machine.state_first_entry = False
+        return True
+
+DETECT_BIN_IDX = state_machine.add_state("Detect bin", detect_bin_state)
 
 # Detect target object
 def detect_object_state():
@@ -264,18 +277,6 @@ def grasp_object_state():
 
 GRASP_OBJECT_IDX = state_machine.add_state("Grasp the object", grasp_object_state)
 
-# Detect bin for placement
-def detect_bin_state():
-    if state_machine.state_first_entry:
-        pose = pose_estimator.estimate_pose("bin")
-        if pose is None:
-            return False
-        state_machine.bin_pose = pose
-        state_machine.state_first_entry = False
-        return True
-
-DETECT_BIN_IDX = state_machine.add_state("Detect bin", detect_bin_state)
-
 # Move to pre-place position
 def pre_place_state():
     if state_machine.state_first_entry:
@@ -313,9 +314,10 @@ RELEASE_IDX = state_machine.add_state("Release the object", release_state)
 # Return to initial position
 def return_to_init_state():
     if state_machine.state_first_entry:
-        robot_pos = np.array([0.5, 0.1, 0.8])
-        robot_ori = np.array([0, 0.7071, 0, 0.7071])
-        env.move_left_arm_to_pose(robot_pos, robot_ori)
+        # robot_pos = np.array([0.5, 0.1, 0.8])
+        # robot_ori = np.array([0, 0.7071, 0, 0.7071])
+        # env.move_left_arm_to_pose(robot_pos, robot_ori)
+        env._move_joints_to_target(env.interface.left_arm, [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
