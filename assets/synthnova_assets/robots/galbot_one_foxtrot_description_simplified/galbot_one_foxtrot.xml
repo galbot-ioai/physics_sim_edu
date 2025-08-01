@@ -19,7 +19,7 @@
       </default>
       <default class="gripper_joint">
         <joint armature="0.001" stiffness="0.05" damping="0.8" frictionloss="0.1" />
-        <position kp="100.0" kv="50.0" forcerange="-10.0 10.0" />
+        <position kp="500.0" kv="50.0" forcerange="-10.0 10.0" />
       </default>
       <default class="visual">
         <geom material="visualgeom" contype="0" conaffinity="0" group="2" />
@@ -1321,8 +1321,8 @@
     <position name="left_arm_joint5" joint="left_arm_joint5" class="arm_joint_lower" ctrlrange="-2.9213400000000003 2.9213400000000003" forcerange="-10.0 10.0" />
     <position name="left_arm_joint6" joint="left_arm_joint6" class="arm_joint_lower" ctrlrange="-0.842808 0.755543" forcerange="-10.0 10.0" />
     <position name="left_arm_joint7" joint="left_arm_joint7" class="arm_joint_lower" ctrlrange="-1.56408 1.56408" forcerange="-10.0 10.0" />
-    <position name="right_gripper_r_knuckle_joint" joint="right_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 1.703" />
-    <position name="left_gripper_r_knuckle_joint" joint="left_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 1.703" />
+    <position name="right_gripper_r_knuckle_joint" joint="right_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 10" />
+    <position name="left_gripper_r_knuckle_joint" joint="left_gripper_r_knuckle_joint" class="gripper_joint" ctrlrange="0.0 10" />
     <velocity ctrllimited="true" ctrlrange="-1.00 1.00" joint="mobile_forward_joint" kv="1000" name="mobile_forward_joint" forcelimited="true" forcerange="-600 600" />
     <velocity ctrllimited="true" ctrlrange="-1.00 1.00" joint="mobile_side_joint" kv="1000" name="mobile_side_joint" forcelimited="true" forcerange="-600 600" />
     <velocity ctrllimited="true" ctrlrange="-4.00 4.00" joint="mobile_yaw_joint" kv="1000" name="mobile_yaw_joint" forcelimited="true" forcerange="-600 600" />

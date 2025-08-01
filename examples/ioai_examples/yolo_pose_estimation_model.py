@@ -177,7 +177,6 @@ class YoloPoseEstimationModel(PoseEstimationModel):
             print(f"Error estimating pose for {class_name}: {e}")
             return None
 
-
 def create_yolo_pose_estimation_model(
     yolo_model_path: str = "examples/yolo_seg_examples/best.pt",
     cad_models_dir: str = "examples/pose_est_examples/models",
@@ -202,4 +201,7 @@ def create_yolo_pose_estimation_model(
         yolo_model_path=yolo_model_path,
         cad_models_dir=cad_models_dir,
         camera_matrix=camera_matrix
-    ) 
+    )
+
+if __name__ == "__main__":
+    pass

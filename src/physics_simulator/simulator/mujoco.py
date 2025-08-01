@@ -385,42 +385,6 @@ class MujocoSimulator(BaseSim):
                 time.sleep(ctrl_dt - elapsed)
             
         self.close()
-        """Run the simulation loop."""
-        # TODO@Chenyu Cao: Hard code for control dt
-        ctrl_dt = 0.004
-        sim_dt = self.config.mujoco_config.timestep
-
-        # TODO@Cheyu: Hard code for fixed render frequency
-        render_dt = 0.1
-
-        num_steps = int(ctrl_dt / sim_dt)
-        realtime_sync = self.config.mujoco_config.realtime_sync
-
-        # Start render thread if viewer exists
-        if self.viewer is not None:
-            self._render_stop_event.clear()
-            self._render_thread = Thread(target=self._render_loop, args=(render_dt,), daemon=True)
-            self._render_thread.start()
-
-        while self._running:
-            start_time = time.time()
-            self.step(num_steps, render=False)
-
-            if self._physics_callbacks:
-                callbacks = list(self._physics_callbacks.values())
-                for callback in callbacks:
-                    callback()
-
-            elapsed = time.time() - start_time
-            if realtime_sync and elapsed < ctrl_dt:
-                time.sleep(ctrl_dt - elapsed)
-            
-        # Stop render thread
-        if self._render_thread is not None:
-            self._render_stop_event.set()
-            self._render_thread.join(timeout=1.0)
-            
-        self.close()
 
     def reset(self):
         """Reset the simulation to its initial state."""

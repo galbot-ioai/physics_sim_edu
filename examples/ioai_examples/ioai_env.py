@@ -230,15 +230,15 @@ class IOAIEnv:
         # Add toy
         toy_config = MeshConfig(
             name="toy",
-            prim_path="/World/toy",
+            prim_path="/World/Toy",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
             .joinpath("objects")
             .joinpath("toy")
             .joinpath("toy.xml"),
-            position=[0.65, -0.05, 0.45],
-            orientation=[0, 0.7071, 0, 0.7071],
+            position=[0.63, -0.1, 0.45],
+            orientation=[-0.4480, 0.4352, -0.5013, 0.5988],
         )
         self.simulator.add_object(toy_config)
 
