@@ -19,7 +19,7 @@
       </default>
       <default class="gripper_joint">
         <joint armature="0.001" stiffness="0.05" damping="0.8" frictionloss="0.1" />
-        <position kp="500.0" kv="50.0" forcerange="-10.0 10.0" />
+        <position kp="100.0" kv="50.0" forcerange="-10.0 10.0" />
       </default>
       <default class="visual">
         <geom material="visualgeom" contype="0" conaffinity="0" group="2" />

@@ -66,9 +66,6 @@ class IOAIEnv:
         # Setup the interface
         self._setup_interface()
 
-        # Init pose
-        self._init_pose()
-
         # Setup the mink
         self._setup_mink()
 
@@ -223,8 +220,8 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("extrusion")
             .joinpath("extrusion.xml"),
-            position=[0.7, 0.05, 0.55],
-            orientation=[0, 0, 0, 1],
+            position=[0.7, 0.05, 0.57],
+            orientation=[0, 0, 0.7071, 0.7071],
         )   
         self.simulator.add_object(extrusion_config)
 
@@ -999,18 +996,6 @@ class IOAIEnv:
         except Exception as e:
             print(f"Error getting camera images: {e}")
             return None, None
-
-    def _init_pose(self):
-        # Initialize robot pose
-        poses = {
-            self.interface.head: [0.0, 0.26],
-            self.interface.leg: [0.0821758285164833, 0.6340972781181335,0.5227039456367493, -0.00001198422432935331],
-            self.interface.left_arm: [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00],
-            self.interface.right_arm: [-2.00, 1.60, 0.60, 1.70, 0.00, 0.80, 0.00]
-        }
-        
-        for module, pose in poses.items():
-            module.set_joint_positions(pose, immediate=True)
 
     def _move_joints_to_target(self, module, target_positions, steps=500):
         """Move joints from current position to target position smoothly."""

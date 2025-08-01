@@ -30,7 +30,7 @@
     <body>
       <body name="object">
         <geom mesh="extrusion" class="visual"/>
-        <!-- <geom mesh="extrusion_collision_0" rgba="0.16389181603232583 0.7485043543025537 0.8425262856730839 1" class="collision"/>
+        <geom mesh="extrusion_collision_0" rgba="0.16389181603232583 0.7485043543025537 0.8425262856730839 1" class="collision"/>
         <geom mesh="extrusion_collision_1" rgba="0.08329378190516845 0.025893753508532735 0.2608222663313612 1" class="collision"/>
         <geom mesh="extrusion_collision_2" rgba="0.8150432436329396 0.8303382034217407 0.6017583132528149 1" class="collision"/>
         <geom mesh="extrusion_collision_3" rgba="0.1983929912514112 0.41865765188065995 0.3859867614685909 1" class="collision"/>
@@ -45,8 +45,8 @@
         <geom mesh="extrusion_collision_12" rgba="0.195530144787889 0.3831850972101276 0.5322522391656781 1" class="collision"/>
         <geom mesh="extrusion_collision_13" rgba="0.931373939274873 0.8162785822421454 0.266045004922013 1" class="collision"/>
         <geom mesh="extrusion_collision_14" rgba="0.43763983218699865 0.7666969725252085 0.886714934144022 1" class="collision"/>
-        <geom mesh="extrusion_collision_15" rgba="0.2607263203619983 0.19949382309164643 0.18584111294420325 1" class="collision"/> -->
-        <geom type="box" size="0.051 0.015 0.015" pos="0 0.0034 0.0153" class="collision"/>
+        <geom mesh="extrusion_collision_15" rgba="0.2607263203619983 0.19949382309164643 0.18584111294420325 1" class="collision"/>
+        <!-- <geom type="box" size="0.051 0.02 0.02" pos="0 0.0034 0.0153" class="collision" solref="0.001" solimp="0.998 0.998" friction="0.8 0.1 0.1"/> -->
       </body>
     </body>
   </worldbody>
