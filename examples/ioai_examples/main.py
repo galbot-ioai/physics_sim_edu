@@ -33,6 +33,7 @@ import time
 from pathlib import Path
 import os
 import cv2
+from scipy.spatial.transform import Rotation as R
 from physics_simulator.utils import preprocess_depth
 
 # ---------- Init env ---------
@@ -100,7 +101,7 @@ current_dir = Path(__file__).parent
 yolo_seg = YoloSeg(
     model_path=os.path.join(current_dir, "yolo_seg/ckpts/cotrain_all_class_0731_1.pt")
 )
-pose_estimator = PoseEstimator(
+pose_est = PoseEstimator(
     camera_matrix=[638.315, 637.683, 636.496, 363.410],
     depth_scale=0.001,
     model_scale_factor=None,
@@ -125,9 +126,12 @@ class YoloSegPoseEstimator:
             max_value=5 * 1000,
             data_type=np.uint16,
         )
-        
 
-        seg_results = yolo_seg.segment_image(rgb)
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        cv2.imwrite("/tmp/rgb_image.png", bgr)
+        cv2.imwrite("/tmp/depth_image.png", depth)
+        
+        seg_results = yolo_seg.segment_image("/tmp/rgb_image.png")
 
         for result in seg_results:
             if result.masks is not None:
@@ -135,25 +139,42 @@ class YoloSegPoseEstimator:
             else:
                 print("No masks detected.")
         
-        best_mask = yolo_seg.get_best_mask(seg_results, object_name)
-        if best_mask is not None:
-            cv2.imwrite("/tmp/best_mask.png", best_mask * 255)
-        else:
-            print("No mask found.")
+        mask = yolo_seg.get_best_mask(seg_results, object_name)
 
-        # pose in camera frame
-        pose = pose_estimator.estimate_pose(
+        mask_resized = cv2.resize(
+            mask.astype(np.float32),
+            (rgb.shape[1], rgb.shape[0]),
+            interpolation=cv2.INTER_LINEAR
+        )
+        mask_binary = (mask_resized > 0.5).astype(np.uint8) * 255
+        if mask_binary is not None:
+            cv2.imwrite("/tmp/mask_binary.png", mask_binary)
+        else:
+            print("No mask binary found.")
+
+        # pose_matrix in camera frame
+        pose_matrix = pose_est.estimate_pose(
             rgb_path="/tmp/rgb_image.png",
             depth_path="/tmp/depth_image.png",
-            mask_path="/tmp/best_mask.png",
+            mask_path="/tmp/mask_binary.png",
             cad_name=object_name,
         )
 
-        # pose in robot frame
+        # pose in camera frame
+        if pose_matrix is not None:
+            position = pose_matrix[:3, 3]
+            rotation_matrix = pose_matrix[:3, :3]
+            quat = R.from_matrix(rotation_matrix).as_quat()  # [qx, qy, qz, qw]
+            pose = np.concatenate([position, quat])  # [x, y, z, qx, qy, qz, qw]
+        else:
+            pose = None
 
+        # pose in robot
+        pose = self.env.camera_to_robot_frame(pose[:3], pose[3:])
         return pose
 
-pose_estimator = DummyPoseEstimator(env=env)
+# pose_estimator = DummyPoseEstimator(env=env)
+pose_estimator = YoloSegPoseEstimator(env=env)
 
 # ---- Init State Machine ------
 state_machine = SimpleStateMachine(max_states=-1)

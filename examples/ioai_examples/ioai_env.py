@@ -596,6 +596,82 @@ class IOAIEnv:
             world_orientation = None
         
         return world_position, world_orientation
+
+    def camera_to_robot_frame(self, camera_position, camera_orientation):
+        """Transform pose from camera frame to robot base frame.
+        
+        Args:
+            camera_position: Position in camera frame [x, y, z]
+            camera_orientation: Orientation in camera frame [qx, qy, qz, qw]
+            
+        Returns:
+            Tuple of (robot_position, robot_orientation) in robot base frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get camera pose in world frame
+        camera_prim_path = self.front_head_rgb_camera_path
+        camera_state = self.simulator.get_sensor_state(camera_prim_path)
+        camera_world_position = camera_state["transform_to_base_link"]["position"]
+        camera_world_orientation = camera_state["transform_to_base_link"]["orientation"]
+        
+        # Get robot base pose in world frame
+        base_position = self.robot.get_position()
+        base_orientation = self.robot.get_orientation()
+        
+        # Create transformation matrices
+        camera_world_rot = Rotation.from_quat(camera_world_orientation)
+        camera_local_rot = Rotation.from_quat(camera_orientation)
+        base_rot = Rotation.from_quat(base_orientation)
+        
+        # Transform position: camera frame -> world frame -> robot frame
+        world_position = camera_world_rot.apply(camera_position) + camera_world_position
+        relative_position = world_position - base_position
+        robot_position = base_rot.inv().apply(relative_position)
+        
+        # Transform orientation: camera frame -> world frame -> robot frame
+        world_orientation = (camera_world_rot * camera_local_rot).as_quat()
+        robot_orientation = (base_rot.inv() * Rotation.from_quat(world_orientation)).as_quat()
+        
+        return robot_position, robot_orientation
+
+    def robot_to_camera_frame(self, robot_position, robot_orientation):
+        """Transform pose from robot base frame to camera frame.
+        
+        Args:
+            robot_position: Position in robot base frame [x, y, z]
+            robot_orientation: Orientation in robot base frame [qx, qy, qz, qw]
+                        # orientation=[0, 0, 0.7071, 0.7071]
+            Tuple of (camera_position, camera_orientation) in camera frame
+        """
+        from scipy.spatial.transform import Rotation
+        
+        # Get camera pose in world frame
+        camera_prim_path = self.front_head_rgb_camera_path
+        camera_state = self.simulator.get_sensor_state(camera_prim_path)
+        camera_world_position = camera_state["transform_to_base_link"]["position"]
+        camera_world_orientation = camera_state["transform_to_base_link"]["orientation"]
+        
+        # Get robot base pose in world frame
+        base_position = self.robot.get_position()
+        base_orientation = self.robot.get_orientation()
+        
+        # Create transformation matrices
+        camera_world_rot = Rotation.from_quat(camera_world_orientation)
+        base_rot = Rotation.from_quat(base_orientation)
+        robot_rot = Rotation.from_quat(robot_orientation)
+        
+        # Transform position: robot frame -> world frame -> camera frame
+        world_position = base_rot.apply(robot_position) + base_position
+        relative_position = world_position - camera_world_position
+        camera_position = camera_world_rot.inv().apply(relative_position)
+        
+        # Transform orientation: robot frame -> world frame -> camera frame
+        world_orientation = (base_rot * robot_rot).as_quat()
+        camera_orientation = (camera_world_rot.inv() * Rotation.from_quat(world_orientation)).as_quat()
+        
+        return camera_position, camera_orientation
+
     
     def world_to_robot_init_frame_2d(self, world_position_2d):
         """Transform 2D position from world frame to robot initial frame.
