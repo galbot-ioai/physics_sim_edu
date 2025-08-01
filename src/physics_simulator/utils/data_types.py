@@ -84,9 +84,7 @@ class JointTrajectory(BaseModel):
                 return None
 
             arr = np.asarray(array)
-            # Shape validation
-            if arr.ndim != 2:
-                raise ValueError(f"{name} must be a 2D array, got {arr.ndim}D array")
+            # Shape validfollow_trajectoryueError(f"{name} must be a 2D array, got {arr.ndim}D array")
 
             # Validate dimensions: first dimension is points, second dimension is joints.
             if self.time_from_start is not None and arr.shape[0] != len(

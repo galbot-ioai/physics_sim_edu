@@ -158,6 +158,7 @@ class IOAIEnv:
 
         # Add table
         table_config = MeshConfig(
+            name="table",
             prim_path="/World/Table",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -172,7 +173,8 @@ class IOAIEnv:
 
         # Add bin
         bin_config = MeshConfig(
-            prim_path="/World/bin",
+            name="bin",
+            prim_path="/World/Bin",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
             .joinpath("synthnova_assets")
@@ -186,6 +188,7 @@ class IOAIEnv:
 
         # Add cube
         cube_config = CuboidConfig(
+            name="cube",
             prim_path="/World/Cube",
             position=[0.5, -0.3, 0.56],
             orientation=[0, 0, 0, 1],
@@ -196,6 +199,7 @@ class IOAIEnv:
 
         # Add toy
         toy_config = MeshConfig(
+            name="toy",
             prim_path="/World/toy",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -203,13 +207,14 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("toy")
             .joinpath("toy.xml"),
-            position=[0.65, -0.3, 0.55],
-            orientation=[0, 0, 0, -1],
+            position=[0.7, 0.1, 0.55],
+            orientation=[0, 0, 0, 1],
         )
         self.simulator.add_object(toy_config)
 
         # Add extrusion
         extrusion_config = MeshConfig(
+            name="extrusion",
             prim_path="/World/Extrusion",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -217,13 +222,14 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("extrusion")
             .joinpath("extrusion.xml"),
-            position=[0.6, -0.2, 0.55],
+            position=[0.6, 0, 0.55],
             orientation=[0, 0, 0, 1],
         )   
         self.simulator.add_object(extrusion_config)
 
         # Add power drill
         power_drill_config = MeshConfig(
+            name="power_drill",
             prim_path="/World/PowerDrill",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -231,13 +237,14 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("power_drill")
             .joinpath("power_drill.xml"),
-            position=[0.65, -0.1, 0.55],
+            position=[0.65, 0, 0.55],
             orientation=[0, 0, 0, 1],
         )
         self.simulator.add_object(power_drill_config)
 
         # Add mug
         mug_config = MeshConfig(
+            name="mug",
             prim_path="/World/Mug",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -258,6 +265,7 @@ class IOAIEnv:
 
         # Add walls
         wall_1_config = CuboidConfig(
+            name="wall_1",
             prim_path="/World/Wall1",
             position=[center_x, center_y+wall_width/2, wall_height / 2],
             orientation=[0, 0, 0, 1],
@@ -268,6 +276,7 @@ class IOAIEnv:
         self.simulator.add_object(wall_1_config)
 
         wall_2_config = CuboidConfig(
+            name="wall_2",
             prim_path="/World/Wall2",
             position=[center_x, center_y-wall_width/2, wall_height / 2],
             orientation=[0, 0, 0, 1],
@@ -278,6 +287,7 @@ class IOAIEnv:
         self.simulator.add_object(wall_2_config)
 
         wall_3_config = CuboidConfig(
+            name="wall_3",
             prim_path="/World/Wall3",
             position=[center_x+wall_width/2, center_y, wall_height / 2],
             orientation=[0, 0, 0, 1],
@@ -288,6 +298,7 @@ class IOAIEnv:
         self.simulator.add_object(wall_3_config)
 
         wall_4_config = CuboidConfig(
+            name="wall_4",
             prim_path="/World/Wall4",
             position=[center_x-wall_width/2, center_y, wall_height / 2],
             orientation=[0, 0, 0, 1],
@@ -299,6 +310,7 @@ class IOAIEnv:
 
         # Add shelf
         shelf_config = MeshConfig(
+            name="shelf",
             prim_path="/World/Shelf",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -313,6 +325,7 @@ class IOAIEnv:
 
         # Add cones
         cone_1_config = MeshConfig(
+            name="cone_1",
             prim_path="/World/Cone1",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -326,6 +339,7 @@ class IOAIEnv:
         self.simulator.add_object(cone_1_config)
 
         cone_2_config = MeshConfig(
+            name="cone_2",
             prim_path="/World/Cone2",
             mjcf_path=Path()
             .joinpath(self.simulator.synthnova_assets_directory)
@@ -338,18 +352,18 @@ class IOAIEnv:
         )
         self.simulator.add_object(cone_2_config)
 
-        cone_3_config = MeshConfig(
-            prim_path="/World/Cone3",
-            mjcf_path=Path()
-            .joinpath(self.simulator.synthnova_assets_directory)
-            .joinpath("synthnova_assets")
-            .joinpath("objects")
-            .joinpath("cone")
-            .joinpath("cone.xml"),
-            position=[1, 1, 0.55],
-            orientation=[0, 0, 0.70711, 0.70711],
-        )
-        self.simulator.add_object(cone_3_config)
+        # cone_3_config = MeshConfig(
+        #     prim_path="/World/Cone3",
+        #     mjcf_path=Path()
+        #     .joinpath(self.simulator.synthnova_assets_directory)
+        #     .joinpath("synthnova_assets")
+        #     .joinpath("objects")
+        #     .joinpath("cone")
+        #     .joinpath("cone.xml"),
+        #     position=[1, 1, 0.55],
+        #     orientation=[0, 0, 0.70711, 0.70711],
+        # )
+        # self.simulator.add_object(cone_3_config)
 
         # Initialize the simulator
         self.simulator.initialize()
@@ -794,21 +808,6 @@ class IOAIEnv:
     def move_right_arm_to_pose(self, target_position, target_orientation):
         """Move right arm to target pose"""
         return self.move_arm_to_pose("right_arm", target_position, target_orientation)
-    
-    def move_chassis_follow_path(self, waypoints):
-        """Move chassis to follow a path defined by waypoints in world coordinates
-        
-        Args:
-            waypoints: List of 2D waypoints [(x1, y1), (x2, y2), ...] in world frame
-        """
-        if not waypoints or len(waypoints) < 2:
-            print("Invalid waypoints: need at least 2 points")
-            return
-        
-        # Convert waypoints to robot frame
-        robot_init_x, robot_init_y = self.robot_init_position[:2]
-        robot_init_theta = self.robot_init_orientation[2]
-        robot_waypoints = waypoints
 
     def move_chassis_follow_path(self, waypoints):
         """Move chassis to follow a path defined by waypoints in world coordinates
@@ -834,7 +833,6 @@ class IOAIEnv:
             if current_target_index >= len(path):
                 self.interface.chassis.set_joint_velocities([0.0, 0.0, 0.0])
                 self.simulator.remove_physics_callback("follow_path_callback")
-                print("Path following completed!")
                 return
                 
             # Get current state
@@ -851,8 +849,6 @@ class IOAIEnv:
                 )
                 if distance < waypoint_tolerance:
                     current_target_index += 1
-                    if current_target_index < len(path):
-                        print(f"Reached waypoint {current_target_index-1}, moving to {current_target_index}")
                     return
             else:
                 target_pos = path[-1]
@@ -867,6 +863,44 @@ class IOAIEnv:
             
         # Add physics callback for path following
         self.simulator.add_physics_callback("follow_path_callback", follow_path_callback)
+
+    def move_chassis_rotate(self, target_angle_world, angular_velocity=0.5):
+        """Rotate chassis to face a specific angle in world coordinates.
+        
+        Args:
+            target_angle_world: Target angle in world frame (radians), 0 is along positive x-axis
+            angular_velocity: Angular velocity for rotation (rad/s), default 0.5
+        """
+        # Remove existing callback
+        try:
+            self.simulator.remove_physics_callback("rotate_callback")
+        except:
+            pass
+        
+        # Calculate target heading in robot frame
+        from scipy.spatial.transform import Rotation
+        init_rot = Rotation.from_quat(self.robot_init_orientation)
+        init_z_angle = init_rot.as_euler('xyz')[2]  # Extract z-axis rotation
+        target_heading = -init_z_angle + target_angle_world
+        
+        def rotate_callback():
+            current_heading = self.interface.chassis.get_joint_positions()[2]
+            heading_error = target_heading - current_heading
+            
+            # Normalize error to [-pi, pi]
+            while heading_error > math.pi:
+                heading_error -= 2 * math.pi
+            while heading_error < -math.pi:
+                heading_error += 2 * math.pi
+            
+            if abs(heading_error) < 0.05:
+                self.interface.chassis.set_joint_velocities([0.0, 0.0, 0.0])
+                self.simulator.remove_physics_callback("rotate_callback")
+            else:
+                yaw_vel = angular_velocity if heading_error > 0 else -angular_velocity
+                self.interface.chassis.set_joint_velocities([0.0, 0.0, yaw_vel])
+        
+        self.simulator.add_physics_callback("rotate_callback", rotate_callback)
 
     def get_camera_images(self):
         """Get RGB and depth images from the front head camera.
@@ -895,8 +929,8 @@ class IOAIEnv:
         poses = {
             self.interface.head: [0.0, 0.26],
             self.interface.leg: [0.0821758285164833, 0.6340972781181335,0.5227039456367493, -0.00001198422432935331],
-            self.interface.left_arm: [-0.4654513936071508, 1.4785659313201904, -0.6235712173907869, 2.097979784011841, 1.3999720811843872, -0.009971064515411854, 1.0999830961227417],
-            self.interface.right_arm: [0.4654513936071508, -1.4785659313201904, 0.6235712173907869, -2.097979784011841, -1.3999720811843872, 0.009971064515411854, -1.0999830961227417]
+            self.interface.left_arm: [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00],
+            self.interface.right_arm: [-2.00, 1.60, 0.60, 1.70, 0.00, 0.80, 0.00]
         }
         
         for module, pose in poses.items():

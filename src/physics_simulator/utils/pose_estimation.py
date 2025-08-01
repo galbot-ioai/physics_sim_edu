@@ -25,7 +25,7 @@ class PoseEstimator:
         depth_scale=0.001,
         model_scale_factor=None,
         visualize=False,
-        output_dir="pose_estimation_results",
+        log_debug=True,
     ):
         """
         Initialize pose estimator
@@ -35,17 +35,38 @@ class PoseEstimator:
             depth_scale: Depth scaling factor (default 0.001, mm to m)
             model_scale_factor: Model scaling factor (optional)
             visualize: Whether to visualize intermediate results (default False)
+            debug: Whether to enable debug mode (default False)
         """
+        cur_time = time.strftime("%Y%m%d%H%M%S")
         self.camera_matrix = camera_matrix
         self.depth_scale = depth_scale
         self.model_scale_factor = model_scale_factor
         self.visualize = visualize
-        self.output_dir = output_dir
+        self.output_dir = f"pose_est_res_{cur_time}"
+        self.debug = log_debug
 
         # Create output directory
         os.makedirs(self.output_dir, exist_ok=True)
+        print("PoseEstimator initialized with parameters:")
 
-    def estimate_pose(self, rgb_path, depth_path, mask_path, cad_path):
+        # Debug mode
+        if self.debug:
+            self.debug_dir = f"pose_est_dbg_{cur_time}"
+            os.makedirs(self.debug_dir, exist_ok=True)
+            # Save parameters to params_init.npz
+            savez_kwargs = {
+                "camera_matrix": camera_matrix,
+                "depth_scale": depth_scale,
+                "visualize": visualize,
+                "output_dir": self.output_dir,
+            }
+            if model_scale_factor is not None:
+                savez_kwargs["model_scale_factor"] = model_scale_factor
+            else:
+                savez_kwargs["model_scale_factor"] = "None"
+            np.savez(f"{self.debug_dir}/params_init.npz", **savez_kwargs)
+
+    def estimate_pose(self, rgb_path, depth_path, mask_path, cad_name):
         """
         Estimate 6D pose of object
 
@@ -53,7 +74,7 @@ class PoseEstimator:
             rgb_path: RGB image path
             depth_path: Depth image path
             mask_path: Mask image path
-            cad_path: CAD model file path
+            cad_name: CAD model name ('power_drill', 'bin', 'cube', 'mug', 'extrusion')
 
         Returns:
             pose_matrix: 4x4 pose transformation matrix
@@ -61,7 +82,7 @@ class PoseEstimator:
         try:
             # Load and process data
             scene_pcd, model_pcd = self.load_and_process_data(
-                rgb_path, depth_path, mask_path, cad_path
+                rgb_path, depth_path, mask_path, cad_name
             )
 
             # Estimate pose
@@ -116,7 +137,7 @@ class PoseEstimator:
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=iterations)
         return mask
 
-    def load_and_process_data(self, rgb_path, depth_path, mask_path, cad_path):
+    def load_and_process_data(self, rgb_path, depth_path, mask_path, cad_name):
         """
         Load and process input data
         """
@@ -127,20 +148,35 @@ class PoseEstimator:
             rgb = cv2.imread(rgb_path)
             if rgb is None:
                 raise FileNotFoundError(f"Cannot load RGB image: {rgb_path}")
+            if self.debug:
+                cv2.imwrite(os.path.join(self.debug_dir, "rgb_image.png"), rgb)
 
             depth = cv2.imread(depth_path, cv2.IMREAD_ANYDEPTH)
             if depth is None:
                 raise FileNotFoundError(f"Cannot load depth image: {depth_path}")
+            if self.debug:
+                cv2.imwrite(os.path.join(self.debug_dir, "depth_image.png"), depth)
             depth = self._enhance_depth_map(depth)
 
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
             if mask is None:
                 raise FileNotFoundError(f"Cannot load mask image: {mask_path}")
+            if self.debug:
+                cv2.imwrite(os.path.join(self.debug_dir, "mask_image.png"), mask)
             mask = self._refine_mask(mask)
 
             pprint(
                 f"Image dimensions: RGB={rgb.shape}, Depth={depth.shape}, Mask={mask.shape}"
             )
+
+            if self.debug:
+                savez_kwargs = {
+                    "rgb_path": f"{self.debug_dir}/rgb_image.png",
+                    "depth_path": f"{self.debug_dir}/depth_image.png",
+                    "mask_path": f"{self.debug_dir}/mask_image.png",
+                    "cad_name": cad_name,
+                }
+                np.savez(f"{self.debug_dir}/params_est.npz", **savez_kwargs)
 
             # Visualize input data
             if self.visualize:
@@ -153,6 +189,8 @@ class PoseEstimator:
             scene_cloud = self.generate_scene_point_cloud(rgb, depth, mask_binary)
 
             # Load CAD model
+            cur_dir = os.path.dirname(os.path.abspath(__file__))
+            cad_path = os.path.join(cur_dir, "models", f"{cad_name}.obj")
             pprint(f"Loading CAD model: {cad_path}")
             cad_mesh = self.load_mesh_with_fallback(cad_path)
 
@@ -163,10 +201,14 @@ class PoseEstimator:
             model_cloud = cad_mesh.sample_points_uniformly(number_of_points=8000)
 
             # Preprocess point clouds with object-specific parameters
-            scene_voxel = 0.003
-            model_voxel = 0.003
-            scene_cloud = self.preprocess_point_cloud(scene_cloud, voxel_size=scene_voxel)
-            model_cloud = self.preprocess_point_cloud(model_cloud, voxel_size=model_voxel)
+            scene_voxel = 0.002 if cad_name == "bin" else 0.003
+            model_voxel = 0.002 if cad_name == "bin" else 0.003
+            scene_cloud = self.preprocess_point_cloud(
+                scene_cloud, voxel_size=scene_voxel
+            )
+            model_cloud = self.preprocess_point_cloud(
+                model_cloud, voxel_size=model_voxel
+            )
 
             pprint(f"Scene point cloud: {len(scene_cloud.points)} points")
             pprint(f"Model point cloud: {len(model_cloud.points)} points")
@@ -360,7 +402,7 @@ class PoseEstimator:
                 pcd_clean.estimate_normals(
                     search_param=o3d.geometry.KDTreeSearchParamKNN(knn=30)
                 )
-            
+
             # Ensure normals point toward camera (assuming camera at origin)
             pcd_clean.orient_normals_towards_camera_location(
                 camera_location=np.array([0, 0, 0])
@@ -405,18 +447,18 @@ class PoseEstimator:
         # Enhanced coarse registration with multiple attempts
         pprint("Performing improved coarse registration...")
         start_time = time.time()
-        
+
         # Save debug point clouds
         # o3d.io.write_point_cloud("model_moved.ply", model_moved)
         # o3d.io.write_point_cloud("scene_cloud.ply", scene_cloud)
         # pprint("Model and scene point clouds saved for debugging.")
-        
+
         best_transform = None
         best_evaluation = None
-        
+
         # Try multiple registration methods and keep the best result
         registration_methods = []
-        
+
         # Method 1: RANSAC with current parameters
         try:
             transform_ransac = self.ransac_global_registration(model_moved, scene_cloud)
@@ -427,18 +469,22 @@ class PoseEstimator:
             pprint(f"RANSAC fitness: {eval_ransac.fitness:.4f}")
         except Exception as e:
             pprint(f"RANSAC failed: {str(e)}")
-        
+
         # Method 2: RANSAC with smaller voxel size for finer features
         try:
-            transform_ransac_fine = self.ransac_global_registration(model_moved, scene_cloud, voxel_size=0.005)
+            transform_ransac_fine = self.ransac_global_registration(
+                model_moved, scene_cloud, voxel_size=0.005
+            )
             eval_ransac_fine = o3d.pipelines.registration.evaluate_registration(
                 model_moved, scene_cloud, 0.05, transform_ransac_fine
             )
-            registration_methods.append(("RANSAC_Fine", transform_ransac_fine, eval_ransac_fine))
+            registration_methods.append(
+                ("RANSAC_Fine", transform_ransac_fine, eval_ransac_fine)
+            )
             pprint(f"RANSAC Fine fitness: {eval_ransac_fine.fitness:.4f}")
         except Exception as e:
             pprint(f"RANSAC Fine failed: {str(e)}")
-            
+
         # Method 3: Teaser++ if available
         try:
             transform_teaser = self.teaser_registration(model_moved, scene_cloud)
@@ -449,7 +495,7 @@ class PoseEstimator:
             pprint(f"Teaser++ fitness: {eval_teaser.fitness:.4f}")
         except Exception as e:
             pprint(f"Teaser++ failed: {str(e)}")
-        
+
         # Method 4: PCA alignment as fallback
         try:
             transform_pca = self.pca_alignment(model_moved, scene_cloud)
@@ -460,13 +506,15 @@ class PoseEstimator:
             pprint(f"PCA fitness: {eval_pca.fitness:.4f}")
         except Exception as e:
             pprint(f"PCA failed: {str(e)}")
-        
+
         # Select the best method based on fitness
         if registration_methods:
             best_method, best_transform, best_evaluation = max(
                 registration_methods, key=lambda x: x[2].fitness
             )
-            pprint(f"Selected best coarse registration method: {best_method} (fitness: {best_evaluation.fitness:.4f})")
+            pprint(
+                f"Selected best coarse registration method: {best_method} (fitness: {best_evaluation.fitness:.4f})"
+            )
             initial_transform = best_transform
             evaluation = best_evaluation
         else:
@@ -482,7 +530,9 @@ class PoseEstimator:
         pprint(
             f"Coarse registration completed, time taken: {time.time() - start_time:.2f} seconds"
         )
-        pprint(f"Coarse registration evaluation: fitness={evaluation.fitness:.4f}, RMSE={evaluation.inlier_rmse:.6f}")
+        pprint(
+            f"Coarse registration evaluation: fitness={evaluation.fitness:.4f}, RMSE={evaluation.inlier_rmse:.6f}"
+        )
         pprint(
             f"Combined initial transformation matrix:\n{np.array_str(T_initial, precision=4, suppress_small=True)}"
         )
@@ -505,9 +555,11 @@ class PoseEstimator:
         # Evaluate registration result with adaptive threshold
         scene_points = np.asarray(scene_cloud.points)
         model_points = np.asarray(model_cloud.points)
-        scene_scale = np.linalg.norm(scene_points.max(axis=0) - scene_points.min(axis=0))
+        scene_scale = np.linalg.norm(
+            scene_points.max(axis=0) - scene_points.min(axis=0)
+        )
         eval_threshold = max(0.02, scene_scale * 0.05)  # Adaptive evaluation threshold
-        
+
         final_evaluation = o3d.pipelines.registration.evaluate_registration(
             model_cloud, scene_cloud, eval_threshold, result.transformation
         )
@@ -519,25 +571,33 @@ class PoseEstimator:
         # Transform model and check overlap with scene
         model_transformed = copy.deepcopy(model_cloud)
         model_transformed.transform(result.transformation)
-        
+
         # Check centroid distance after transformation
         scene_center = np.mean(scene_points, axis=0)
         model_center_transformed = np.mean(np.asarray(model_transformed.points), axis=0)
         centroid_distance = np.linalg.norm(scene_center - model_center_transformed)
         pprint(f"Post-registration centroid distance: {centroid_distance:.4f}")
-        
+
         # If centroid distance is too large, the registration might have failed
         if centroid_distance > scene_scale * 0.3:
-            pprint("Warning: Large centroid distance suggests potential registration failure")
+            pprint(
+                "Warning: Large centroid distance suggests potential registration failure"
+            )
 
         # Adjusted fitness thresholds based on point cloud characteristics
-        fitness_threshold_low = max(0.15, 75.0 / len(scene_points))  # Increased thresholds
+        fitness_threshold_low = max(
+            0.15, 75.0 / len(scene_points)
+        )  # Increased thresholds
         fitness_threshold_medium = max(0.35, 200.0 / len(scene_points))
-        
+
         if final_evaluation.fitness < fitness_threshold_low:
-            pprint(f"Low registration quality (fitness < {fitness_threshold_low:.3f}), results may be unreliable")
+            pprint(
+                f"Low registration quality (fitness < {fitness_threshold_low:.3f}), results may be unreliable"
+            )
         elif final_evaluation.fitness < fitness_threshold_medium:
-            pprint(f"Medium registration quality (fitness < {fitness_threshold_medium:.3f}), please check results")
+            pprint(
+                f"Medium registration quality (fitness < {fitness_threshold_medium:.3f}), please check results"
+            )
         else:
             pprint("Good registration quality")
 
@@ -615,18 +675,26 @@ class PoseEstimator:
         # Calculate point cloud scale to adapt correspondence distances
         source_points = np.asarray(source.points)
         target_points = np.asarray(target.points)
-        source_scale = np.linalg.norm(source_points.max(axis=0) - source_points.min(axis=0))
-        target_scale = np.linalg.norm(target_points.max(axis=0) - target_points.min(axis=0))
+        source_scale = np.linalg.norm(
+            source_points.max(axis=0) - source_points.min(axis=0)
+        )
+        target_scale = np.linalg.norm(
+            target_points.max(axis=0) - target_points.min(axis=0)
+        )
         avg_scale = (source_scale + target_scale) / 2
-        
-        pprint(f"Point cloud scale: source={source_scale:.4f}, target={target_scale:.4f}, avg={avg_scale:.4f}")
-        
+
+        pprint(
+            f"Point cloud scale: source={source_scale:.4f}, target={target_scale:.4f}, avg={avg_scale:.4f}"
+        )
+
         # More conservative correspondence distances to prevent overfitting
         loose_dist = max(0.08, avg_scale * 0.12)
         medium_dist = max(0.04, avg_scale * 0.06)
         strict_dist = max(0.015, avg_scale * 0.025)
-        
-        pprint(f"ICP correspondence distances: loose={loose_dist:.4f}, medium={medium_dist:.4f}, strict={strict_dist:.4f}")
+
+        pprint(
+            f"ICP correspondence distances: loose={loose_dist:.4f}, medium={medium_dist:.4f}, strict={strict_dist:.4f}"
+        )
 
         # Stage 1: Loose parameters - Point to Point first for robustness
         criteria = o3d.pipelines.registration.ICPConvergenceCriteria(
@@ -641,11 +709,13 @@ class PoseEstimator:
             estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
             criteria=criteria,
         )
-        
+
         evaluation1 = o3d.pipelines.registration.evaluate_registration(
             source, target, medium_dist, result.transformation
         )
-        pprint(f"ICP Stage 1 (Point-to-Point): fitness={evaluation1.fitness:.4f}, RMSE={evaluation1.inlier_rmse:.6f}")
+        pprint(
+            f"ICP Stage 1 (Point-to-Point): fitness={evaluation1.fitness:.4f}, RMSE={evaluation1.inlier_rmse:.6f}"
+        )
 
         # Stage 2: Medium parameters - Continue with Point-to-Point for robustness
         criteria = o3d.pipelines.registration.ICPConvergenceCriteria(
@@ -661,17 +731,23 @@ class PoseEstimator:
             estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
             criteria=criteria,
         )
-        
+
         evaluation2_p2p = o3d.pipelines.registration.evaluate_registration(
             source, target, medium_dist, result_p2p.transformation
         )
-        pprint(f"ICP Stage 2 (Point-to-Point): fitness={evaluation2_p2p.fitness:.4f}, RMSE={evaluation2_p2p.inlier_rmse:.6f}")
+        pprint(
+            f"ICP Stage 2 (Point-to-Point): fitness={evaluation2_p2p.fitness:.4f}, RMSE={evaluation2_p2p.inlier_rmse:.6f}"
+        )
 
         # Try Point-to-Plane if we have good Point-to-Point result and both clouds have normals
-        if (source.has_normals() and target.has_normals() and 
-            evaluation2_p2p.fitness > 0.3):  # Only if Point-to-Point worked well
-            
-            pprint("Attempting Point-to-Plane ICP with good Point-to-Point initialization...")
+        if (
+            source.has_normals()
+            and target.has_normals()
+            and evaluation2_p2p.fitness > 0.3
+        ):  # Only if Point-to-Point worked well
+            pprint(
+                "Attempting Point-to-Plane ICP with good Point-to-Point initialization..."
+            )
             result_p2plane = o3d.pipelines.registration.registration_icp(
                 source,
                 target,
@@ -680,14 +756,18 @@ class PoseEstimator:
                 estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
                 criteria=criteria,
             )
-            
+
             evaluation2_p2plane = o3d.pipelines.registration.evaluate_registration(
                 source, target, medium_dist, result_p2plane.transformation
             )
-            pprint(f"ICP Stage 2 (Point-to-Plane): fitness={evaluation2_p2plane.fitness:.4f}, RMSE={evaluation2_p2plane.inlier_rmse:.6f}")
-            
+            pprint(
+                f"ICP Stage 2 (Point-to-Plane): fitness={evaluation2_p2plane.fitness:.4f}, RMSE={evaluation2_p2plane.inlier_rmse:.6f}"
+            )
+
             # Use Point-to-Plane result if it's better, otherwise stick with Point-to-Point
-            if evaluation2_p2plane.fitness >= evaluation2_p2p.fitness * 0.8:  # Allow small degradation for better geometry
+            if (
+                evaluation2_p2plane.fitness >= evaluation2_p2p.fitness * 0.8
+            ):  # Allow small degradation for better geometry
                 result = result_p2plane
                 evaluation2 = evaluation2_p2plane
                 pprint("Using Point-to-Plane result for better geometric accuracy")
@@ -701,7 +781,9 @@ class PoseEstimator:
             if not (source.has_normals() and target.has_normals()):
                 pprint("Using Point-to-Point ICP (missing normals)")
             else:
-                pprint("Using Point-to-Point ICP (Point-to-Point result not good enough for Point-to-Plane)")
+                pprint(
+                    "Using Point-to-Point ICP (Point-to-Point result not good enough for Point-to-Plane)"
+                )
 
         # Stage 3: Fine parameters - Only if previous stage was successful
         if evaluation2.fitness > 0.2:  # Lower threshold to allow fine registration
@@ -710,10 +792,17 @@ class PoseEstimator:
             )
 
             # Use more conservative estimation method for fine registration
-            final_estimation_method = o3d.pipelines.registration.TransformationEstimationPointToPoint()
-            if (source.has_normals() and target.has_normals() and 
-                evaluation2.fitness > 0.6):  # Only use Point-to-Plane for very good alignments
-                final_estimation_method = o3d.pipelines.registration.TransformationEstimationPointToPlane()
+            final_estimation_method = (
+                o3d.pipelines.registration.TransformationEstimationPointToPoint()
+            )
+            if (
+                source.has_normals()
+                and target.has_normals()
+                and evaluation2.fitness > 0.6
+            ):  # Only use Point-to-Plane for very good alignments
+                final_estimation_method = (
+                    o3d.pipelines.registration.TransformationEstimationPointToPlane()
+                )
                 pprint("Using Point-to-Plane for fine registration")
             else:
                 pprint("Using Point-to-Point for fine registration")
@@ -726,14 +815,18 @@ class PoseEstimator:
                 estimation_method=final_estimation_method,
                 criteria=criteria,
             )
-            
+
             evaluation3 = o3d.pipelines.registration.evaluate_registration(
                 source, target, strict_dist, result_fine.transformation
             )
-            pprint(f"ICP Stage 3 (Fine): fitness={evaluation3.fitness:.4f}, RMSE={evaluation3.inlier_rmse:.6f}")
-            
+            pprint(
+                f"ICP Stage 3 (Fine): fitness={evaluation3.fitness:.4f}, RMSE={evaluation3.inlier_rmse:.6f}"
+            )
+
             # Only use fine result if it doesn't significantly degrade fitness
-            if evaluation3.fitness >= evaluation2.fitness * 0.7:  # Allow some degradation for better precision
+            if (
+                evaluation3.fitness >= evaluation2.fitness * 0.7
+            ):  # Allow some degradation for better precision
                 result = result_fine
                 pprint("Using fine registration result")
             else:
@@ -751,7 +844,7 @@ class PoseEstimator:
 
         # RANSAC parameters - more conservative for better accuracy
         distance_threshold = voxel_size * 2.0  # Increased threshold for robustness
-        
+
         # More iterations for better convergence
         result = (
             o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
@@ -806,41 +899,39 @@ class PoseEstimator:
     def teaser_registration(self, source, target):
         """Use TEASER++ for robust registration"""
         pprint("Using TEASER++ for robust registration")
-        
+
         # Downsample point clouds for efficiency
         voxel_size = 0.01
         source_down = source.voxel_down_sample(voxel_size)
         target_down = target.voxel_down_sample(voxel_size)
-        
+
         # Extract point cloud data in correct format (3xN)
         src_pts = np.asarray(source_down.points).T
         tgt_pts = np.asarray(target_down.points).T
-        
+
         # Compute FPFH features
         source_fpfh = self.compute_fpfh(source_down, voxel_size)
         target_fpfh = self.compute_fpfh(target_down, voxel_size)
-        
+
         # Find correspondences using feature matching
         corr_source, corr_target = self.find_correspondences(
             source_fpfh, target_fpfh, source_down, target_down
         )
-        
+
         # Prepare corresponding points for TEASER++
         src_corr = src_pts[:, corr_source]
         tgt_corr = tgt_pts[:, corr_target]
-        
+
         # Initialize TEASER solver
         solver_params = teaserpp_python.RobustRegistrationSolver.Params()
         solver_params.cbar2 = 1.0
         solver_params.noise_bound = voxel_size * 2
         solver_params.estimate_scaling = False
-        solver_params.rotation_estimation_algorithm = (
-            teaserpp_python.RobustRegistrationSolver.ROTATION_ESTIMATION_ALGORITHM.GNC_TLS
-        )
+        solver_params.rotation_estimation_algorithm = teaserpp_python.RobustRegistrationSolver.ROTATION_ESTIMATION_ALGORITHM.GNC_TLS
         solver_params.rotation_gnc_factor = 1.4
         solver_params.rotation_max_iterations = 100
         solver_params.rotation_cost_threshold = 1e-6
-        
+
         solver = teaserpp_python.RobustRegistrationSolver(solver_params)
         solver.solve(src_corr, tgt_corr)
         solution = solver.getSolution()
@@ -855,21 +946,21 @@ class PoseEstimator:
         """Find point correspondences using feature matching"""
         source_features = np.array(source_fpfh.data).T
         target_features = np.array(target_fpfh.data).T
-        
+
         # Build KDTree for target features
         target_tree = o3d.geometry.KDTreeFlann(target_features)
-        
+
         # Find mutual correspondences
         corr_source = []
         corr_target = []
-        
+
         # Source to target matching
         s_to_t = {}
         for i in range(source_features.shape[0]):
             _, idxs, _ = target_tree.search_knn_vector_xd(source_features[i], 1)
             j = idxs[0]
             s_to_t[i] = j
-        
+
         # Target to source matching
         source_tree = o3d.geometry.KDTreeFlann(source_features)
         t_to_s = {}
@@ -877,13 +968,13 @@ class PoseEstimator:
             _, idxs, _ = source_tree.search_knn_vector_xd(target_features[j], 1)
             i = idxs[0]
             t_to_s[j] = i
-        
+
         # Keep mutual correspondences
         for i, j in s_to_t.items():
             if t_to_s.get(j, -1) == i:
                 corr_source.append(i)
                 corr_target.append(j)
-        
+
         pprint(f"Found {len(corr_source)} mutual correspondences")
         return corr_source, corr_target
 
