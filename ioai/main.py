@@ -104,6 +104,13 @@ def main():
 
     # Register callback and run simulation
     env.simulator.add_physics_callback("ioai_main_callback", ioai_main_callback)
+
+    # --- Add referee
+    from referee.referee import Referee
+    referee = Referee(env.simulator.model._model, os.path.join(os.path.dirname(os.path.abspath(__file__)), "referee/rules.json"))
+    env.simulator.add_physics_callback("referee_callback", lambda: referee.update(env.simulator.data._data))
+
+    # ---
     env.run()
 
 

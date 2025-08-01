@@ -4,7 +4,7 @@
       <geom group="1" type="mesh" contype="0" conaffinity="0"/>
     </default>
     <default class="collision">
-      <geom group="0" type="mesh" density="1"/>
+      <geom group="0" type="mesh"/>
     </default>
   </default>
   <asset>
@@ -47,6 +47,7 @@
         <geom mesh="extrusion_collision_14" rgba="0.43763983218699865 0.7666969725252085 0.886714934144022 1" class="collision"/>
         <geom mesh="extrusion_collision_15" rgba="0.2607263203619983 0.19949382309164643 0.18584111294420325 1" class="collision"/> -->
         <geom type="box" size="0.051 0.015 0.015" pos="0 0.0034 0.0153" class="collision"/>
+        <!-- <geom type="box" size="0.05 0.05 0.05" pos="0 0.0034 0.0153" class="collision"/> -->
       </body>
     </body>
   </worldbody>

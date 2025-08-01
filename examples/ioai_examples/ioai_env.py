@@ -940,12 +940,12 @@ class IOAIEnv:
         # Add physics callback for path following
         self.simulator.add_physics_callback("follow_path_callback", follow_path_callback)
 
-    def move_chassis_rotate(self, target_angle_world, angular_velocity=1.0):
+    def move_chassis_rotate(self, target_angle_world, angular_velocity=0.5):
         """Rotate chassis to face a specific angle in world coordinates.
         
         Args:
             target_angle_world: Target angle in world frame (radians), 0 is along positive x-axis
-            angular_velocity: Angular velocity for rotation (rad/s), default 1.0
+            angular_velocity: Angular velocity for rotation (rad/s), default 0.5
         """
         # Remove existing callback
         try:
