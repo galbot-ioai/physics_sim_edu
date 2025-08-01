@@ -340,18 +340,144 @@ class IOAIEnv:
         )
         self.simulator.add_object(cone_2_config)
 
-        # cone_3_config = MeshConfig(
-        #     prim_path="/World/Cone3",
-        #     mjcf_path=Path()
-        #     .joinpath(self.simulator.synthnova_assets_directory)
-        #     .joinpath("synthnova_assets")
-        #     .joinpath("objects")
-        #     .joinpath("cone")
-        #     .joinpath("cone.xml"),
-        #     position=[1, 1, 0.55],
-        #     orientation=[0, 0, 0.70711, 0.70711],
-        # )
-        # self.simulator.add_object(cone_3_config)
+        cone_3_config = MeshConfig(
+            prim_path="/World/Cone3",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("cone")
+            .joinpath("cone.xml"),
+            position=[0, 3, 0],
+            orientation=[0, 0, 0.70711, 0.70711],
+            scale=[1.5, 1.5, 1.5]
+        )
+        self.simulator.add_object(cone_3_config)
+
+        cone_4_config = MeshConfig(
+            name="cone_4",
+            prim_path="/World/Cone4",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("cone")
+            .joinpath("cone.xml"),
+            position=[3, 1, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[1.5, 1.5, 1.5]
+        )
+        self.simulator.add_object(cone_4_config)
+
+        cone_5_config = MeshConfig(
+            name="cone_5",
+            prim_path="/World/Cone5",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("cone")
+            .joinpath("cone.xml"),
+            position=[0, 2, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[1.5, 1.5, 1.5]
+        )
+        self.simulator.add_object(cone_5_config)
+
+        cone_6_config = MeshConfig(
+            name="cone_6",
+            prim_path="/World/Cone6",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("cone")
+            .joinpath("cone.xml"),
+            position=[1.5, 0, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[1.5, 1.5, 1.5]
+        )
+        self.simulator.add_object(cone_6_config)
+
+        # Add zones
+        departure_zone_config = MeshConfig(
+            name="departure_zone",
+            prim_path="/World/Zone",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("zone")
+            .joinpath("zone.xml"),
+            position=[0, 4, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[0.8, 0.8, 0.02]
+        )
+        self.simulator.add_object(departure_zone_config)
+
+        # pick_zone
+        pick_config = MeshConfig(
+            name="pick_up_zone",
+            prim_path="/World/PickUpZone",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("zone")
+            .joinpath("zone.xml"),
+            position=[0, 0, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[0.6, 1, 0.02]
+        )
+        self.simulator.add_object(pick_config)
+
+        # pick_bin_zone
+        pick_bin_config = MeshConfig(
+            name="pick_bin_zone",
+            prim_path="/World/PickBinZone",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("zone")
+            .joinpath("zone.xml"),
+            position=[0.65, 0.9, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[0.6, 0.6, 0.02]
+        )
+        self.simulator.add_object(pick_bin_config)
+
+        # end zone
+        end_config = MeshConfig(
+            name="end_zone",
+            prim_path="/World/EndZone",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("zone")
+            .joinpath("zone.xml"),
+            position=[4, 0, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[0.8, 0.8, 0.02]
+        )
+        self.simulator.add_object(end_config)
+
+        # place zone
+        place_config = MeshConfig(
+            name="place_zone",
+            prim_path="/World/PlaceZone",
+            mjcf_path=Path()
+            .joinpath(self.simulator.synthnova_assets_directory)
+            .joinpath("synthnova_assets")
+            .joinpath("objects")
+            .joinpath("zone")
+            .joinpath("zone.xml"),
+            position=[3, 4, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[0.8, 1.0, 0.02]
+        )
+        self.simulator.add_object(place_config)
 
         # Initialize the simulator
         self.simulator.initialize()

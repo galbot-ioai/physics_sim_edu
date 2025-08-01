@@ -65,9 +65,9 @@ def main():
     # Replace with your vision-based pose estimation implementation
     # Baseline: GroundTruthObjectPoseEstimator (perfect but unrealistic)
     # Target: Robust pose estimation from camera data
-    object_pose_estimator = GroundTruthObjectPoseEstimator(env)
-    # yolo_seg_model_path = os.path.join(current_dir, "yolo_seg/ckpts/cotrain_all_class_0731_1.pt")
-    # object_pose_estimator = YoloSegObjectPoseEstimator(env, yolo_seg_model_path)
+    # object_pose_estimator = GroundTruthObjectPoseEstimator(env)
+    yolo_seg_model_path = os.path.join(current_dir, "yolo_seg/ckpts/cotrain_all_class_0731_1.pt")
+    object_pose_estimator = YoloSegObjectPoseEstimator(env, yolo_seg_model_path)
 
     # TODO: Grasp Pose Prediction  
     # Replace with your grasp planning algorithm
