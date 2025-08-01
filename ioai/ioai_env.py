@@ -1,3 +1,6 @@
+######################################################################################
+# Copyright (c) 2023-2025 Galbot. All Rights Reserved.
+#
 # This software contains confidential and proprietary information of Galbot, Inc.
 # ("Confidential Information"). You shall not disclose such Confidential Information
 # and shall use it only in accordance with the terms of the license agreement you
@@ -6,17 +9,17 @@
 # UNAUTHORIZED COPYING, USE, OR DISTRIBUTION OF THIS SOFTWARE, OR ANY PORTION OR
 # DERIVATIVE THEREOF, IS STRICTLY PROHIBITED. IF YOU HAVE RECEIVED THIS SOFTWARE IN
 # ERROR, PLEASE NOTIFY GALBOT, INC. IMMEDIATELY AND DELETE IT FROM YOUR SYSTEM.
-#####################################################################################
-#          _____             _   _       _   _
-#         / ____|           | | | |     | \ | |
-#        | (___  _   _ _ __ | |_| |__   |  \| | _____   ____ _
-#         \___ \| | | | '_ \| __| '_ \  | . ` |/ _ \ \ / / _` |
-#         ____) | |_| | | | | |_| | | | | |\  | (_) \ V / (_| |
-#        |_____/ \__, |_| |_|\__|_| |_| |_| \_|\___/ \_/ \__,_|
-#                 __/ |
-#                |___/
+######################################################################################
 #
-#####################################################################################
+#  ██████  ██    ██ ██    ██ ████████ ██     ██ ██    ██  ███████  ██     ██    ███
+# ██    ██  ██  ██  ███   ██    ██    ██     ██ ███   ██ ██     ██ ██     ██   ██ ██
+# ██         ████   ████  ██    ██    ██     ██ ████  ██ ██     ██ ██     ██  ██   ██
+#  ██████     ██    ██ ██ ██    ██    █████████ ██ ██ ██ ██     ██ ██     ██ ██     ██
+#       ██    ██    ██  ████    ██    ██     ██ ██  ████ ██     ██  ██   ██  █████████
+# ██    ██    ██    ██   ███    ██    ██     ██ ██   ███ ██     ██   ██ ██   ██     ██
+#  ██████     ██    ██    ██    ██    ██     ██ ██    ██  ███████     ███    ██     ██
+#
+######################################################################################
 #
 # Description: IOAI env
 # Author: Chenyu Cao@Galbot
@@ -691,11 +694,12 @@ class IOAIEnv:
         # Create transformation matrix for initial pose
         init_rot = Rotation.from_quat(init_orientation)
         
-        # Convert 2D to 3D by adding z=0
-        world_position_3d = [world_position_2d[0], world_position_2d[1], 0]
+        # Convert 2D to 3D by adding z=0 and ensure numpy arrays
+        world_position_3d = np.array([world_position_2d[0], world_position_2d[1], 0.0])
+        init_position_array = np.array(init_position, dtype=float)
         
         # Transform position: subtract initial position and rotate
-        relative_position = np.array(world_position_3d) - np.array(init_position)
+        relative_position = world_position_3d - init_position_array
         robot_init_position_3d = init_rot.inv().apply(relative_position)
         
         # Return only 2D coordinates
@@ -831,7 +835,7 @@ class IOAIEnv:
         
         # Create transformation matrices
         from scipy.spatial.transform import Rotation
-        
+
         # World to base transformation
         base_rot = Rotation.from_quat(base_orientation)
         base_rot_matrix = base_rot.as_matrix()
@@ -938,6 +942,66 @@ class IOAIEnv:
             
         # Add physics callback for path following
         self.simulator.add_physics_callback("follow_path_callback", follow_path_callback)
+
+    def move_chassis_xy(self, waypoints, velocity=0.8):
+        """Move chassis to follow waypoints in world coordinates
+        
+        Args:
+            waypoints: List of 2D waypoints [(x1, y1), (x2, y2), ...] in world frame
+            velocity: Chassis velocity (m/s), default 0.8
+        """
+        if not waypoints or len(waypoints) < 1:
+            print("Invalid waypoints: need at least 1 point")
+            return
+        
+        # Convert waypoints from world frame to robot initial frame
+        waypoints_robot = [self.world_to_robot_init_frame_2d(wp) for wp in waypoints]
+        
+        current_waypoint_index = 0
+        
+        def move_xy_callback():
+            nonlocal current_waypoint_index
+            
+            # Check if all waypoints are reached
+            if current_waypoint_index >= len(waypoints_robot):
+                self.interface.chassis.set_joint_velocities([0.0, 0.0, 0.0])
+                self.simulator.remove_physics_callback("move_xy_callback")
+                return
+            
+            # Get current position in robot frame
+            current_pos = self.interface.chassis.get_joint_positions()[:2]
+            
+            # Get current target waypoint
+            target_pos_robot = waypoints_robot[current_waypoint_index]
+            
+            # Calculate distance to current waypoint
+            distance = math.sqrt(
+                (target_pos_robot[0] - current_pos[0])**2 + (target_pos_robot[1] - current_pos[1])**2
+            )
+            
+            # Check if current waypoint is reached
+            if distance < 0.01:  # 1cm tolerance
+                current_waypoint_index += 1
+                return
+            
+            # Calculate direction vector
+            direction_x = target_pos_robot[0] - current_pos[0]
+            direction_y = target_pos_robot[1] - current_pos[1]
+            
+            # Normalize direction vector
+            if distance > 0:
+                direction_x /= distance
+                direction_y /= distance
+            
+            # Set velocities based on direction and target velocity
+            forward_vel = direction_x * velocity
+            side_vel = direction_y * velocity
+            
+            # Set chassis velocities (forward, side, yaw)
+            self.interface.chassis.set_joint_velocities([forward_vel, side_vel, 0.0])
+        
+        # Add physics callback for xy movement
+        self.simulator.add_physics_callback("move_xy_callback", move_xy_callback)
 
     def move_chassis_rotate(self, target_angle_world, angular_velocity=1.0):
         """Rotate chassis to face a specific angle in world coordinates.
