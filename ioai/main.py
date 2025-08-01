@@ -164,97 +164,97 @@ def main():
         return is_callback_complete("LeftArm_follow_trajectory_callback")
     state_machine.add_state("Adjust to Table Grasping Pose", adjust_to_table_grasping_pose_state)
 
-    # # Phase 2: Object Grasping Loop
-    # def detect_table_objects_state():
-    #     if state_machine.state_first_entry:
-    #         # Simulate object detection
-    #         object_sequence = ["cube", "power_drill", "extrusion", "toy"]
-    #         if state_machine.objects_processed < len(object_sequence):
-    #             state_machine.object_name = object_sequence[state_machine.objects_processed]
-    #         state_machine.state_first_entry = False
-    #         print(f"State: {state_machine.get_state_name()} - Detecting table objects")
-    #     return True
-    # state_machine.add_state("Detect Table Objects", detect_table_objects_state)
+    # Phase 2: Object Grasping Loop
+    def detect_table_objects_state():
+        if state_machine.state_first_entry:
+            # Simulate object detection
+            object_sequence = ["cube", "power_drill", "extrusion", "toy"]
+            if state_machine.objects_processed < len(object_sequence):
+                state_machine.object_name = object_sequence[state_machine.objects_processed]
+            state_machine.state_first_entry = False
+            print(f"State: {state_machine.get_state_name()} - Detecting table objects")
+        return True
+    state_machine.add_state("Detect Table Objects", detect_table_objects_state)
 
-    # def get_object_grasp_pose_state():
-    #     if state_machine.state_first_entry:
-    #         # Simulate grasp pose estimation
-    #         state_machine.object_pose = state_machine.pose_estimator.estimate_pose(state_machine.object_name)
-    #         combined_pose = np.concatenate([state_machine.object_pose[0], state_machine.object_pose[1]])
-    #         state_machine.grasp_pose = state_machine.grasp_predictor.predict_grasp(state_machine.object_name, combined_pose)
-    #         state_machine.state_first_entry = False
-    #         print(f"State: {state_machine.get_state_name()} - Getting grasp pose for {state_machine.object_name}")
-    #     return state_machine.grasp_pose is not None and not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
-    # state_machine.add_state("Get Object Grasp Pose", get_object_grasp_pose_state)
+    def get_object_grasp_pose_state():
+        if state_machine.state_first_entry:
+            # Simulate grasp pose estimation
+            state_machine.object_pose = state_machine.pose_estimator.estimate_pose(state_machine.object_name)
+            combined_pose = np.concatenate([state_machine.object_pose[0], state_machine.object_pose[1]])
+            state_machine.grasp_pose = state_machine.grasp_predictor.predict_grasp(state_machine.object_name, combined_pose)
+            state_machine.state_first_entry = False
+            print(f"State: {state_machine.get_state_name()} - Getting grasp pose for {state_machine.object_name}")
+        return state_machine.grasp_pose is not None and not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
+    state_machine.add_state("Get Object Grasp Pose", get_object_grasp_pose_state)
 
-    # def move_to_object_pre_grasp_state():
-    #     if state_machine.state_first_entry:
-    #         pos_wrt_robot = state_machine.grasp_pose[:3] + np.array([0, 0, 0.3])
-    #         ori_wrt_robot = state_machine.grasp_pose[3:]
-    #         env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
-    #         state_machine.state_first_entry = False
-    #         print(f"State: {state_machine.get_state_name()} - Moving to pre-grasp position")
-    #     return is_callback_complete("LeftArm_follow_trajectory_callback")
-    # state_machine.add_state("Move to Object Pre Grasp", move_to_object_pre_grasp_state)
+    def move_to_object_pre_grasp_state():
+        if state_machine.state_first_entry:
+            pos_wrt_robot = state_machine.grasp_pose[:3] + np.array([0, 0, 0.3])
+            ori_wrt_robot = state_machine.grasp_pose[3:]
+            env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            state_machine.state_first_entry = False
+            print(f"State: {state_machine.get_state_name()} - Moving to pre-grasp position")
+        return is_callback_complete("LeftArm_follow_trajectory_callback")
+    state_machine.add_state("Move to Object Pre Grasp", move_to_object_pre_grasp_state)
 
-    # def move_to_object_grasp_state():
-    #     if state_machine.state_first_entry:
-    #         pos_wrt_robot = state_machine.grasp_pose[:3] + np.array([0, 0, 0.02])
-    #         ori_wrt_robot = state_machine.grasp_pose[3:]
-    #         env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
-    #         state_machine.state_first_entry = False
-    #         print(f"State: {state_machine.get_state_name()} - Moving to grasp position")
-    #     return is_callback_complete("LeftArm_follow_trajectory_callback")
-    # state_machine.add_state("Move to Object Grasp", move_to_object_grasp_state)
+    def move_to_object_grasp_state():
+        if state_machine.state_first_entry:
+            pos_wrt_robot = state_machine.grasp_pose[:3] + np.array([0, 0, 0.02])
+            ori_wrt_robot = state_machine.grasp_pose[3:]
+            env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            state_machine.state_first_entry = False
+            print(f"State: {state_machine.get_state_name()} - Moving to grasp position")
+        return is_callback_complete("LeftArm_follow_trajectory_callback")
+    state_machine.add_state("Move to Object Grasp", move_to_object_grasp_state)
 
-    # def grasp_object_state():
-    #     if state_machine.state_first_entry:
-    #         env.interface.left_gripper.set_gripper_close()
-    #         state_machine.state_first_entry = False
-    #         state_machine.wait_start_time = time.time()
-    #         print(f"State: {state_machine.get_state_name()} - Grasping {state_machine.object_name}")
-    #     return time.time() - state_machine.wait_start_time >= 3
-    # state_machine.add_state("Grasp Object", grasp_object_state)
+    def grasp_object_state():
+        if state_machine.state_first_entry:
+            env.interface.left_gripper.set_gripper_close()
+            state_machine.state_first_entry = False
+            state_machine.wait_start_time = time.time()
+            print(f"State: {state_machine.get_state_name()} - Grasping {state_machine.object_name}")
+        return time.time() - state_machine.wait_start_time >= 3
+    state_machine.add_state("Grasp Object", grasp_object_state)
 
-    # def move_to_object_retreat_state():
-    #     if state_machine.state_first_entry:
-    #         pos_wrt_robot = state_machine.grasp_pose[:3] + np.array([0, 0, 0.4])
-    #         ori_wrt_robot = state_machine.grasp_pose[3:]
-    #         env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
-    #         state_machine.state_first_entry = False
-    #         print(f"State: {state_machine.get_state_name()} - Moving to retreat position")
-    #     return is_callback_complete("LeftArm_follow_trajectory_callback")
-    # state_machine.add_state("Move to Object Retreat", move_to_object_retreat_state)
+    def move_to_object_retreat_state():
+        if state_machine.state_first_entry:
+            pos_wrt_robot = state_machine.grasp_pose[:3] + np.array([0, 0, 0.4])
+            ori_wrt_robot = state_machine.grasp_pose[3:]
+            env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            state_machine.state_first_entry = False
+            print(f"State: {state_machine.get_state_name()} - Moving to retreat position")
+        return is_callback_complete("LeftArm_follow_trajectory_callback")
+    state_machine.add_state("Move to Object Retreat", move_to_object_retreat_state)
 
-    # def move_to_bin_place_pose_state():
-    #     if state_machine.state_first_entry:
-    #         pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, 0, 0.4])
-    #         # ori_wrt_robot = [0, 0.7071, 0, 0.7071]
-    #         ori_wrt_robot = [0, 0, 0, 1]
-    #         env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
-    #         state_machine.state_first_entry = False
-    #         print(f"State: {state_machine.get_state_name()} - Moving to bin place position")
-    #     return is_callback_complete("LeftArm_follow_trajectory_callback")
-    # state_machine.add_state("Move to Bin Place Pose", move_to_bin_place_pose_state)
+    def move_to_bin_place_pose_state():
+        if state_machine.state_first_entry:
+            pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, 0, 0.4])
+            # ori_wrt_robot = [0, 0.7071, 0, 0.7071]
+            ori_wrt_robot = [0, 0, 0, 1]
+            env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            state_machine.state_first_entry = False
+            print(f"State: {state_machine.get_state_name()} - Moving to bin place position")
+        return is_callback_complete("LeftArm_follow_trajectory_callback")
+    state_machine.add_state("Move to Bin Place Pose", move_to_bin_place_pose_state)
 
-    # def release_object_state():
-    #     if state_machine.state_first_entry:
-    #         env.interface.left_gripper.set_gripper_open()
-    #         state_machine.state_first_entry = False
-    #         state_machine.wait_start_time = time.time()
-    #         print(f"State: {state_machine.get_state_name()} - Releasing {state_machine.object_name}")
-    #     return time.time() - state_machine.wait_start_time >= 3
-    # state_machine.add_state("Release Object", release_object_state)
+    def release_object_state():
+        if state_machine.state_first_entry:
+            env.interface.left_gripper.set_gripper_open()
+            state_machine.state_first_entry = False
+            state_machine.wait_start_time = time.time()
+            print(f"State: {state_machine.get_state_name()} - Releasing {state_machine.object_name}")
+        return time.time() - state_machine.wait_start_time >= 3
+    state_machine.add_state("Release Object", release_object_state)
 
-    # def return_to_table_grasping_pose_state():
-    #     if state_machine.state_first_entry:
-    #         pos_wrt_robot = np.array([0.49, 0.035, 0.8])
-    #         ori_wrt_robot = np.array([0.49212, 0.48182, -0.47995, 0.54343])
-    #         env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
-    #         state_machine.state_first_entry = False
-    #         print(f"State: {state_machine.get_state_name()} - Returning to table grasping pose")
-    #     return is_callback_complete("LeftArm_follow_trajectory_callback")
-    # state_machine.add_state("Return to Table Grasping Pose", return_to_table_grasping_pose_state)
+    def return_to_table_grasping_pose_state():
+        if state_machine.state_first_entry:
+            pos_wrt_robot = np.array([0.49, 0.035, 0.8])
+            ori_wrt_robot = np.array([0.49212, 0.48182, -0.47995, 0.54343])
+            env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            state_machine.state_first_entry = False
+            print(f"State: {state_machine.get_state_name()} - Returning to table grasping pose")
+        return is_callback_complete("LeftArm_follow_trajectory_callback")
+    state_machine.add_state("Return to Table Grasping Pose", return_to_table_grasping_pose_state)
 
     # Phase 3: Bin Placement
     def initialize_robot_for_bin_grasp_state():
@@ -340,6 +340,7 @@ def main():
                 [0.239, 0.97, 0.692, 0]
             )
             state_machine.state_first_entry = False
+            state_machine.wait_start_time = time.time()
             print(f"State: {state_machine.get_state_name()} - Lifting bin with dual arms")
         return time.time() - state_machine.wait_start_time >= 3
     state_machine.add_state("Lift Bin with Dual Arms", lift_bin_with_dual_arms_state)
@@ -356,7 +357,7 @@ def main():
         if state_machine.state_first_entry:
             # Simulate navigation to shelf
             current_pos = env.robot.get_position()[:2]
-            waypoints = state_machine.path_planner.plan_path(current_pos, [3, 4], 30)
+            waypoints = state_machine.path_planner.plan_path(current_pos, [2.5, 4], 30)
             env.move_chassis_follow_path(waypoints)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Navigating to shelf front")
@@ -372,17 +373,35 @@ def main():
         return is_callback_complete("rotate_callback")
     state_machine.add_state("Rotate to Face Shelf Final", rotate_to_face_shelf_final_state)
 
-    def extend_arms_forward_state():
+    def lift_legs_state():
         if state_machine.state_first_entry:
             # Simulate extending arms forward
+            state_machine.wait_start_time = time.time()
+            env.interface.leg.set_joint_positions(
+                [0.456, 1.3, 0.764, 0]
+            )
+            
             state_machine.state_first_entry = False
-            print(f"State: {state_machine.get_state_name()} - Extending arms forward")
-        return True
-    state_machine.add_state("Extend Arms Forward", extend_arms_forward_state)
+            print(f"State: {state_machine.get_state_name()} - Lifting legs")
+        return time.time() - state_machine.wait_start_time >= 3
+    state_machine.add_state("Lift Legs", lift_legs_state)
+
+    def move_forward_to_shelf_state():
+        if state_machine.state_first_entry:
+            # Simulate moving forward to shelf
+            state_machine.state_first_entry = False
+            current_pos = env.robot.get_position()[:2]
+            waypoints = state_machine.path_planner.plan_path(current_pos, [3.2, 4], 30)
+            env.move_chassis_follow_path(waypoints)
+            print(f"State: {state_machine.get_state_name()} - Moving forward to shelf")
+        return is_callback_complete("follow_path_callback")
+    state_machine.add_state("Move Forward to Shelf", move_forward_to_shelf_state)
 
     def release_bin_on_shelf_state():
         if state_machine.state_first_entry:
             # Simulate releasing bin on shelf
+            env.interface.left_gripper.set_gripper_open()
+            env.interface.right_gripper.set_gripper_open()
             state_machine.state_first_entry = False
             state_machine.wait_start_time = time.time()
             print(f"State: {state_machine.get_state_name()} - Releasing bin on shelf")
@@ -392,6 +411,16 @@ def main():
     def retract_arms_state():
         if state_machine.state_first_entry:
             # Simulate retracting arms
+            move_joints_to_target(
+                env.interface.left_arm,
+                [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00],
+                500
+            )
+            move_joints_to_target(
+                env.interface.right_arm,
+                [-2.00, 1.60, 0.60, 1.70, 0.00, 0.80, 0.00],
+                500
+            )
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Retracting arms")
         return True
@@ -400,17 +429,24 @@ def main():
     # Phase 4: Final Navigation
     def initialize_robot_for_exit_state():
         if state_machine.state_first_entry:
-            pos_wrt_robot = np.array([0.5, 0.1, 0.8])
-            ori_wrt_robot = np.array([0, 0.7071, 0, 0.7071])
-            env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            state_machine.wait_start_time = time.time()
+            poses = {
+                env.interface.head: [0.0, 0.26],
+                env.interface.leg: [0.0821758285164833, 0.6340972781181335,0.5227039456367493, -0.00001198422432935331],
+                env.interface.left_arm: [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00],
+                env.interface.right_arm: [-2.00, 1.60, 0.60, 1.70, 0.00, 0.80, 0.00]
+            }
+            for module, pose in poses.items():
+                module.set_joint_positions(pose, immediate=False)
             state_machine.state_first_entry = False
-            print(f"State: {state_machine.get_state_name()} - Initializing robot for exit")
-        return is_callback_complete("LeftArm_follow_trajectory_callback")
+            print(f"State: {state_machine.get_state_name()} - Initializing robot to safe pose")
+        # Wait for 3 seconds
+        return time.time() - state_machine.wait_start_time >= 3
     state_machine.add_state("Initialize Robot for Exit", initialize_robot_for_exit_state)
 
     def rotate_to_exit_direction_state():
         if state_machine.state_first_entry:
-            env.move_chassis_rotate(math.pi)
+            env.move_chassis_rotate(math.pi / 2)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Rotating to exit direction")
         return is_callback_complete("rotate_callback")
@@ -420,8 +456,11 @@ def main():
         if state_machine.state_first_entry:
             # Simulate navigation to final destination
             state_machine.state_first_entry = False
+            current_pos = env.robot.get_position()[:2]
+            waypoints = state_machine.path_planner.plan_path(current_pos, [4, 0], 30)
+            env.move_chassis_follow_path(waypoints)
             print(f"State: {state_machine.get_state_name()} - Navigating to final destination")
-        return True
+        return is_callback_complete("follow_path_callback")
     state_machine.add_state("Navigate to Final Destination", navigate_to_final_destination_state)
 
     def ioai_main_callback():

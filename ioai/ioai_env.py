@@ -946,11 +946,6 @@ class IOAIEnv:
             target_angle_world: Target angle in world frame (radians), 0 is along positive x-axis
             angular_velocity: Angular velocity for rotation (rad/s), default 1.0
         """
-        # Remove existing callback
-        try:
-            self.simulator.remove_physics_callback("rotate_callback")
-        except:
-            pass
         
         # Calculate target heading in robot frame
         from scipy.spatial.transform import Rotation
