@@ -9,7 +9,7 @@ mjmodel.xml
 MUJOCO_LOG.TXT
 
 # ignore asset: toy
-assets/synthnova_assets/objects/toy
+# assets/synthnova_assets/objects/toy
 
 .vscode/
 
