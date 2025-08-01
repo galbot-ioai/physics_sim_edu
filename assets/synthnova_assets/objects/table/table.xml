@@ -35,7 +35,7 @@
     <body>
       <body name="object">
         <geom material="Ml_Zuozi_01" mesh="table" class="visual"/>
-        <geom mesh="table_collision_0" rgba="0.30680662652629787 0.11615989344381583 0.935736150608665 1" class="collision"/>
+        <!-- <geom mesh="table_collision_0" rgba="0.30680662652629787 0.11615989344381583 0.935736150608665 1" class="collision"/>
         <geom mesh="table_collision_1" rgba="0.2800775566687982 0.7456709711940533 0.3847077919761348 1" class="collision"/>
         <geom mesh="table_collision_2" rgba="0.780600664116529 0.7824009968583971 0.060320650740606885 1" class="collision"/>
         <geom mesh="table_collision_3" rgba="0.35117942725342244 0.028343865587647787 0.962268539044357 1" class="collision"/>
@@ -53,7 +53,8 @@
         <geom mesh="table_collision_15" rgba="0.6437974439462006 0.35158875470659334 0.5213529328359774 1" class="collision"/>
         <geom mesh="table_collision_16" rgba="0.60588245388817 0.29067611150260564 0.2581761764113606 1" class="collision"/>
         <geom mesh="table_collision_17" rgba="0.47765679491771385 0.42392663666742547 0.45539828896807966 1" class="collision"/>
-        <geom mesh="table_collision_18" rgba="0.5421319052677009 0.29480507467011274 0.0910588696990734 1" class="collision"/>
+        <geom mesh="table_collision_18" rgba="0.5421319052677009 0.29480507467011274 0.0910588696990734 1" class="collision"/> -->
+        <geom type="box" size="0.45 0.275 0.223" pos="-0.02 0 0.202" class="collision"/>
       </body>
     </body>
   </worldbody>

@@ -164,7 +164,7 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("table")
             .joinpath("table.xml"),
-            position=[0.68, 0, 0],
+            position=[0.65, 0, 0],
             orientation=[0, 0, 0.70711, 0.70711],
         )
         self.simulator.add_object(table_config)
@@ -316,8 +316,9 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("cone")
             .joinpath("cone.xml"),
-            position=[3, 3, 0.55],
-            orientation=[0, 0, 0.70711, 0.70711],
+            position=[3, 3, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[1.5, 1.5, 1.5]
         )
         self.simulator.add_object(cone_1_config)
 
@@ -330,8 +331,9 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("cone")
             .joinpath("cone.xml"),
-            position=[2, 2, 0.55],
-            orientation=[0, 0, 0.70711, 0.70711],
+            position=[2, 2, 0],
+            orientation=[0, 0, 0, 1],
+            scale=[1.5, 1.5, 1.5]
         )
         self.simulator.add_object(cone_2_config)
 

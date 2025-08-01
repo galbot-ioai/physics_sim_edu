@@ -38,6 +38,7 @@ from object_pose_estimator import (
 )
 from grasp_pose_predictor import BaseGraspPosePredictor, OfficialGraspPosePredictor
 from motion_planner import BaseMotionPlanner, InterpolationMotionPlanner
+from path_planner import BasePathPlanner, InterpolationPathPlanner
 from physics_simulator.utils.state_machine import SimpleStateMachine
 import numpy as np
 import time
@@ -75,6 +76,9 @@ def main():
     # Target: Collision-free, efficient trajectory planning
     motion_planner = InterpolationMotionPlanner(env)
 
+    # Current: AStarPathPlanner (A* algorithm with interpolation)
+    path_planner = InterpolationPathPlanner(env)
+
     # Initialize SimpleStateMachine
     state_machine = SimpleStateMachine(max_states=-1)
     state_machine.state_first_entry = True
@@ -90,6 +94,7 @@ def main():
     state_machine.pose_estimator = object_pose_estimator
     state_machine.grasp_predictor = grasp_pose_predictor
     state_machine.motion_planner = motion_planner
+    state_machine.path_planner = path_planner
 
     # Helper function to check motion completion
     def is_callback_complete(callback_name):
@@ -125,7 +130,7 @@ def main():
         if state_machine.state_first_entry:
             init_pos = env.robot.get_position()[:2]
             target_pos = [0, -0.3]
-            waypoints = np.linspace(init_pos, target_pos, 30).tolist()
+            waypoints = state_machine.path_planner.plan_path(init_pos, target_pos, 30)
             env.move_chassis_follow_path(waypoints)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Navigating to table front")
@@ -262,8 +267,9 @@ def main():
 
     def navigate_to_bin_side_state():
         if state_machine.state_first_entry:
-            waypoints_1 = np.linspace([0, 0], [0, 0.9], 30).tolist()
-            waypoints_2 = np.linspace([0, 0.9], [0.65, 0.9], 30).tolist()
+            current_pos = env.robot.get_position()[:2]
+            waypoints_1 = state_machine.path_planner.plan_path(current_pos, [0, 1], 30)
+            waypoints_2 = state_machine.path_planner.plan_path([0, 1], [0.65, 1], 30)
             waypoints = waypoints_1 + waypoints_2
             env.move_chassis_follow_path(waypoints)
             state_machine.state_first_entry = False
@@ -291,28 +297,36 @@ def main():
     def plan_dual_arm_pre_grasp_state():
         if state_machine.state_first_entry:
             # Simulate dual arm pre-grasp planning
-            left_pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, 0.16, 0.23])
+            left_pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, 0.2, 0.4])
             left_ori_wrt_robot = [0, 0, 0, 1]
-            right_pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, -0.16, 0.23])
+            right_pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, -0.2, 0.4])
             right_ori_wrt_robot = [0, 0, 0, 1]
             env.move_left_arm_to_pose(left_pos_wrt_robot, left_ori_wrt_robot)
             env.move_right_arm_to_pose(right_pos_wrt_robot, right_ori_wrt_robot)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Planning dual arm pre-grasp")
-        return True
+        return is_callback_complete("LeftArm_follow_trajectory_callback") and is_callback_complete("RightArm_follow_trajectory_callback")
     state_machine.add_state("Plan Dual Arm Pre Grasp", plan_dual_arm_pre_grasp_state)
 
     def plan_dual_arm_grasp_state():
         if state_machine.state_first_entry:
             # Simulate dual arm grasp planning
+            left_pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, 0.16, 0.2])
+            left_ori_wrt_robot = [0, 0, 0, 1]
+            right_pos_wrt_robot = state_machine.bin_pose[0] + np.array([0, -0.16, 0.2])
+            right_ori_wrt_robot = [0, 0, 0, 1]
+            env.move_left_arm_to_pose(left_pos_wrt_robot, left_ori_wrt_robot)
+            env.move_right_arm_to_pose(right_pos_wrt_robot, right_ori_wrt_robot)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Planning dual arm grasp")
-        return True
+        return is_callback_complete("LeftArm_follow_trajectory_callback") and is_callback_complete("RightArm_follow_trajectory_callback")
     state_machine.add_state("Plan Dual Arm Grasp", plan_dual_arm_grasp_state)
 
     def grasp_bin_with_dual_arms_state():
         if state_machine.state_first_entry:
             # Simulate dual arm bin grasping
+            env.interface.left_gripper.set_gripper_close()
+            env.interface.right_gripper.set_gripper_close()
             state_machine.state_first_entry = False
             state_machine.wait_start_time = time.time()
             print(f"State: {state_machine.get_state_name()} - Grasping bin with dual arms")
@@ -322,14 +336,17 @@ def main():
     def lift_bin_with_dual_arms_state():
         if state_machine.state_first_entry:
             # Simulate lifting bin
+            env.interface.leg.set_joint_positions(
+                [0.239, 0.97, 0.692, 0]
+            )
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Lifting bin with dual arms")
-        return True
+        return time.time() - state_machine.wait_start_time >= 3
     state_machine.add_state("Lift Bin with Dual Arms", lift_bin_with_dual_arms_state)
 
     def rotate_to_face_shelf_state():
         if state_machine.state_first_entry:
-            env.move_chassis_rotate(-math.pi / 2)
+            env.move_chassis_rotate(0)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Rotating to face shelf")
         return is_callback_complete("rotate_callback")
@@ -338,17 +355,21 @@ def main():
     def navigate_to_shelf_front_state():
         if state_machine.state_first_entry:
             # Simulate navigation to shelf
+            current_pos = env.robot.get_position()[:2]
+            waypoints = state_machine.path_planner.plan_path(current_pos, [3, 4], 30)
+            env.move_chassis_follow_path(waypoints)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Navigating to shelf front")
-        return True
+        return is_callback_complete("follow_path_callback")
     state_machine.add_state("Navigate to Shelf Front", navigate_to_shelf_front_state)
 
     def rotate_to_face_shelf_final_state():
         if state_machine.state_first_entry:
             # Simulate final rotation to shelf
+            env.move_chassis_rotate(0)
             state_machine.state_first_entry = False
             print(f"State: {state_machine.get_state_name()} - Rotating to face shelf final")
-        return True
+        return is_callback_complete("rotate_callback")
     state_machine.add_state("Rotate to Face Shelf Final", rotate_to_face_shelf_final_state)
 
     def extend_arms_forward_state():

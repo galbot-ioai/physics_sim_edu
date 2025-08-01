@@ -52,7 +52,7 @@
     <body>
       <body name="object">
         <geom material="material_0" mesh="cone" class="visual"/>
-        <geom mesh="cone_collision_0" rgba="0.8443257579809135 0.7112512608114421 0.8687634306901773 1" class="collision"/>
+        <!-- <geom mesh="cone_collision_0" rgba="0.8443257579809135 0.7112512608114421 0.8687634306901773 1" class="collision"/>
         <geom mesh="cone_collision_1" rgba="0.9273937006804708 0.9797280640283876 0.9338816777555106 1" class="collision"/>
         <geom mesh="cone_collision_2" rgba="0.9341054163827357 0.7905046435854446 0.40027953467174093 1" class="collision"/>
         <geom mesh="cone_collision_3" rgba="0.7400477454205551 0.06019582893315578 0.7566543155130162 1" class="collision"/>
@@ -87,7 +87,7 @@
         <geom mesh="cone_collision_32" rgba="0.0997015644416952 0.22946215680330295 0.6154551058873728 1" class="collision"/>
         <geom mesh="cone_collision_33" rgba="0.13706619411095322 0.6797511689322219 0.8430168563093 1" class="collision"/>
         <geom mesh="cone_collision_34" rgba="0.7276195479735297 0.39765729771030756 0.33641060901643893 1" class="collision"/>
-        <geom mesh="cone_collision_35" rgba="0.5054474487557965 0.5437378678783892 0.7585770571075104 1" class="collision"/>
+        <geom mesh="cone_collision_35" rgba="0.5054474487557965 0.5437378678783892 0.7585770571075104 1" class="collision"/> -->
       </body>
     </body>
   </worldbody>
