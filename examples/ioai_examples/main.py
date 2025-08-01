@@ -42,11 +42,26 @@ env = IOAIEnv(headless=False)
 # ---------- Useful functions ---- --
 # It is a simple toolbox to generate a grsping pose from the detected pose
 # you can modify this as well
+# A simple method to generate a grasping pose from the detected pose
 from grasp_reg import GraspRegistration
 grasp_reg = GraspRegistration()
 
-# --------- Pose Estimator ------
+# A simple linear interpolation implementation
+# You can implement your own motion planning method as well
+def interpolate_joint_positions(start_positions, end_positions, steps):
+    return np.linspace(start_positions, end_positions, steps)
 
+from physics_simulator.utils.data_types import JointTrajectory
+# A simple `move_joints_to_target` function by linear interpolation
+def move_joints_to_target(module, target_positions, steps=500):
+    start_positions = module.get_joint_positions()
+    end_positions = target_positions
+    joint_positions = interpolate_joint_positions(start_positions, end_positions, steps)
+    joint_trajectory = JointTrajectory(positions=np.array(joint_positions))
+    module.follow_trajectory(joint_trajectory)
+
+# --------- Pose Estimator ------
+# A base interface for a pose estimator
 class BasePoseEstimator:
     def __init__(self, env: IOAIEnv):
         pass
@@ -58,7 +73,7 @@ class DummyPoseEstimator(BasePoseEstimator):
     def __init__(self, env: IOAIEnv):
         self.env = env
     
-    # NOTE: You need to change the dummy pose estimator to the vision-based one
+    # NOTE: You need to replace the dummy pose estimator to the vision-based one
     # A state-based method, which you can only get the basic scores
     def estimate_pose(self, object_name):
         if object_name == "cube":
@@ -94,6 +109,7 @@ class DummyPoseEstimator(BasePoseEstimator):
         else:
             raise ValueError(f"Unknown object name: {object_name}")
 
+# ---------- Vision-based Pose Estimator ------
 from yolo_seg.seg import YoloSeg
 from pose_est.pose_est import PoseEstimator
 
@@ -141,6 +157,10 @@ class YoloSegPoseEstimator(BasePoseEstimator):
         
         mask = yolo_seg.get_best_mask(seg_results, object_name)
 
+        if mask is None:
+            print(f"No mask found for {object_name}")
+            return None
+
         mask_resized = cv2.resize(
             mask.astype(np.float32),
             (rgb.shape[1], rgb.shape[0]),
@@ -169,12 +189,14 @@ class YoloSegPoseEstimator(BasePoseEstimator):
         else:
             pose = None
 
-        # pose in robot
+        # pose in robot frame
         pose = self.env.camera_to_robot_frame(pose[:3], pose[3:])
         return pose
 
-# pose_estimator = DummyPoseEstimator(env=env)
-pose_estimator = YoloSegPoseEstimator(env=env)
+# ----- Define your pose estimator
+# TODO: change this line to replace the dummy pose estimator
+pose_estimator = DummyPoseEstimator(env=env)
+# pose_estimator = YoloSegPoseEstimator(env=env)
 
 # ---- Init State Machine ------
 state_machine = SimpleStateMachine(max_states=-1)
@@ -201,18 +223,6 @@ def front_to_table_state():
 
 FRONT_TO_TABLE_IDX = state_machine.add_state("Front to table", front_to_table_state)
 
-# Initialize robot arm
-def init_state():
-    if state_machine.state_first_entry:
-        # robot_pos = np.array([0.5, 0.1, 0.8])
-        # robot_ori = np.array([0, 0.7071, 0, 0.7071])
-        # env.move_left_arm_to_pose(robot_pos, robot_ori)
-        env._move_joints_to_target(env.interface.left_arm, [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
-        state_machine.state_first_entry = False
-    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
-
-INIT_IDX = state_machine.add_state("Init", init_state)
-
 # Detect bin for placement
 def detect_bin_state():
     if state_machine.state_first_entry:
@@ -225,6 +235,17 @@ def detect_bin_state():
 
 DETECT_BIN_IDX = state_machine.add_state("Detect bin", detect_bin_state)
 
+# Initialize robot arm
+def init_state():
+    if state_machine.state_first_entry:
+        robot_pos = np.array([0.49, 0.035, 0.8])
+        robot_ori = np.array([0.49212, 0.48182, -0.47995, 0.54343])
+        env.move_left_arm_to_pose(robot_pos, robot_ori)
+        state_machine.state_first_entry = False
+    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
+
+INIT_IDX = state_machine.add_state("Init", init_state)
+
 # Detect target object
 def detect_object_state():
     object_name = state_machine.object_name
@@ -233,7 +254,6 @@ def detect_object_state():
         return False
     state_machine.object_pose = pose
     state_machine.grasp_pose = grasp_reg.predict_grasp(object_name, np.concatenate([pose[0], pose[1]]))['grasp_pose']
-    # state_machine.grasp_pose = np.concatenate([pose[0], pose[1]])
     return True
 
 DETECT_OBJECT_IDX = state_machine.add_state("Detect Object", detect_object_state)
@@ -241,7 +261,7 @@ DETECT_OBJECT_IDX = state_machine.add_state("Detect Object", detect_object_state
 # Move to pre-grasp position
 def pre_grasp_state():
     if state_machine.state_first_entry:
-        robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.3])
+        robot_pos = state_machine.grasp_pose[:3] + np.array([0, 0, 0.4])
         # robot_ori = [0, 0.7071, 0, 0.7071]
         robot_ori = state_machine.grasp_pose[3:]
         env.move_left_arm_to_pose(robot_pos, robot_ori)
@@ -293,7 +313,7 @@ PRE_PLACE_IDX = state_machine.add_state("Move to Pre Place State", pre_place_sta
 def place_state():
     if state_machine.state_first_entry:
         robot_pos = state_machine.bin_pose[0] + np.array([0, 0, 0.4])
-        robot_ori = [0, 0, 0, 1]
+        robot_ori = [0, 0.7071, 0, 0.7071]
         env.move_left_arm_to_pose(robot_pos, robot_ori)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
@@ -314,10 +334,7 @@ RELEASE_IDX = state_machine.add_state("Release the object", release_state)
 # Return to initial position
 def return_to_init_state():
     if state_machine.state_first_entry:
-        # robot_pos = np.array([0.5, 0.1, 0.8])
-        # robot_ori = np.array([0, 0.7071, 0, 0.7071])
-        # env.move_left_arm_to_pose(robot_pos, robot_ori)
-        env._move_joints_to_target(env.interface.left_arm, [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
+        move_joints_to_target(env.interface.left_arm, [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
 
@@ -326,8 +343,8 @@ RETURN_TO_INIT_IDX = state_machine.add_state("Return to Init State", return_to_i
 # Move to bin area
 def move_to_bin_state():
     if state_machine.state_first_entry:
-        waypoints_1 = np.linspace([0, 0], [0, 0.9], 30).tolist()
-        waypoints_2 = np.linspace([0, 0.9], [0.65, 0.9], 30).tolist()
+        waypoints_1 = np.linspace([0, 0], [0, 0.9], 50).tolist()
+        waypoints_2 = np.linspace([0, 0.9], [0.65, 0.9], 50).tolist()
         waypoints = waypoints_1 + waypoints_2
         env.move_chassis_follow_path(waypoints)
         state_machine.state_first_entry = False
@@ -344,19 +361,10 @@ def front_to_bin_state():
 
 FRONT_TO_BIN_IDX = state_machine.add_state("Front to bin", front_to_bin_state)
 
-# Initialize left arm joints
-def init_left_arm_joints_state():
-    if state_machine.state_first_entry:
-        env._move_joints_to_target(env.interface.left_arm, [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
-        state_machine.state_first_entry = False
-    return not env.simulator.physics_callback_exists("LeftArm_follow_trajectory_callback")
-
-INIT_LEFT_ARM_JOINTS_IDX = state_machine.add_state("Init left arm joints", init_left_arm_joints_state)
-
 # Rotate to face shelf
 def rotate_to_shelf_state():
     if state_machine.state_first_entry:
-        env.move_chassis_rotate(-math.pi / 2)
+        env.move_chassis_rotate(0)
         state_machine.state_first_entry = False
     return not env.simulator.physics_callback_exists("rotate_callback")
 
@@ -394,15 +402,15 @@ def ioai_main_callback():
         if state_machine.state_idx == RELEASE_IDX:
             if state_machine.object_name == "cube":
                 state_machine.object_name = "power_drill"
-                state_machine.set_state(DETECT_OBJECT_IDX)
+                state_machine.set_state(INIT_IDX)
                 state_machine.state_first_entry = True
             elif state_machine.object_name == "power_drill":
                 state_machine.object_name = "extrusion"
-                state_machine.set_state(DETECT_OBJECT_IDX)
+                state_machine.set_state(INIT_IDX)
                 state_machine.state_first_entry = True
             elif state_machine.object_name == "extrusion":
                 state_machine.object_name = "toy"
-                state_machine.set_state(DETECT_OBJECT_IDX)
+                state_machine.set_state(INIT_IDX)
                 state_machine.state_first_entry = True
             elif state_machine.object_name == "toy":
                 # Move on

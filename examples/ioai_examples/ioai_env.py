@@ -46,6 +46,7 @@ from physics_simulator.utils.data_types import JointTrajectory
 import time
 import os
 import math
+import warnings
 from physics_simulator.utils.state_machine import SimpleStateMachine
 
 def interpolate_joint_positions(start_positions, end_positions, steps):
@@ -166,7 +167,7 @@ class IOAIEnv:
             .joinpath("objects")
             .joinpath("table")
             .joinpath("table.xml"),
-            position=[0.65, 0, 0],
+            position=[0.68, 0, 0],
             orientation=[0, 0, 0.70711, 0.70711],
         )
         self.simulator.add_object(table_config)
@@ -757,9 +758,10 @@ class IOAIEnv:
         # Iterative IK solving to get final positions
         dt = 1e-3
         max_iterations = 50
-        position_tolerance = 1e-4
-        orientation_tolerance = 1e-4
+        position_tolerance = 1e-2
+        orientation_tolerance = 1e-2
         
+        converged = False
         for iteration in range(max_iterations):
             # Solve IK for velocity
             vel = mink.solve_ik(
@@ -779,7 +781,20 @@ class IOAIEnv:
             pos_error = np.linalg.norm(error[:3])
             ori_error = np.linalg.norm(error[3:])
             if pos_error < position_tolerance and ori_error < orientation_tolerance:
+                converged = True
                 break
+
+        # Check if IK converged
+        if not converged:
+            error = self.tasks[arm_id].compute_error(self.mink_config)
+            pos_error = np.linalg.norm(error[:3])
+            ori_error = np.linalg.norm(error[3:])
+            warnings.warn(
+                f"IK did not fully converge for {arm_id} after {max_iterations} iterations. "
+                f"Final position error: {pos_error:.6f} (tolerance: {position_tolerance}), "
+                f"orientation error: {ori_error:.6f} (tolerance: {orientation_tolerance}). "
+                f"Proceeding with current solution."
+            )
 
         # Get final joint positions
         joint_positions = self.mink_config.q
@@ -990,7 +1005,7 @@ class IOAIEnv:
         poses = {
             self.interface.head: [0.0, 0.26],
             self.interface.leg: [0.0821758285164833, 0.6340972781181335,0.5227039456367493, -0.00001198422432935331],
-            self.interface.left_arm: [2.00,-1.60, -0.60, -1.70, 0.00, -0.80, 0.00],
+            self.interface.left_arm: [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00],
             self.interface.right_arm: [-2.00, 1.60, 0.60, 1.70, 0.00, 0.80, 0.00]
         }
         

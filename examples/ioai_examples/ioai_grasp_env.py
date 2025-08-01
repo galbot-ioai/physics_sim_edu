@@ -48,6 +48,7 @@ import numpy as np
 from physics_simulator.utils.data_types import JointTrajectory
 import time
 import os
+import warnings
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 
@@ -708,10 +709,11 @@ class IoaiGraspEnv:
         
         # Iterative IK solving to get final positions
         dt = 1e-3
-        max_iterations = 50
+        max_iterations = 100
         position_tolerance = 1e-4
         orientation_tolerance = 1e-4
         
+        converged = False
         for iteration in range(max_iterations):
             # Solve IK for velocity
             vel = mink.solve_ik(
@@ -731,7 +733,20 @@ class IoaiGraspEnv:
             pos_error = np.linalg.norm(error[:3])
             ori_error = np.linalg.norm(error[3:])
             if pos_error < position_tolerance and ori_error < orientation_tolerance:
+                converged = True
                 break
+
+        # Check if IK converged
+        if not converged:
+            error = self.tasks[arm_id].compute_error(self.mink_config)
+            pos_error = np.linalg.norm(error[:3])
+            ori_error = np.linalg.norm(error[3:])
+            warnings.warn(
+                f"IK did not fully converge for {arm_id} after {max_iterations} iterations. "
+                f"Final position error: {pos_error:.6f} (tolerance: {position_tolerance}), "
+                f"orientation error: {ori_error:.6f} (tolerance: {orientation_tolerance}). "
+                f"Proceeding with current solution."
+            )
 
         # Get final joint positions
         joint_positions = self.mink_config.q
