@@ -31,13 +31,6 @@ from physics_simulator import PhysicsSimulator
 from synthnova_config import (
     MujocoConfig,
     PhysicsSimulatorConfig,
-    RobotConfig,
-    MeshConfig,
-    CuboidConfig,
-    RgbCameraConfig,
-    RealsenseD436RgbSensorConfig,
-    DepthCameraConfig,
-    RealsenseD436DepthSensorConfig,
     ScenarioConfig
 )
 from physics_simulator.galbot_interface import GalbotInterface, GalbotInterfaceConfig
