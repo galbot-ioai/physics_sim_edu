@@ -158,7 +158,12 @@ class IOAIRobotStateMachine:
         if self.state_machine.state_first_entry:
             init_pos = self.env.robot.get_position()[:2]
             target_pos = [0, -0.3]
-            waypoints = self.state_machine.path_planner.plan_path(init_pos, target_pos, 30)
+            waypoint_1 = self.state_machine.path_planner.plan_path(init_pos, [0.65, 4], 30)
+            waypoint_2 = self.state_machine.path_planner.plan_path([0.65, 4], [0.65, 1], 30)
+            waypoint_3 = self.state_machine.path_planner.plan_path([0.65, 1], [0, 1], 30)
+            waypoint_4 = self.state_machine.path_planner.plan_path([0, 1], [0, -0.3], 30)
+
+            waypoints = waypoint_1 + waypoint_2 + waypoint_3 + waypoint_4
             self.env.move_chassis_follow_path(waypoints)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Navigating to table front")
