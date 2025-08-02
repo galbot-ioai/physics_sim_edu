@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 import trimesh
 from pprint import pprint
-import teaserpp_python
 from sklearn.decomposition import PCA
 import os
 
@@ -71,7 +70,7 @@ class PoseEstimator:
             cad_name: CAD model name ('power_drill', 'bin', 'cube', 'mug', 'extrusion')
 
         Returns:
-            pose_matrix: 4x4 pose transformation matrix
+            (pose_matrix | None): 4x4 pose transformation matrix or None if estimation fails
         """
         try:
             # Load and process data
@@ -81,6 +80,9 @@ class PoseEstimator:
 
             # Estimate pose
             pose = self.estimate_pose_from_point_clouds(scene_pcd, model_pcd)
+            if pose is None:
+                pprint("Pose estimation failed, returning None")
+                return None
 
             # Save pose matrix
             pose_path = os.path.join(self.output_dir, "pose_matrix.txt")
@@ -292,36 +294,50 @@ class PoseEstimator:
             cad_mesh = self.scale_cad_model(cad_mesh)
 
             # Uniform point cloud sampling with higher density for better features
-            model_cloud = cad_mesh.sample_points_uniformly(number_of_points=8000)
+            model_cloud = cad_mesh.sample_points_uniformly(number_of_points=10000)
 
-            # Special handling for cube and extrusion to reduce streaking artifacts
-            if cad_name in ["cube", "extrusion"]:
-                scene_voxel = 0.002  # Finer voxel size for better edge preservation
-                model_voxel = 0.002
-                scene_cloud = self.preprocess_point_cloud_enhanced(
-                    scene_cloud, voxel_size=scene_voxel, object_type=cad_name
-                )
-                model_cloud = self.preprocess_point_cloud_enhanced(
-                    model_cloud, voxel_size=model_voxel, object_type=cad_name
-                )
-            elif cad_name == "bin":
-                scene_voxel = 0.005
-                model_voxel = 0.005
-                scene_cloud = self.preprocess_point_cloud(
-                    scene_cloud, voxel_size=scene_voxel
-                )
-                model_cloud = self.preprocess_point_cloud(
-                    model_cloud, voxel_size=model_voxel
-                )
+            # # Special handling for cube and extrusion to reduce streaking artifacts
+            # if cad_name in ["cube", "extrusion"]:
+            #     scene_voxel = 0.002  # Finer voxel size for better edge preservation
+            #     model_voxel = 0.002
+            #     scene_cloud = self.preprocess_point_cloud_enhanced(
+            #         scene_cloud, voxel_size=scene_voxel, object_type=cad_name
+            #     )
+            #     model_cloud = self.preprocess_point_cloud_enhanced(
+            #         model_cloud, voxel_size=model_voxel, object_type=cad_name
+            #     )
+            # elif cad_name == "bin":
+            #     scene_voxel = 0.005
+            #     model_voxel = 0.002
+            #     scene_cloud = self.preprocess_point_cloud(
+            #         scene_cloud, voxel_size=scene_voxel
+            #     )
+            #     model_cloud = self.preprocess_point_cloud(
+            #         model_cloud, voxel_size=model_voxel
+            #     )
+            # else:
+            #     scene_voxel = 0.003
+            #     model_voxel = 0.003
+            #     scene_cloud = self.preprocess_point_cloud(
+            #         scene_cloud, voxel_size=scene_voxel
+            #     )
+            #     model_cloud = self.preprocess_point_cloud(
+            #         model_cloud, voxel_size=model_voxel
+            #     )
+
+            # pprint(f"Scene point cloud: {len(scene_cloud.points)} points")
+            # pprint(f"Model point cloud: {len(model_cloud.points)} points")
+            
+            
+            model_voxel = 0.004
+            model_cloud = self.preprocess_point_cloud(model_cloud, voxel_size=model_voxel)
+            if len(model_cloud.points) > 0:
+                ratio = len(scene_cloud.points) / len(model_cloud.points)
+                scene_voxel = model_voxel * ratio ** (1/3)
+                scene_cloud = self.preprocess_point_cloud(scene_cloud, voxel_size=scene_voxel)
             else:
-                scene_voxel = 0.003
-                model_voxel = 0.003
-                scene_cloud = self.preprocess_point_cloud(
-                    scene_cloud, voxel_size=scene_voxel
-                )
-                model_cloud = self.preprocess_point_cloud(
-                    model_cloud, voxel_size=model_voxel
-                )
+                scene_voxel = model_voxel * 2
+                scene_cloud = self.preprocess_point_cloud(scene_cloud, voxel_size=scene_voxel)
 
             pprint(f"Scene point cloud: {len(scene_cloud.points)} points")
             pprint(f"Model point cloud: {len(model_cloud.points)} points")
@@ -773,53 +789,119 @@ class PoseEstimator:
         # Try multiple registration methods and keep the best result
         registration_methods = []
 
-        # Method 1: RANSAC with current parameters
-        try:
-            transform_ransac = self.ransac_global_registration(model_moved, scene_cloud)
-            eval_ransac = o3d.pipelines.registration.evaluate_registration(
-                model_moved, scene_cloud, 0.05, transform_ransac
-            )
-            registration_methods.append(("RANSAC", transform_ransac, eval_ransac))
-            pprint(f"RANSAC fitness: {eval_ransac.fitness:.4f}")
-        except Exception as e:
-            pprint(f"RANSAC failed: {str(e)}")
+        # # Method 1: RANSAC with current parameters
+        # try:
+        #     transform_ransac = self.ransac_global_registration(model_moved, scene_cloud)
+        #     eval_ransac = o3d.pipelines.registration.evaluate_registration(
+        #         model_moved, scene_cloud, 0.05, transform_ransac
+        #     )
+        #     registration_methods.append(("RANSAC", transform_ransac, eval_ransac))
+        #     pprint(f"RANSAC fitness: {eval_ransac.fitness:.4f}")
+        # except Exception as e:
+        #     pprint(f"RANSAC failed: {str(e)}")
 
-        # Method 2: RANSAC with smaller voxel size for finer features
-        try:
-            transform_ransac_fine = self.ransac_global_registration(
-                model_moved, scene_cloud, voxel_size=0.005
-            )
-            eval_ransac_fine = o3d.pipelines.registration.evaluate_registration(
-                model_moved, scene_cloud, 0.05, transform_ransac_fine
-            )
-            registration_methods.append(
-                ("RANSAC_Fine", transform_ransac_fine, eval_ransac_fine)
-            )
-            pprint(f"RANSAC Fine fitness: {eval_ransac_fine.fitness:.4f}")
-        except Exception as e:
-            pprint(f"RANSAC Fine failed: {str(e)}")
+        # # Method 2: RANSAC with smaller voxel size for finer features
+        # try:
+        #     transform_ransac_fine = self.ransac_global_registration(
+        #         model_moved, scene_cloud, voxel_size=0.005
+        #     )
+        #     eval_ransac_fine = o3d.pipelines.registration.evaluate_registration(
+        #         model_moved, scene_cloud, 0.05, transform_ransac_fine
+        #     )
+        #     registration_methods.append(
+        #         ("RANSAC_Fine", transform_ransac_fine, eval_ransac_fine)
+        #     )
+        #     pprint(f"RANSAC Fine fitness: {eval_ransac_fine.fitness:.4f}")
+        # except Exception as e:
+        #     pprint(f"RANSAC Fine failed: {str(e)}")
 
-        # Method 3: Teaser++ if available
+        # Method 4: Teaser++ global registration
         try:
-            transform_teaser = self.teaser_registration(model_moved, scene_cloud)
+            import teaserpp_python
+            
+            def teaserpp_registration(source, target):
+                # Convert Open3D point clouds to numpy arrays
+                src_pts = np.asarray(source.points).T  # 3 x N
+                tgt_pts = np.asarray(target.points).T  # 3 x N
+
+                # Use FPFH features to find correspondences
+                src_fpfh = self.compute_fpfh(source, voxel_size=0.01)
+                tgt_fpfh = self.compute_fpfh(target, voxel_size=0.01)
+                src_idx, tgt_idx = self.find_correspondences(src_fpfh, tgt_fpfh, source, target)
+
+                if len(src_idx) < 4:
+                    raise ValueError("Not enough correspondences for Teaser++ registration")
+
+                src_corr = src_pts[:, src_idx]
+                tgt_corr = tgt_pts[:, tgt_idx]
+
+                # Setup Teaser++ solver
+                solver_params = teaserpp_python.RobustRegistrationSolver.Params()
+                solver_params.cbar2 = 1.0
+                solver_params.noise_bound = 0.01
+                solver_params.estimate_scaling = False
+                solver_params.rotation_estimation_algorithm = teaserpp_python.RobustRegistrationSolver.ROTATION_ESTIMATION_ALGORITHM.GNC_TLS
+                solver_params.rotation_gnc_factor = 1.4
+                solver_params.rotation_max_iterations = 100
+
+                solver = teaserpp_python.RobustRegistrationSolver(solver_params)
+                solver.solve(src_corr, tgt_corr)
+                solution = solver.getSolution()
+
+                # Build transformation matrix
+                T_teaser = np.eye(4)
+                T_teaser[:3, :3] = solution.rotation
+                T_teaser[:3, 3] = solution.translation
+                return T_teaser
+
+            transform_teaser = teaserpp_registration(model_moved, scene_cloud)
             eval_teaser = o3d.pipelines.registration.evaluate_registration(
-                model_moved, scene_cloud, 0.05, transform_teaser
+            model_moved, scene_cloud, 0.05, transform_teaser
             )
             registration_methods.append(("Teaser++", transform_teaser, eval_teaser))
             pprint(f"Teaser++ fitness: {eval_teaser.fitness:.4f}")
         except Exception as e:
-            pprint(f"Teaser++ failed: {str(e)}")
-
-        # Method 4: PCA alignment as fallback
-        try:
-            transform_pca = self.pca_alignment(model_moved, scene_cloud)
-            eval_pca = o3d.pipelines.registration.evaluate_registration(
-                model_moved, scene_cloud, 0.05, transform_pca
-            )
-            registration_methods.append(("PCA", transform_pca, eval_pca))
-            pprint(f"PCA fitness: {eval_pca.fitness:.4f}")
-        except Exception as e:
-            pprint(f"PCA failed: {str(e)}")
+            pprint(f"Teaser++ registration failed: {str(e)}")
+            
+        # Method 3: PCA alignment as fallback
+        if not registration_methods:
+            try:
+                transform_pca = self.pca_alignment(model_moved, scene_cloud)
+                eval_pca = o3d.pipelines.registration.evaluate_registration(
+                    model_moved, scene_cloud, 0.05, transform_pca
+                )
+                
+                def rotate_matrix_along_x_axis(matrix, angle):
+                    """Rotate the matrix along the z-axis.
+                    Args:
+                        matrix (np.ndarray): The input matrix.
+                        angle (float): The angle to rotate in degrees.
+                    Returns:
+                        np.ndarray: The rotated matrix.
+                    """
+                    theta = np.deg2rad(angle)
+                    transform_matrix = np.array(
+                        [
+                            [1, 0, 0, 0],
+                            [0, np.cos(theta), -np.sin(theta), 0],
+                            [0, np.sin(theta), np.cos(theta), 0],
+                            [0, 0, 0, 1],
+                        ],
+                        dtype=np.float64,
+                    )
+                    new_matrix = matrix @ transform_matrix
+                    return new_matrix
+                
+                # Rotate the PCA transform to align with the scene
+                z_p_camera = np.array([0, 0, 1])
+                z_p_scene = transform_pca[:3, 2]
+                dot = np.dot(z_p_camera, z_p_scene)
+                if dot > 0:
+                    transform_pca = rotate_matrix_along_x_axis(transform_pca, 180)
+                registration_methods.append(("PCA", transform_pca, eval_pca))
+                pprint(f"PCA fitness: {eval_pca.fitness:.4f}")
+            except Exception as e:
+                pprint(f"PCA failed: {str(e)}")
 
         # Select the best method based on fitness
         if registration_methods:
@@ -908,10 +990,12 @@ class PoseEstimator:
             pprint(
                 f"Low registration quality (fitness < {fitness_threshold_low:.3f}), results may be unreliable"
             )
+            return None  # Registration failed, return None
         elif final_evaluation.fitness < fitness_threshold_medium:
             pprint(
                 f"Medium registration quality (fitness < {fitness_threshold_medium:.3f}), please check results"
             )
+            return None  # Medium quality, return None
         else:
             pprint("Good registration quality")
 
@@ -1210,80 +1294,29 @@ class PoseEstimator:
         )
         return fpfh
 
-    def teaser_registration(self, source, target):
-        """Use TEASER++ for robust registration"""
-        pprint("Using TEASER++ for robust registration")
-
-        # Downsample point clouds for efficiency
-        voxel_size = 0.01
-        source_down = source.voxel_down_sample(voxel_size)
-        target_down = target.voxel_down_sample(voxel_size)
-
-        # Extract point cloud data in correct format (3xN)
-        src_pts = np.asarray(source_down.points).T
-        tgt_pts = np.asarray(target_down.points).T
-
-        # Compute FPFH features
-        source_fpfh = self.compute_fpfh(source_down, voxel_size)
-        target_fpfh = self.compute_fpfh(target_down, voxel_size)
-
-        # Find correspondences using feature matching
-        corr_source, corr_target = self.find_correspondences(
-            source_fpfh, target_fpfh, source_down, target_down
-        )
-
-        # Prepare corresponding points for TEASER++
-        src_corr = src_pts[:, corr_source]
-        tgt_corr = tgt_pts[:, corr_target]
-
-        # Initialize TEASER solver
-        solver_params = teaserpp_python.RobustRegistrationSolver.Params()
-        solver_params.cbar2 = 1.0
-        solver_params.noise_bound = voxel_size * 2
-        solver_params.estimate_scaling = False
-        solver_params.rotation_estimation_algorithm = teaserpp_python.RobustRegistrationSolver.ROTATION_ESTIMATION_ALGORITHM.GNC_TLS
-        solver_params.rotation_gnc_factor = 1.4
-        solver_params.rotation_max_iterations = 100
-        solver_params.rotation_cost_threshold = 1e-6
-
-        solver = teaserpp_python.RobustRegistrationSolver(solver_params)
-        solver.solve(src_corr, tgt_corr)
-        solution = solver.getSolution()
-
-        # Convert to 4x4 transformation matrix
-        T = np.eye(4)
-        T[:3, :3] = solution.rotation
-        T[:3, 3] = solution.translation
-        return T
-
     def find_correspondences(self, source_fpfh, target_fpfh, source_pcd, target_pcd):
         """Find point correspondences using feature matching"""
-        source_features = np.array(source_fpfh.data).T
-        target_features = np.array(target_fpfh.data).T
+        from scipy.spatial import cKDTree
+
+        source_features = np.array(source_fpfh.data).T  # [N, 33]
+        target_features = np.array(target_fpfh.data).T  # [M, 33]
 
         # Build KDTree for target features
-        target_tree = o3d.geometry.KDTreeFlann(target_features)
-
-        # Find mutual correspondences
-        corr_source = []
-        corr_target = []
-
-        # Source to target matching
+        target_tree = cKDTree(target_features)
         s_to_t = {}
         for i in range(source_features.shape[0]):
-            _, idxs, _ = target_tree.search_knn_vector_xd(source_features[i], 1)
-            j = idxs[0]
-            s_to_t[i] = j
+            dist, idx = target_tree.query(source_features[i], k=1)
+            s_to_t[i] = idx
 
-        # Target to source matching
-        source_tree = o3d.geometry.KDTreeFlann(source_features)
+        # Build KDTree for source features
+        source_tree = cKDTree(source_features)
         t_to_s = {}
         for j in range(target_features.shape[0]):
-            _, idxs, _ = source_tree.search_knn_vector_xd(target_features[j], 1)
-            i = idxs[0]
-            t_to_s[j] = i
+            dist, idx = source_tree.query(target_features[j], k=1)
+            t_to_s[j] = idx
 
-        # Keep mutual correspondences
+        corr_source = []
+        corr_target = []
         for i, j in s_to_t.items():
             if t_to_s.get(j, -1) == i:
                 corr_source.append(i)
