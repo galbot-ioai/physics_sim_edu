@@ -8,8 +8,9 @@ def main(args):
     print(f"Using device: {device}")
 
     # model = YOLO('yolo11n-seg.pt')  # Load a pre-trained YOLO model
-    model = YOLO('ckpts/cotrain_all_class_0730.pt')  # Load a pre-trained YOLO model
+    model = YOLO('ckpts/cotrain_all_class_0731_1.pt')  # Load a pre-trained YOLO model
 
+    # TODO: please replace to your data_path
     if args.dataset == 'sim':
         data_path = 'data/sim_datasets/yolo_seg.yaml'
         pprint(object=f"Using simulated dataset: {data_path}")

@@ -3,7 +3,8 @@ from ultralytics import YOLO
 import cv2
 import numpy as np
 
-MODEL_PATH = "ckpts/cotrain_all_class_0731.pt"
+
+MODEL_PATH = "ckpts/cotrain_all_class_0731_1.pt"
 # IMG_PATH = "data/real_datasets/images/test/000003_pic_10.png"
 IMG_PATH = "test_data/rgb_image.png"
     
