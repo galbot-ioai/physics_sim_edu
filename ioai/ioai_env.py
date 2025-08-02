@@ -91,6 +91,7 @@ class IOAIEnv:
         left_wrist_rgb_camera_path: Path to left wrist RGB camera.
         left_wrist_depth_camera_path: Path to left wrist depth camera.
         obstacle_points: List of 2D obstacle positions in world frame for path planning.
+        obstacle_radius: Radius of the obstacle for collision detection.
     """
     
     def __init__(self, headless: bool = False) -> None:
@@ -192,8 +193,8 @@ class IOAIEnv:
 
         # Initialize obstacle points for path planning and collision avoidance
         # These points represent the 2D positions of static obstacles (cones) in world frame
-        # Used for A* path planning, collision detection, and navigation algorithms
         self.obstacle_points: List[List[float]] = []
+        self.obstacle_radius = 0.2
         
         # Extract obstacle positions from scene objects (Cone1 to Cone6)
         # Each obstacle is represented as [x, y] coordinates in world frame
