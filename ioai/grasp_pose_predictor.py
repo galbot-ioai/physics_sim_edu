@@ -21,7 +21,7 @@
 #
 ######################################################################################
 #
-# Description: A basic pipeline for IOAI environment
+# Description: Grasp pose prediction framework for IOAI environment
 # Author: Chenyu Cao, Herman Ye@Galbot
 #
 ######################################################################################
@@ -89,15 +89,16 @@ class BaseGraspPosePredictor(ABC):
 class OfficialGraspPosePredictor(BaseGraspPosePredictor):
     """Official baseline grasp pose predictor for the IOAI environment.
 
-    This class provides a basic implementation of grasp pose prediction using
-    predefined grasp strategies for different object types. It serves as a
+    This class provides a baseline implementation of grasp pose prediction using
+    the GraspRegistration class, which implements predefined grasp strategies for
+    specific object types (power_drill, extrusion, toy, cube, mug). It serves as a
     baseline for evaluation and can be used as a starting point for custom
     implementations.
 
-    The predictor uses simple geometric transformations to predict grasp poses
-    based on object type and pose. While functional, more advanced methods
-    considering object geometry, physics, and task requirements may provide
-    better performance.
+    The predictor uses the GraspRegistration class that generates multiple candidate
+    grasp poses based on object-specific geometric transformations and selects the
+    optimal one based on orientation criteria. The implementation considers object
+    geometry and provides different grasp strategies for different object types.
 
     Coordinate convention:
         - Position: [x, y, z]
@@ -118,12 +119,15 @@ class OfficialGraspPosePredictor(BaseGraspPosePredictor):
     def predict_grasp(self, object_name: str, object_pose: np.ndarray) -> np.ndarray:
         """Predict the optimal grasp pose for a given object using the official baseline.
 
-        This method uses the GraspRegistration class to predict grasp poses based on
-        predefined strategies for different object types. The grasp pose is returned
-        in the robot's coordinate frame.
+        This method uses the GraspRegistration class to predict grasp poses. The
+        GraspRegistration class generates multiple candidate grasp poses based on
+        object-specific geometric transformations (translations and rotations) and
+        selects the optimal one based on the z-axis orientation. The grasp pose is
+        returned in the robot's coordinate frame.
 
         Args:
-            object_name (str): The name of the object to grasp (e.g., "cube", "power_drill").
+            object_name (str): The name of the object to grasp. Must be one of:
+                              "power_drill", "extrusion", "toy", "cube", "mug".
             object_pose (np.ndarray): The 6D pose of the object in quaternion format [x, y, z, qx, qy, qz, qw].
 
         Returns:

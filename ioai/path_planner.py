@@ -43,13 +43,13 @@ class BasePathPlanner(ABC):
         """Initialize the path planner with a reference to the IOAI environment.
 
         Args:
-            environment(IOAIEnv): The IOAI simulation environment instance.
+            environment: The IOAI simulation environment instance.
         """
         self.environment = environment
 
     @abstractmethod
     def plan_path(self, *args, **kwargs):
-        """Plan the optimal path for the robot to navigate to the goal.
+        """Plan a path between specified points.
 
         This method should be implemented by subclasses to plan navigation paths.
         The input parameters and return values are flexible to accommodate different
@@ -75,14 +75,14 @@ class BasePathPlanner(ABC):
 
 class InterpolationPathPlanner(BasePathPlanner):
     """Simple interpolation path planner that directly connects two points.
-    
+
     This path planner ignores obstacles and creates a direct path between
     start and goal positions using linear interpolation.
     """
 
     def __init__(self, environment: IOAIEnv):
         """Initialize the interpolation path planner.
-        
+
         Args:
             environment: The IOAI simulation environment instance.
         """
@@ -95,45 +95,46 @@ class InterpolationPathPlanner(BasePathPlanner):
         num_points: int = 50,
     ) -> List[Tuple[float, float]]:
         """Plan a direct path from start to goal position using linear interpolation.
-        
+
+        This method creates a simple straight-line path between start and goal
+        positions by interpolating intermediate waypoints. It does not consider
+        obstacles or optimize for any specific criteria.
+
         Args:
             start_position: Starting position coordinates (x, y) in meters.
             goal_position: Goal position coordinates (x, y) in meters.
             num_points: Number of points to generate along the path.
-                
+
         Returns:
             List of waypoints forming the interpolated path.
         """
         if num_points < 2:
             num_points = 2
-            
+
         return self._linear_interpolation(start_position, goal_position, num_points)
 
     def _linear_interpolation(
-        self, 
-        start: Tuple[float, float], 
-        goal: Tuple[float, float], 
-        num_points: int
+        self, start: Tuple[float, float], goal: Tuple[float, float], num_points: int
     ) -> List[Tuple[float, float]]:
         """Perform linear interpolation between start and goal points.
-        
+
         Args:
             start: Starting position (x, y).
             goal: Goal position (x, y).
             num_points: Number of points to generate.
-            
+
         Returns:
             List of interpolated waypoints.
         """
         path = []
-        
+
         for i in range(num_points):
             t = i / (num_points - 1)  # Parameter from 0 to 1
-            
+
             # Linear interpolation
             x = start[0] + t * (goal[0] - start[0])
             y = start[1] + t * (goal[1] - start[1])
-            
+
             path.append((x, y))
-            
+
         return path

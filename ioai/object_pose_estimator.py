@@ -21,7 +21,7 @@
 #
 ######################################################################################
 #
-# Description: Base class for object pose estimators
+# Description: Object pose estimators for the IOAI environment
 # Author: Chenyu Cao, Herman Ye@Galbot
 #
 ######################################################################################
@@ -125,7 +125,7 @@ class GroundTruthObjectPoseEstimator(BaseObjectPoseEstimator):
 
     def estimate_pose(
         self, object_name: str, *args, **kwargs
-    ) -> Tuple[np.ndarray, np.ndarray] | None:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Return the ground-truth pose of the specified object.
 
         This method queries the simulator for the true position and orientation
@@ -176,15 +176,37 @@ class GroundTruthObjectPoseEstimator(BaseObjectPoseEstimator):
         # Position: [x, y, z], Orientation (quaternion): [qx, qy, qz, qw]
         return position_wrt_robot, orientation_wrt_robot
 
-from yolo_seg.seg import YoloSeg
-from pose_est.pose_est import PoseEstimator
 
 class YoloSegObjectPoseEstimator(BaseObjectPoseEstimator):
+    """A pose estimator that uses YOLO segmentation and pose estimation for object pose detection.
+
+    This class combines YOLO segmentation to detect objects in images and pose estimation
+    to determine their 3D pose. It processes RGB and depth images from the front head camera
+    to estimate object poses in the robot's coordinate frame.
+
+    Coordinate convention:
+        - Position: [x, y, z]
+        - Orientation (quaternion): [qx, qy, qz, qw]
+    """
+
     def __init__(self, environment: IOAIEnv, yolo_seg_model_path: str):
+        """Initialize the YOLO segmentation pose estimator.
+
+        Args:
+            environment (IOAIEnv): The IOAI simulation environment instance.
+            yolo_seg_model_path (str): Path to the YOLO segmentation model file.
+        """
+        from yolo_seg.seg import YoloSeg
+        from pose_est.pose_est import PoseEstimator
+
         super().__init__(environment)
+
         self.yolo_seg = YoloSeg(model_path=yolo_seg_model_path)
+        # Camera intrinsic parameters: [fx, fy, cx, cy]
         self.camera_matrix = [638.315, 637.683, 636.496, 363.410]
+        # Depth scale factor (meters per unit in depth image)
         self.depth_scale = 0.001
+        # Model scale factor for pose estimation (None for default)
         self.model_scale_factor = None
         self.pose_est = PoseEstimator(
             camera_matrix=self.camera_matrix,
@@ -194,25 +216,31 @@ class YoloSegObjectPoseEstimator(BaseObjectPoseEstimator):
             log_debug=True,
         )
 
-    def estimate_pose(self, object_name: str, *args, **kwargs) -> Tuple[np.ndarray, np.ndarray] | None:
+    def estimate_pose(
+        self, object_name: str, *args, **kwargs
+    ) -> Tuple[np.ndarray, np.ndarray] | None:
         """Estimate the pose of an object using YOLO segmentation and pose estimation.
-        
+
+        This method captures RGB and depth images from the front head camera, performs
+        YOLO segmentation to detect the target object, and uses pose estimation to
+        determine the object's 3D pose in the robot's coordinate frame.
+
         Args:
             object_name (str): The name of the object whose pose is to be estimated.
             *args: Additional arguments (ignored in this implementation).
             **kwargs: Additional keyword arguments (ignored in this implementation).
-            
+
         Returns:
             Tuple[np.ndarray, np.ndarray] | None: The position (3,) and orientation (4,)
                 of the object in the robot's coordinate frame, or None if pose estimation fails.
                 The position is ordered as [x, y, z], and the orientation quaternion is
                 ordered as [qx, qy, qz, qw].
         """
-        # Get RGB and depth images from front camera
+        # Get RGB and depth images from front head camera
         rgb = self.environment.interface.front_head_camera.get_rgb()
         depth = self.environment.interface.front_head_camera.get_depth()
 
-        # Preprocess depth
+        # Preprocess depth image: scale to millimeters, clip values, convert to uint16
         depth = preprocess_depth(
             depth,
             scale=1000,
@@ -221,49 +249,50 @@ class YoloSegObjectPoseEstimator(BaseObjectPoseEstimator):
             data_type=np.uint16,
         )
 
-        # Convert RGB to BGR and save images to temporary files
+        # Convert RGB to BGR format for OpenCV processing
         bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        
-        # Use temporary files for processing
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as rgb_file:
+
+        # Create temporary files for image processing
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as rgb_file:
             rgb_path = rgb_file.name
             cv2.imwrite(rgb_path, bgr)
-            
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as depth_file:
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as depth_file:
             depth_path = depth_file.name
             cv2.imwrite(depth_path, depth)
-        
+
         try:
-            # Perform YOLO segmentation
+            # Perform YOLO segmentation on the RGB image
             seg_results = self.yolo_seg.segment_image(rgb_path)
 
+            # Debug: Print number of detected masks
             for result in seg_results:
                 if result.masks is not None:
                     print(f"Detected {len(result.masks)} masks in the image.")
                 else:
                     print("No masks detected.")
-            
-            # Get the best mask for the target object
+
+            # Extract the best segmentation mask for the target object
             mask = self.yolo_seg.get_best_mask(seg_results, object_name)
 
             if mask is None:
                 print(f"No mask found for {object_name}")
                 return None
 
-            # Resize mask to match image dimensions
+            # Resize mask to match original image dimensions and create binary mask
             mask_resized = cv2.resize(
                 mask.astype(np.float32),
                 (rgb.shape[1], rgb.shape[0]),
-                interpolation=cv2.INTER_LINEAR
+                interpolation=cv2.INTER_LINEAR,
             )
             mask_binary = (mask_resized > 0.5).astype(np.uint8) * 255
-            
-            # Save mask to temporary file
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as mask_file:
+
+            # Save binary mask to temporary file
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as mask_file:
                 mask_path = mask_file.name
                 cv2.imwrite(mask_path, mask_binary)
 
-            # Estimate pose using the pose estimator
+            # Estimate pose using the pose estimator with RGB, depth, and mask
             pose_matrix = self.pose_est.estimate_pose(
                 rgb_path=rgb_path,
                 depth_path=depth_path,
@@ -271,25 +300,28 @@ class YoloSegObjectPoseEstimator(BaseObjectPoseEstimator):
                 cad_name=object_name,
             )
 
-            # Convert pose matrix to position and orientation
+            # Convert 4x4 pose matrix to position and quaternion orientation
             if pose_matrix is not None:
+                # Extract position from translation part of transformation matrix
                 position = pose_matrix[:3, 3]
+                # Extract rotation matrix and convert to quaternion
                 rotation_matrix = pose_matrix[:3, :3]
                 quat = R.from_matrix(rotation_matrix).as_quat()  # [qx, qy, qz, qw]
+                # Combine position and orientation into single pose vector
                 pose = np.concatenate([position, quat])  # [x, y, z, qx, qy, qz, qw]
             else:
                 print(f"Pose estimation failed for {object_name}")
                 return None
 
-            # Transform pose from camera frame to robot frame
-            position_wrt_robot, orientation_wrt_robot = self.environment.camera_to_robot_frame(
-                pose[:3], pose[3:]
+            # Transform pose from camera coordinate frame to robot coordinate frame
+            position_wrt_robot, orientation_wrt_robot = (
+                self.environment.camera_to_robot_frame(pose[:3], pose[3:])
             )
-            
+
             return position_wrt_robot, orientation_wrt_robot
-            
+
         finally:
-            # Clean up temporary files
+            # Clean up temporary files to avoid disk space issues
             for file_path in [rgb_path, depth_path, mask_path]:
                 try:
                     os.unlink(file_path)

@@ -21,7 +21,7 @@
 #
 ######################################################################################
 #
-# Description: Base class for motion planners
+# Description: Motion planner base class and baseline implementation
 # Author: Chenyu Cao, Herman Ye@Galbot
 #
 ######################################################################################
@@ -76,8 +76,8 @@ class BaseMotionPlanner(ABC):
         Returns:
             Any: The planned motion trajectory in any format suitable for the implementation.
                 Common formats include:
-                - List[np.ndarray]: List of waypoints [x, y, z, qx, qy, qz, qw]
                 - List[List[float]]: List of joint positions [joint1, joint2, ..., jointN]
+                - List[np.ndarray]: List of waypoints [x, y, z, qx, qy, qz, qw]
                 - Dict: Dictionary containing trajectory information
                 - Any other format that suits the implementation
 
@@ -91,18 +91,15 @@ class InterpolationMotionPlanner(BaseMotionPlanner):
     """Official baseline motion planner for the IOAI environment.
 
     This class provides a basic implementation of motion planning using
-    simple interpolation strategies for different motion types. It serves as a
+    simple linear interpolation for joint space motion. It serves as a
     baseline for evaluation and can be used as a starting point for custom
     implementations.
 
-    The planner uses linear interpolation for joint space motion and
-    simple geometric transformations for Cartesian space motion. While functional,
-    more advanced methods considering dynamics, obstacles, and optimization may
-    improve motion performance and reduce execution time.
+    The planner uses linear interpolation for joint space motion only.
+    While functional, more advanced methods considering dynamics, obstacles,
+    and optimization may improve motion performance and reduce execution time.
 
     Coordinate convention:
-        - Position: [x, y, z]
-        - Orientation (quaternion): [qx, qy, qz, qw]
         - Joint positions: [joint1, joint2, ..., jointN]
     """
 
@@ -120,10 +117,10 @@ class InterpolationMotionPlanner(BaseMotionPlanner):
         end_joint_positions: List[float],
         interpolation_steps: int = 100,
     ) -> List[List[float]]:
-        """Plan motion from start joint positions to end joint positions using interpolation.
+        """Plan motion from start joint positions to end joint positions using linear interpolation.
 
         This method takes the start and end joint positions, along with the number of
-        interpolation steps, to generate a motion trajectory.
+        interpolation steps, to generate a motion trajectory using linear interpolation.
 
         Args:
             start_joint_positions (List[float]): Starting joint positions [joint1, joint2, ..., jointN]
@@ -135,8 +132,8 @@ class InterpolationMotionPlanner(BaseMotionPlanner):
                 Each element is a list of joint positions for one time step.
 
         Raises:
-            ValueError: If joint positions have invalid format or different lengths.
-            RuntimeError: If motion planning fails.
+            ValueError: If joint positions have invalid format, different lengths, or interpolation_steps <= 0.
+            RuntimeError: If motion planning fails due to other errors.
         """
         try:
             # Validate input parameters
@@ -168,7 +165,15 @@ class InterpolationMotionPlanner(BaseMotionPlanner):
             raise RuntimeError(f"Failed to plan motion: {str(e)}")
 
     def _validate_joint_positions(self, joint_positions: List[float], param_name: str):
-        """Validate joint positions format."""
+        """Validate joint positions format.
+
+        Args:
+            joint_positions: The joint positions to validate
+            param_name: Name of the parameter for error messages
+
+        Raises:
+            ValueError: If joint_positions is not a list/numpy array, is empty, or contains non-numeric values
+        """
         if not isinstance(joint_positions, (list, np.ndarray)):
             raise ValueError(f"{param_name} must be a list or numpy array")
 
@@ -183,5 +188,14 @@ class InterpolationMotionPlanner(BaseMotionPlanner):
     def _interpolate_joint_trajectory_simple(
         self, start_joints: np.ndarray, end_joints: np.ndarray, steps: int
     ) -> List[List[float]]:
-        """Generate interpolated joint trajectory using linear interpolation."""
+        """Generate interpolated joint trajectory using linear interpolation.
+
+        Args:
+            start_joints: Starting joint positions as numpy array
+            end_joints: Target joint positions as numpy array
+            steps: Number of interpolation steps
+
+        Returns:
+            List[List[float]]: List of joint positions representing the trajectory
+        """
         return np.linspace(start_joints, end_joints, steps).tolist()

@@ -82,7 +82,7 @@ class GraspRegistration:
         return new_matrix
 
     def rotate_matrix_along_x_axis(self, matrix, angle):
-        """Rotate the matrix along the z-axis.
+        """Rotate the matrix along the x-axis.
         Args:
             matrix (np.ndarray): The input matrix.
             angle (float): The angle to rotate in degrees.

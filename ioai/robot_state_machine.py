@@ -117,6 +117,7 @@ class IOAIRobotStateMachine:
         self.state_machine.add_state("Move Forward to Shelf", self._move_forward_to_shelf_state)
         self.state_machine.add_state("Rotate to Face Shelf Final", self._rotate_to_face_shelf_final_state)
         self.state_machine.add_state("Release Bin on Shelf", self._release_bin_on_shelf_state)
+        # Note: Retract Arms state is commented out in the original code
         # self.state_machine.add_state("Retract Arms", self._retract_arms_state)
         self.state_machine.add_state("Move Backward", self._move_backward_state)
         
