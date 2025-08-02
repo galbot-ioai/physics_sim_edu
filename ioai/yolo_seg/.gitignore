@@ -1,0 +1,7 @@
+__pycache__/
+output_with_masks.png
+yolo11n-seg.pt
+yolo11n.pt
+data/
+runs/
+best_mask_bin.png
