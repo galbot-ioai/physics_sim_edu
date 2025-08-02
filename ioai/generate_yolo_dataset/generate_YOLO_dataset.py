@@ -1183,6 +1183,18 @@ def main():
                     synthnova_physics_simulator.close()
 
     print(f"\n\n[INFO] Data collection completed")
+    print(f"[INFO] Dataset saved to: {ROOT}")
+    print(f"[INFO] Dataset structure:")
+    print(f"  ├── classes.txt")
+    for split in SPLITS:
+        print(f"  ├── images/{split}/")
+        print(f"  └── labels/{split}/")
+    print(f"\n[INFO] Total samples per split:")
+    for split, count in SPLITS.items():
+        images_dir = os.path.join(ROOT, "images", split)
+        if os.path.exists(images_dir):
+            actual_count = len([f for f in os.listdir(images_dir) if f.endswith('.jpg')])
+            print(f"  {split}: {actual_count} images")
 
 
 if __name__ == "__main__":
