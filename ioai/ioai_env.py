@@ -126,6 +126,14 @@ class IOAIEnv:
             "/World/Galbot/left_arm_link7/left_arm_end_effector_mount_link/left_wrist_depth_camera"
         )
 
+        # Get the obstacle points in world frame
+        self.obstacle_points = []
+        for i in range(1, 7):
+            obstacle_prim_path = f"/World/Cone{i}"
+            obstacle_state = self.simulator.get_object_state(obstacle_prim_path)
+            object_point = obstacle_state["position"][:2].tolist()
+            self.obstacle_points.append(object_point)
+
     def _setup_interface(self):
         """Setup the Galbot interface for robot control."""
         galbot_interface_config = GalbotInterfaceConfig()
