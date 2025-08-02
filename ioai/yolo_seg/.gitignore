@@ -2,7 +2,5 @@ __pycache__/
 data/
 runs/
 
-ckpts/
-
 output_with_masks.png
 best_mask_bin.png
