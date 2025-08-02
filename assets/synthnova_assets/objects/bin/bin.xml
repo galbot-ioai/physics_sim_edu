@@ -4,7 +4,7 @@
       <geom group="1" type="mesh" contype="0" conaffinity="0"/>
     </default>
     <default class="collision">
-      <geom group="0" type="mesh"/>
+      <geom group="0" type="mesh" friction="10 10 10"/>
     </default>
   </default>
   <asset>
@@ -86,6 +86,10 @@
         <geom mesh="bucket_collision_32" rgba="0.5883754575517366 0.7896605823735925 0.377020906040612 1" class="collision"/>
         <geom mesh="bucket_collision_33" rgba="0.9924231516418911 0.7554110174763835 0.792742572702263 1" class="collision"/>
         <geom mesh="bucket_collision_34" rgba="0.08688340690731011 0.9762185814846313 0.36771835032104305 1" class="collision"/>
+        <!-- <geom type="box" size="0.006 0.025 0.035" pos="0.162 0 0.21" euler="0 8 0" rgba="1 0 0 0.5" class="collision"/>
+        <geom type="box" size="0.006 0.025 0.035" pos="-0.162 0 0.21" euler="0 -8 0" rgba="1 0 0 0.5" class="collision"/> -->
+        <geom type="box" size="0.008 0.025 0.035" pos="0.162 0 0.21" rgba="1 0 0 0.5" class="collision"/>
+        <geom type="box" size="0.008 0.025 0.035" pos="-0.162 0 0.21" rgba="1 0 0 0.5" class="collision"/>
       </body>
     </body>
   </worldbody>
