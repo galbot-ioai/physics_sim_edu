@@ -130,14 +130,52 @@ class IOAIRobotStateMachine:
         """Helper function to check motion completion"""
         return not self.env.simulator.physics_callback_exists(callback_name)
     
-    def _move_joints_to_target(self, module, target_positions, steps=500):
+    def move_joints_to_target(self, module, target_positions, steps=500):
         """Helper function for joint interpolation"""
         from physics_simulator.utils.data_types import JointTrajectory
         start_positions = module.get_joint_positions()
-        joint_positions = np.linspace(start_positions, target_positions, steps)
+        joint_positions = self.state_machine.motion_planner.plan_motion(start_positions, target_positions, steps)
         joint_trajectory = JointTrajectory(positions=np.array(joint_positions))
         module.follow_trajectory(joint_trajectory)
+
+    def move_arm_to_pose(self, arm_id, target_position, target_orientation, steps=500):
+        """Move arm to target pose using inverse kinematics.
+        
+        Args:
+            arm_id: The ID of the arm, either "left_arm" or "right_arm".
+            target_position: Target position in robot base frame [x, y, z].
+            target_orientation: Target orientation in robot base frame [qx, qy, qz, qw].
+            steps: Number of steps for trajectory planning.
+        """
+        # Prepare target pose in robot frame
+        target_pose = np.concatenate([target_position, target_orientation])
+        
+        # Solve IK and start motion
+        current_joints = self.env.mink_config.q
+        arm_joints = self.env.compute_inverse_kinematics(current_joints, target_pose, arm_id)
+        arm_module = getattr(self.env.interface, arm_id)
+        self.move_joints_to_target(arm_module, arm_joints, steps)
+
+    def move_left_arm_to_pose(self, target_position, target_orientation, steps=500):
+        """Move left arm to target pose.
+        
+        Args:
+            target_position: Target position in robot base frame [x, y, z].
+            target_orientation: Target orientation in robot base frame [qx, qy, qz, qw].
+            steps: Number of steps for trajectory planning.
+        """
+        return self.move_arm_to_pose("left_arm", target_position, target_orientation, steps)
     
+    def move_right_arm_to_pose(self, target_position, target_orientation, steps=500):
+        """Move right arm to target pose.
+        
+        Args:
+            target_position: Target position in robot base frame [x, y, z].
+            target_orientation: Target orientation in robot base frame [qx, qy, qz, qw].
+            steps: Number of steps for trajectory planning.
+        """
+        return self.move_arm_to_pose("right_arm", target_position, target_orientation, steps)
+
     # Phase 1: Initial Setup and Navigation States
     def _initialize_robot_safe_pose_state(self):
         if self.state_machine.state_first_entry:
@@ -188,7 +226,7 @@ class IOAIRobotStateMachine:
         if self.state_machine.state_first_entry:
             pos_wrt_robot = np.array([0.49, 0.035, 0.8])
             ori_wrt_robot = np.array([0.49212, 0.48182, -0.47995, 0.54343])
-            self.env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            self.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Adjusting to table grasping pose")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback")
@@ -218,7 +256,7 @@ class IOAIRobotStateMachine:
         if self.state_machine.state_first_entry:
             pos_wrt_robot = self.state_machine.grasp_pose[:3] + np.array([0, 0, 0.3])
             ori_wrt_robot = self.state_machine.grasp_pose[3:]
-            self.env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            self.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Moving to pre-grasp position")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback")
@@ -227,7 +265,7 @@ class IOAIRobotStateMachine:
         if self.state_machine.state_first_entry:
             pos_wrt_robot = self.state_machine.grasp_pose[:3] + np.array([0, 0, 0.02])
             ori_wrt_robot = self.state_machine.grasp_pose[3:]
-            self.env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            self.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Moving to grasp position")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback")
@@ -244,7 +282,7 @@ class IOAIRobotStateMachine:
         if self.state_machine.state_first_entry:
             pos_wrt_robot = self.state_machine.grasp_pose[:3] + np.array([0, 0, 0.4])
             ori_wrt_robot = self.state_machine.grasp_pose[3:]
-            self.env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            self.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Moving to retreat position")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback")
@@ -253,7 +291,7 @@ class IOAIRobotStateMachine:
         if self.state_machine.state_first_entry:
             pos_wrt_robot = self.state_machine.bin_pose[0] + np.array([0, 0, 0.4])
             ori_wrt_robot = [0, 0, 0, 1]
-            self.env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            self.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Moving to bin place position")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback")
@@ -270,7 +308,7 @@ class IOAIRobotStateMachine:
         if self.state_machine.state_first_entry:
             pos_wrt_robot = np.array([0.49, 0.035, 0.8])
             ori_wrt_robot = np.array([0.49212, 0.48182, -0.47995, 0.54343])
-            self.env.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
+            self.move_left_arm_to_pose(pos_wrt_robot, ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Returning to table grasping pose")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback")
@@ -278,7 +316,7 @@ class IOAIRobotStateMachine:
     # Phase 3: Bin Placement States
     def _initialize_robot_for_bin_grasp_state(self):
         if self.state_machine.state_first_entry:
-            self._move_joints_to_target(self.env.interface.left_arm, [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
+            self.move_joints_to_target(self.env.interface.left_arm, [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00], 500)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Initializing robot for bin grasp")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback")
@@ -316,8 +354,8 @@ class IOAIRobotStateMachine:
             left_ori_wrt_robot = [0, 0, 0, 1]
             right_pos_wrt_robot = self.state_machine.bin_pose[0] + np.array([0, -0.2, 0.4])
             right_ori_wrt_robot = [0, 0, 0, 1]
-            self.env.move_left_arm_to_pose(left_pos_wrt_robot, left_ori_wrt_robot)
-            self.env.move_right_arm_to_pose(right_pos_wrt_robot, right_ori_wrt_robot)
+            self.move_left_arm_to_pose(left_pos_wrt_robot, left_ori_wrt_robot)
+            self.move_right_arm_to_pose(right_pos_wrt_robot, right_ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Planning dual arm pre-grasp")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback") and self._is_callback_complete("RightArm_follow_trajectory_callback")
@@ -329,8 +367,8 @@ class IOAIRobotStateMachine:
             left_ori_wrt_robot = [0, 0, 0, 1]
             right_pos_wrt_robot = self.state_machine.bin_pose[0] + np.array([0, -0.16, 0.2])
             right_ori_wrt_robot = [0, 0, 0, 1]
-            self.env.move_left_arm_to_pose(left_pos_wrt_robot, left_ori_wrt_robot)
-            self.env.move_right_arm_to_pose(right_pos_wrt_robot, right_ori_wrt_robot)
+            self.move_left_arm_to_pose(left_pos_wrt_robot, left_ori_wrt_robot)
+            self.move_right_arm_to_pose(right_pos_wrt_robot, right_ori_wrt_robot)
             self.state_machine.state_first_entry = False
             print(f"State: {self.state_machine.get_state_name()} - Planning dual arm grasp")
         return self._is_callback_complete("LeftArm_follow_trajectory_callback") and self._is_callback_complete("RightArm_follow_trajectory_callback")
@@ -421,12 +459,12 @@ class IOAIRobotStateMachine:
     def _retract_arms_state(self):
         if self.state_machine.state_first_entry:
             # Simulate retracting arms
-            self._move_joints_to_target(
+            self.move_joints_to_target(
                 self.env.interface.left_arm,
                 [2.00, -1.60, -0.60, -1.70, 0.00, -0.80, 0.00],
                 500
             )
-            self._move_joints_to_target(
+            self.move_joints_to_target(
                 self.env.interface.right_arm,
                 [-2.00, 1.60, 0.60, 1.70, 0.00, 0.80, 0.00],
                 500

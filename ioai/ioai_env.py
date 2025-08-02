@@ -37,27 +37,10 @@ from physics_simulator.galbot_interface import GalbotInterface, GalbotInterfaceC
 import mink
 from loop_rate_limiters import RateLimiter
 from auro_utils import xyzw_to_wxyz, wxyz_to_xyzw
-from pathlib import Path
 import numpy as np
-from physics_simulator.utils.data_types import JointTrajectory
-import time
 import os
 import math
 import warnings
-from physics_simulator.utils.state_machine import SimpleStateMachine
-
-def interpolate_joint_positions(start_positions, end_positions, steps):
-    """Interpolate between start and end joint positions.
-    
-    Args:
-        start_positions: Initial joint positions.
-        end_positions: Target joint positions.
-        steps: Number of interpolation steps.
-        
-    Returns:
-        List of interpolated joint position arrays.
-    """
-    return np.linspace(start_positions, end_positions, steps).tolist()
 
 class IOAIEnv:
     """IOAI Environment for physics simulation and robot control.
@@ -616,10 +599,10 @@ class IOAIEnv:
         """
         if arm_id == "left_arm":
             # Get left gripper TCP pose from simulator
-            position, quaternion = self.get_left_gripper_pose()
+            position, quaternion = self._get_left_gripper_pose()
         elif arm_id == "right_arm":
             # Get right gripper TCP pose from simulator
-            position, quaternion = self.get_right_gripper_pose()
+            position, quaternion = self._get_right_gripper_pose()
         else:
             raise ValueError(f"Invalid arm_id: {arm_id}")
         
@@ -646,7 +629,7 @@ class IOAIEnv:
         # Return pose in base link frame [x, y, z, qx, qy, qz, qw]
         return np.concatenate([tcp_position_base, tcp_orientation_base])
 
-    def get_left_gripper_pose(self):
+    def _get_left_gripper_pose(self):
         """Get left gripper TCP pose in world frame.
         
         Returns:
@@ -658,7 +641,7 @@ class IOAIEnv:
         quaternion = Rotation.from_matrix(site_data.xmat.reshape((3, 3))).as_quat()
         return position, quaternion
     
-    def get_right_gripper_pose(self):
+    def _get_right_gripper_pose(self):
         """Get right gripper TCP pose in world frame.
         
         Returns:
@@ -669,41 +652,6 @@ class IOAIEnv:
         from scipy.spatial.transform import Rotation
         quaternion = Rotation.from_matrix(site_data.xmat.reshape((3, 3))).as_quat()
         return position, quaternion
-    
-    def move_arm_to_pose(self, arm_id, target_position, target_orientation):
-        """Move arm to target pose using inverse kinematics.
-        
-        Args:
-            arm_id: The ID of the arm, either "left_arm" or "right_arm".
-            target_position: Target position in robot base frame [x, y, z].
-            target_orientation: Target orientation in robot base frame [qx, qy, qz, qw].
-        """
-        # Prepare target pose in robot frame
-        target_pose = np.concatenate([target_position, target_orientation])
-        
-        # Solve IK and start motion
-        current_joints = self.mink_config.q
-        arm_joints = self.compute_inverse_kinematics(current_joints, target_pose, arm_id)
-        arm_module = getattr(self.interface, arm_id)
-        self._move_joints_to_target(arm_module, arm_joints)
-
-    def move_left_arm_to_pose(self, target_position, target_orientation):
-        """Move left arm to target pose.
-        
-        Args:
-            target_position: Target position in robot base frame [x, y, z].
-            target_orientation: Target orientation in robot base frame [qx, qy, qz, qw].
-        """
-        return self.move_arm_to_pose("left_arm", target_position, target_orientation)
-    
-    def move_right_arm_to_pose(self, target_position, target_orientation):
-        """Move right arm to target pose.
-        
-        Args:
-            target_position: Target position in robot base frame [x, y, z].
-            target_orientation: Target orientation in robot base frame [qx, qy, qz, qw].
-        """
-        return self.move_arm_to_pose("right_arm", target_position, target_orientation)
 
     def move_chassis_follow_path(self, waypoints):
         """Move chassis to follow a path defined by waypoints in world coordinates.
@@ -874,19 +822,6 @@ class IOAIEnv:
         except Exception as e:
             print(f"Error getting camera images: {e}")
             return None, None
-
-    def _move_joints_to_target(self, module, target_positions, steps=500):
-        """Move joints from current position to target position smoothly.
-        
-        Args:
-            module: Robot module to control.
-            target_positions: Target joint positions.
-            steps: Number of interpolation steps.
-        """
-        current_positions = module.get_joint_positions()
-        positions = interpolate_joint_positions(current_positions, target_positions, steps)
-        joint_trajectory = JointTrajectory(positions=np.array(positions))
-        module.follow_trajectory(joint_trajectory)
 
     def _is_joint_positions_reached(self, module, target_positions, atol=0.01):
         """Check if joint positions are reached within tolerance.
