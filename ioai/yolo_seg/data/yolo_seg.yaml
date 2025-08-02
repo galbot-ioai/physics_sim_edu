@@ -1,0 +1,13 @@
+path: data/datasets
+train: images/train
+val: images/val
+test: images/test
+
+# Classes
+names:
+  0: power_drill
+  1: cube
+  2: mug
+  3: bin
+  4: extrusion
+  5: toy

@@ -261,6 +261,9 @@ class YoloSegObjectPoseEstimator(BaseObjectPoseEstimator):
             depth_path = depth_file.name
             cv2.imwrite(depth_path, depth)
 
+        # Initialize mask_path to None to handle cases where mask creation fails
+        mask_path = None
+        
         try:
             # Perform YOLO segmentation on the RGB image
             seg_results = self.yolo_seg.segment_image(rgb_path)
@@ -322,7 +325,11 @@ class YoloSegObjectPoseEstimator(BaseObjectPoseEstimator):
 
         finally:
             # Clean up temporary files to avoid disk space issues
-            for file_path in [rgb_path, depth_path, mask_path]:
+            files_to_cleanup = [rgb_path, depth_path]
+            if mask_path is not None:
+                files_to_cleanup.append(mask_path)
+                
+            for file_path in files_to_cleanup:
                 try:
                     os.unlink(file_path)
                 except (OSError, NameError):
