@@ -73,7 +73,7 @@ def main():
 
     # Initialize object pose estimator using ground truth data
     object_pose_estimator = GroundTruthObjectPoseEstimator(env)
-    # yolo_seg_model_path = os.path.join(Path(__file__).parent, "yolo_seg/ckpts/cotrain_all_class_0731_1.pt")
+    # yolo_seg_model_path = os.path.join(Path(__file__).parent, "yolo_seg/ckpts/ioai.pt")
     # object_pose_estimator = YoloSegObjectPoseEstimator(env, yolo_seg_model_path)
 
     # Initialize grasp pose predictor using official implementation
