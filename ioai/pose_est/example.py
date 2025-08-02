@@ -1,36 +1,30 @@
-# Usage example
-
+import os
+import argparse
 import time
 import numpy as np
 from pose_est import PoseEstimator
 
-if __name__ == "__main__":
-    data_type = "real"  # Change to "sim" for simulation data
 
-    if data_type == "real":
-        object_name = "cube"  # Change to your real object name
-        camera_matrix = [638.315, 637.683, 636.496, 363.410]  # fx, fy, cx, cy
-        rgb_path = "test_data/real/rgb_image.png"
-        depth_path = "test_data/real/depth_image.png"
-        mask_path = "test_data/real/mask_image.png"
-    else:  # Simulation data
-        object_name = "mug"  # Change to your object name
-        camera_matrix = [
-            359.0587537547767,
-            359.0587537547767,
-            640.0,
-            360.0,
-        ]  # fx, fy, cx, cy
-        rgb_path = f"test_data/sim_data/{object_name}/images/00_color_image.jpg"
-        depth_path = f"test_data/sim_data/{object_name}/depth/00.png"
-        mask_path = f"test_data/sim_data/{object_name}/mask/00.png"
+def main(args):
+    # Get parent directory (ioai/pose_est/) for default paths
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    
+    # Set simulation camera matrix
+    camera_matrix = [359.0587537547767, 359.0587537547767, 640.0, 360.0]  # fx, fy, cx, cy
+    
+    # Use provided paths directly
+    rgb_path = args.rgb_path
+    depth_path = args.depth_path
+    mask_path = args.mask_path
+    object_name = args.object_name
 
     # Initialize pose estimator
     PE = PoseEstimator(
         camera_matrix=camera_matrix,
-        depth_scale=0.001,
-        model_scale_factor=None,
-        visualize=True,  # Enable visualization
+        depth_scale=args.depth_scale,
+        model_scale_factor=args.model_scale_factor,
+        visualize=args.visualize,
     )
 
     # Estimate pose
@@ -47,3 +41,31 @@ if __name__ == "__main__":
     if pose is not None:
         print("Final 6D pose matrix:")
         print(np.array_str(pose, precision=4, suppress_small=True))
+
+
+if __name__ == "__main__":
+    # Get parent directory for default paths
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    
+    parser = argparse.ArgumentParser(description="Pose estimation example")
+    parser.add_argument('--object_name', type=str, default='mug', 
+                       help='Object name for pose estimation')
+    parser.add_argument('--rgb_path', type=str, 
+                       default=os.path.join(parent_dir, 'test_data/sim_data/mug/images/00_color_image.jpg'), 
+                       help='Path to RGB image')
+    parser.add_argument('--depth_path', type=str, 
+                       default=os.path.join(parent_dir, 'test_data/sim_data/mug/depth/00.png'), 
+                       help='Path to depth image')
+    parser.add_argument('--mask_path', type=str, 
+                       default=os.path.join(parent_dir, 'test_data/sim_data/mug/mask/00.png'), 
+                       help='Path to mask image')
+    parser.add_argument('--depth_scale', type=float, default=0.001, 
+                       help='Depth scale factor')
+    parser.add_argument('--model_scale_factor', type=float, default=None, 
+                       help='Model scale factor')
+    parser.add_argument('--visualize', action='store_true', default=True, 
+                       help='Enable visualization')
+    args = parser.parse_args()
+    
+    main(args)
