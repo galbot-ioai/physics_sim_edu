@@ -30,34 +30,14 @@ class PoseEstimator:
             visualize: Whether to visualize intermediate results (default False)
             debug: Whether to enable debug mode (default False)
         """
-        cur_time = time.strftime("%Y%m%d%H%M%S")
         self.camera_matrix = camera_matrix
         self.depth_scale = depth_scale
         self.model_scale_factor = model_scale_factor
         self.visualize = visualize
-        self.output_dir = f"pose_est_res_{cur_time}"
+        self.output_dir = None
         self.debug = log_debug
-
-        # Create output directory
-        os.makedirs(self.output_dir, exist_ok=True)
-        print("PoseEstimator initialized with parameters:")
-
-        # Debug mode
-        if self.debug:
-            self.debug_dir = f"pose_est_dbg_{cur_time}"
-            os.makedirs(self.debug_dir, exist_ok=True)
-            # Save parameters to params_init.npz
-            savez_kwargs = {
-                "camera_matrix": camera_matrix,
-                "depth_scale": depth_scale,
-                "visualize": visualize,
-                "output_dir": self.output_dir,
-            }
-            if model_scale_factor is not None:
-                savez_kwargs["model_scale_factor"] = model_scale_factor
-            else:
-                savez_kwargs["model_scale_factor"] = "None"
-            np.savez(f"{self.debug_dir}/params_init.npz", **savez_kwargs)
+        self.cad_name = None
+        self.debug_dir = None
 
     def estimate_pose(self, rgb_path, depth_path, mask_path, cad_name):
         """
@@ -72,6 +52,28 @@ class PoseEstimator:
         Returns:
             (pose_matrix | None): 4x4 pose transformation matrix or None if estimation fails
         """
+        cur_time = time.strftime("%Y%m%d%H%M%S")
+        self.output_dir = f"pose_logs/pose_est_res_{cur_time}"
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        # Debug mode
+        if self.debug:
+            self.debug_dir = f"pose_logs/pose_est_dbg_{cur_time}"
+            os.makedirs(self.debug_dir, exist_ok=True)
+            savez_kwargs = {
+                "camera_matrix": self.camera_matrix,
+                "depth_scale": self.depth_scale,
+                "visualize": self.visualize,
+                "output_dir": self.output_dir,
+            }
+            if self.model_scale_factor is not None:
+                savez_kwargs["model_scale_factor"] = self.model_scale_factor
+            else:
+                savez_kwargs["model_scale_factor"] = "None"
+            np.savez(f"{self.debug_dir}/params_init.npz", **savez_kwargs)
+
+        self.cad_name = cad_name
+
         try:
             # Load and process data
             scene_pcd, model_pcd = self.load_and_process_data(
@@ -110,12 +112,12 @@ class PoseEstimator:
         """Enhanced depth map processing to reduce artifacts and improve quality"""
         # Apply morphological operations to clean up the depth map
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        
+
         # Close small holes
         depth_closed = cv2.morphologyEx(
             depth.astype(np.uint16), cv2.MORPH_CLOSE, kernel, iterations=1
         )
-        
+
         # Remove small isolated regions
         depth_opened = cv2.morphologyEx(
             depth_closed, cv2.MORPH_OPEN, kernel, iterations=1
@@ -138,7 +140,7 @@ class PoseEstimator:
 
         # Limit maximum depth
         depth_filtered[depth_filtered > max_depth] = max_depth
-        
+
         return depth_filtered.astype(np.uint16)
 
     def _refine_mask(self, mask, kernel_size=5, iterations=1):
@@ -155,84 +157,88 @@ class PoseEstimator:
         Filter depth artifacts including flying pixels and unrealistic depth jumps
         """
         depth_filtered = depth.copy().astype(np.float32)
-        
+
         # Apply Gaussian blur for initial smoothing (safer than bilateral filter)
         depth_filtered = cv2.GaussianBlur(depth_filtered, (5, 5), 1.0)
-        
+
         # Apply median filter to remove salt-and-pepper noise
-        depth_filtered = cv2.medianBlur(depth_filtered.astype(np.uint16), 5).astype(np.float32)
-        
+        depth_filtered = cv2.medianBlur(depth_filtered.astype(np.uint16), 5).astype(
+            np.float32
+        )
+
         # Detect and remove depth discontinuities (flying pixels)
         kernel = np.ones((3, 3), np.uint8)
         depth_eroded = cv2.erode(depth_filtered.astype(np.uint16), kernel, iterations=1)
-        
+
         # Remove pixels where depth differs significantly from neighbors
         depth_diff = np.abs(depth_filtered - depth_eroded.astype(np.float32))
         outlier_mask = depth_diff > max_depth_jump
-        
+
         # Only apply within the object mask to avoid affecting background
         outlier_mask = outlier_mask & mask_binary
         depth_filtered[outlier_mask] = 0
-        
+
         return depth_filtered.astype(np.uint16)
 
-    def _filter_depth_discontinuities(self, z_values, y_idxs, x_idxs, depth_image, threshold_factor=0.1):
+    def _filter_depth_discontinuities(
+        self, z_values, y_idxs, x_idxs, depth_image, threshold_factor=0.1
+    ):
         """
         Filter points based on local depth discontinuities to remove flying pixels
         """
         if len(z_values) < 10:
             return z_values, y_idxs, x_idxs
-            
+
         # Calculate local depth statistics
         depth_median = np.median(z_values)
         depth_std = np.std(z_values)
-        
+
         # Define reasonable depth range
         min_depth = max(0.1, depth_median - 3 * depth_std)
         max_depth = depth_median + 3 * depth_std
-        
+
         # Filter based on global depth range
         valid_global = (z_values >= min_depth) & (z_values <= max_depth)
-        
+
         # Local neighborhood analysis for remaining points
         valid_local = np.ones(len(z_values), dtype=bool)
-        
+
         for i, (y, x, z) in enumerate(zip(y_idxs, x_idxs, z_values)):
             if not valid_global[i]:
                 continue
-                
+
             # Check 3x3 neighborhood
-            y_min, y_max = max(0, y-1), min(depth_image.shape[0], y+2)
-            x_min, x_max = max(0, x-1), min(depth_image.shape[1], x+2)
-            
+            y_min, y_max = max(0, y - 1), min(depth_image.shape[0], y + 2)
+            x_min, x_max = max(0, x - 1), min(depth_image.shape[1], x + 2)
+
             neighborhood = depth_image[y_min:y_max, x_min:x_max]
             valid_neighbors = neighborhood[neighborhood > 0] * self.depth_scale
-            
+
             if len(valid_neighbors) < 3:
                 valid_local[i] = False
                 continue
-                
+
             # Check if current depth is consistent with neighbors
             neighbor_median = np.median(valid_neighbors)
             depth_diff = abs(z - neighbor_median)
-            
+
             # Adaptive threshold based on depth value
             adaptive_threshold = max(0.01, neighbor_median * threshold_factor)
-            
+
             if depth_diff > adaptive_threshold:
                 valid_local[i] = False
-        
+
         # Combine filters
         valid_mask = valid_global & valid_local
-        
-        filtered_z = z_values[valid_mask]
-        filtered_y = y_idxs[valid_mask] 
-        filtered_x = x_idxs[valid_mask]
-        
-        pprint(f"Depth filtering: {len(z_values)} -> {len(filtered_z)} points")
-        
-        return filtered_z, filtered_y, filtered_x
 
+        filtered_z = z_values[valid_mask]
+        filtered_y = y_idxs[valid_mask]
+        filtered_x = x_idxs[valid_mask]
+
+        pprint(f"Depth filtering: {len(z_values)} -> {len(filtered_z)} points")
+
+        return filtered_z, filtered_y, filtered_x
+ 
     def load_and_process_data(self, rgb_path, depth_path, mask_path, cad_name):
         """
         Load and process input data
@@ -296,48 +302,21 @@ class PoseEstimator:
             # Uniform point cloud sampling with higher density for better features
             model_cloud = cad_mesh.sample_points_uniformly(number_of_points=10000)
 
-            # # Special handling for cube and extrusion to reduce streaking artifacts
-            # if cad_name in ["cube", "extrusion"]:
-            #     scene_voxel = 0.002  # Finer voxel size for better edge preservation
-            #     model_voxel = 0.002
-            #     scene_cloud = self.preprocess_point_cloud_enhanced(
-            #         scene_cloud, voxel_size=scene_voxel, object_type=cad_name
-            #     )
-            #     model_cloud = self.preprocess_point_cloud_enhanced(
-            #         model_cloud, voxel_size=model_voxel, object_type=cad_name
-            #     )
-            # elif cad_name == "bin":
-            #     scene_voxel = 0.005
-            #     model_voxel = 0.002
-            #     scene_cloud = self.preprocess_point_cloud(
-            #         scene_cloud, voxel_size=scene_voxel
-            #     )
-            #     model_cloud = self.preprocess_point_cloud(
-            #         model_cloud, voxel_size=model_voxel
-            #     )
-            # else:
-            #     scene_voxel = 0.003
-            #     model_voxel = 0.003
-            #     scene_cloud = self.preprocess_point_cloud(
-            #         scene_cloud, voxel_size=scene_voxel
-            #     )
-            #     model_cloud = self.preprocess_point_cloud(
-            #         model_cloud, voxel_size=model_voxel
-            #     )
-
-            # pprint(f"Scene point cloud: {len(scene_cloud.points)} points")
-            # pprint(f"Model point cloud: {len(model_cloud.points)} points")
-            
-            
-            model_voxel = 0.004
-            model_cloud = self.preprocess_point_cloud(model_cloud, voxel_size=model_voxel)
+            model_voxel = 0.004 if self.cad_name == "bin" else 0.002
+            model_cloud = self.preprocess_point_cloud(
+                model_cloud, voxel_size=model_voxel
+            )
             if len(model_cloud.points) > 0:
                 ratio = len(scene_cloud.points) / len(model_cloud.points)
-                scene_voxel = model_voxel * ratio ** (1/3)
-                scene_cloud = self.preprocess_point_cloud(scene_cloud, voxel_size=scene_voxel)
+                scene_voxel = model_voxel * ratio ** (1 / 3)
+                scene_cloud = self.preprocess_point_cloud(
+                    scene_cloud, voxel_size=scene_voxel
+                )
             else:
                 scene_voxel = model_voxel * 2
-                scene_cloud = self.preprocess_point_cloud(scene_cloud, voxel_size=scene_voxel)
+                scene_cloud = self.preprocess_point_cloud(
+                    scene_cloud, voxel_size=scene_voxel
+                )
 
             pprint(f"Scene point cloud: {len(scene_cloud.points)} points")
             pprint(f"Model point cloud: {len(model_cloud.points)} points")
@@ -463,7 +442,7 @@ class PoseEstimator:
         mask_norm = mask.astype(float)
         if mask_norm.max() > 1:
             mask_norm = mask_norm / 255.0
-        plt.imshow(mask_norm, cmap='jet', alpha=0.4)
+        plt.imshow(mask_norm, cmap="jet", alpha=0.4)
         plt.title("RGB + Mask Overlay")
 
         plt.tight_layout()
@@ -497,10 +476,10 @@ class PoseEstimator:
 
         z_values = depth_filtered[y_idxs, x_idxs].astype(float) * self.depth_scale
 
-        # Apply depth discontinuity filtering to remove flying pixels and artifacts
-        z_values, y_idxs, x_idxs = self._filter_depth_discontinuities(
-            z_values, y_idxs, x_idxs, depth_filtered
-        )
+        # # Apply depth discontinuity filtering to remove flying pixels and artifacts
+        # z_values, y_idxs, x_idxs = self._filter_depth_discontinuities(
+        #     z_values, y_idxs, x_idxs, depth_filtered
+        # )
 
         # Convert to 3D coordinates (OpenCV coordinate system)
         x_cam = (x_idxs - cx) * z_values / fx
@@ -531,10 +510,10 @@ class PoseEstimator:
             pcd_clean, _ = pcd_down.remove_statistical_outlier(
                 nb_neighbors=20, std_ratio=2.0
             )
-            
-            # Second pass: Enhanced outlier removal for streaking artifacts
-            if len(pcd_clean.points) > 10:
-                pcd_clean = self._remove_streaking_artifacts(pcd_clean, voxel_size)
+
+            # # Second pass: Enhanced outlier removal for streaking artifacts
+            # if len(pcd_clean.points) > 10:
+            #     pcd_clean = self._remove_streaking_artifacts(pcd_clean, voxel_size)
         else:
             pprint("Too few points in point cloud, skipping denoising")
             pcd_clean = pcd_down
@@ -571,54 +550,54 @@ class PoseEstimator:
         points = np.asarray(pcd.points)
         if len(points) < 10:
             return pcd
-            
+
         # Build KDTree for efficient neighbor search
         pcd_tree = o3d.geometry.KDTreeFlann(pcd)
-        
+
         # Parameters for streak detection
         min_neighbors = 8  # Minimum neighbors for a valid point
         search_radius = voxel_size * 5  # Search radius for neighbors
         max_linear_ratio = 0.3  # Maximum ratio of linear arrangement
-        
+
         valid_indices = []
-        
+
         for i, point in enumerate(points):
             # Find neighbors within radius
             [k, idx, _] = pcd_tree.search_radius_vector_3d(point, search_radius)
-            
+
             if k < min_neighbors:
                 continue  # Too few neighbors, likely an artifact
-                
+
             # Get neighbor positions
             neighbor_points = points[idx[1:]]  # Exclude the point itself
-            
+
             if len(neighbor_points) < 3:
                 continue
-                
+
             # Check if neighbors form a linear arrangement (indicating streaking)
             try:
                 # Use PCA to analyze point distribution
                 pca = PCA(n_components=3)
                 pca.fit(neighbor_points - point)
-                
+
                 # Check explained variance ratios
                 explained_ratios = pca.explained_variance_ratio_
-                
+
                 # If first component explains too much variance, points are linear
                 if explained_ratios[0] > (1.0 - max_linear_ratio):
                     continue  # Skip this point as it's likely part of a streak
-                    
+
                 # Additional check: ensure points are reasonably distributed
                 distances = np.linalg.norm(neighbor_points - point, axis=1)
                 if np.std(distances) < voxel_size * 0.5:
                     continue  # Points too clustered, might be noise
-                    
+
                 valid_indices.append(i)
-                
+
             except Exception:
                 # If PCA fails, keep the point (conservative approach)
                 valid_indices.append(i)
-        
+
         # Create filtered point cloud
         if len(valid_indices) > 0:
             filtered_pcd = pcd.select_by_index(valid_indices)
@@ -628,63 +607,6 @@ class PoseEstimator:
             pprint("Warning: Streak filtering removed all points, returning original")
             return pcd
 
-    def preprocess_point_cloud_enhanced(self, pcd, voxel_size=0.005, object_type="cube"):
-        """
-        Enhanced point cloud preprocessing specifically for cube and extrusion objects
-        """
-        # More aggressive downsampling for cube/extrusion to reduce edge artifacts
-        pcd_down = pcd.voxel_down_sample(voxel_size)
-
-        if len(pcd_down.points) > 10:
-            # Multiple passes of outlier removal for cube/extrusion
-            pcd_clean = pcd_down
-            
-            # Pass 1: Remove statistical outliers
-            pcd_clean, _ = pcd_clean.remove_statistical_outlier(
-                nb_neighbors=25, std_ratio=1.5  # More strict for geometric objects
-            )
-            
-            # Pass 2: Remove radius-based outliers (good for removing isolated points)
-            if len(pcd_clean.points) > 10:
-                pcd_clean, _ = pcd_clean.remove_radius_outlier(
-                    nb_points=8, radius=voxel_size * 3
-                )
-            
-            # Pass 3: Enhanced streak removal for cube/extrusion
-            if len(pcd_clean.points) > 10:
-                pcd_clean = self._remove_streaking_artifacts(pcd_clean, voxel_size)
-                
-            # Pass 4: Geometric consistency check for cube/extrusion
-            if len(pcd_clean.points) > 10 and object_type in ["cube", "extrusion"]:
-                pcd_clean = self._filter_geometric_inconsistencies(pcd_clean, voxel_size, object_type)
-        else:
-            pprint("Too few points in point cloud, skipping enhanced denoising")
-            pcd_clean = pcd_down
-
-        # Normal estimation with enhanced parameters for geometric objects
-        if len(pcd_clean.points) > 3:
-            try:
-                # Use smaller radius for better edge detection
-                radius_normal = voxel_size * 3
-                pcd_clean.estimate_normals(
-                    search_param=o3d.geometry.KDTreeSearchParamHybrid(
-                        radius=radius_normal,
-                        max_nn=30
-                    )
-                )
-            except Exception:
-                pcd_clean.estimate_normals(
-                    search_param=o3d.geometry.KDTreeSearchParamKNN(knn=20)
-                )
-
-            pcd_clean.orient_normals_towards_camera_location(
-                camera_location=np.array([0, 0, 0])
-            )
-        else:
-            pprint("Insufficient points in point cloud, cannot estimate normals")
-
-        return pcd_clean
-
     def _filter_geometric_inconsistencies(self, pcd, voxel_size, object_type):
         """
         Filter points that are geometrically inconsistent with cube/extrusion shapes
@@ -692,59 +614,60 @@ class PoseEstimator:
         points = np.asarray(pcd.points)
         if len(points) < 20:
             return pcd
-            
+
         # For cube and extrusion, we expect points to lie on planar surfaces
         # Use RANSAC to find dominant planes and filter outliers
-        
+
         valid_indices = set(range(len(points)))
-        
+
         # Find multiple planes (typically 3-6 for a cube/extrusion)
-        max_planes = 6 if object_type == "cube" else 4
+        max_planes = 6 if object_type in ["cube", "extrusion"] else 4
         min_points_per_plane = max(10, len(points) // 20)
-        
+
         remaining_indices = list(range(len(points)))
-        
+
         for plane_idx in range(max_planes):
             if len(remaining_indices) < min_points_per_plane:
                 break
-                
+
             # Create temporary point cloud from remaining points
             temp_pcd = pcd.select_by_index(remaining_indices)
-            
+
             try:
                 # Fit plane using RANSAC
                 plane_model, inlier_indices = temp_pcd.segment_plane(
-                    distance_threshold=voxel_size * 2,
-                    ransac_n=3,
-                    num_iterations=1000
+                    distance_threshold=voxel_size * 2, ransac_n=3, num_iterations=1000
                 )
-                
+
                 if len(inlier_indices) < min_points_per_plane:
                     break
-                    
+
                 # Convert local indices back to global indices
                 global_inlier_indices = [remaining_indices[i] for i in inlier_indices]
-                
+
                 # Remove these points from remaining list
-                remaining_indices = [idx for idx in remaining_indices 
-                                   if idx not in global_inlier_indices]
-                
+                remaining_indices = [
+                    idx for idx in remaining_indices if idx not in global_inlier_indices
+                ]
+
                 pprint(f"Found plane {plane_idx + 1} with {len(inlier_indices)} points")
-                
+
             except Exception:
                 break
-        
+
         # Remove points that don't belong to any plane (likely artifacts)
         outlier_indices = remaining_indices
         if len(outlier_indices) > 0:
             valid_indices = valid_indices - set(outlier_indices)
             pprint(f"Removed {len(outlier_indices)} geometric outliers")
-        
+
         if len(valid_indices) > 0:
             filtered_pcd = pcd.select_by_index(list(valid_indices))
             return filtered_pcd
         else:
-            pprint("Warning: Geometric filtering removed all points, returning original")
+            pprint(
+                "Warning: Geometric filtering removed all points, returning original"
+            )
             return pcd
 
     def visualize_point_clouds(self, scene_cloud, model_cloud, filename):
@@ -788,89 +711,87 @@ class PoseEstimator:
 
         # Try multiple registration methods and keep the best result
         registration_methods = []
+        reg_fitness = 0.0
 
-        # # Method 1: RANSAC with current parameters
-        # try:
-        #     transform_ransac = self.ransac_global_registration(model_moved, scene_cloud)
-        #     eval_ransac = o3d.pipelines.registration.evaluate_registration(
-        #         model_moved, scene_cloud, 0.05, transform_ransac
-        #     )
-        #     registration_methods.append(("RANSAC", transform_ransac, eval_ransac))
-        #     pprint(f"RANSAC fitness: {eval_ransac.fitness:.4f}")
-        # except Exception as e:
-        #     pprint(f"RANSAC failed: {str(e)}")
+        # if self.cad_name != "bin":
+        if True:
+            # Method 1: Teaser++ global registration
+            try:
+                import teaserpp_python
 
-        # # Method 2: RANSAC with smaller voxel size for finer features
-        # try:
-        #     transform_ransac_fine = self.ransac_global_registration(
-        #         model_moved, scene_cloud, voxel_size=0.005
-        #     )
-        #     eval_ransac_fine = o3d.pipelines.registration.evaluate_registration(
-        #         model_moved, scene_cloud, 0.05, transform_ransac_fine
-        #     )
-        #     registration_methods.append(
-        #         ("RANSAC_Fine", transform_ransac_fine, eval_ransac_fine)
-        #     )
-        #     pprint(f"RANSAC Fine fitness: {eval_ransac_fine.fitness:.4f}")
-        # except Exception as e:
-        #     pprint(f"RANSAC Fine failed: {str(e)}")
+                def teaserpp_registration(source, target):
+                    # Convert Open3D point clouds to numpy arrays
+                    src_pts = np.asarray(source.points).T  # 3 x N
+                    tgt_pts = np.asarray(target.points).T  # 3 x N
 
-        # Method 4: Teaser++ global registration
-        try:
-            import teaserpp_python
-            
-            def teaserpp_registration(source, target):
-                # Convert Open3D point clouds to numpy arrays
-                src_pts = np.asarray(source.points).T  # 3 x N
-                tgt_pts = np.asarray(target.points).T  # 3 x N
+                    # Use FPFH features to find correspondences
+                    src_fpfh = self.compute_fpfh(source, voxel_size=0.01)
+                    tgt_fpfh = self.compute_fpfh(target, voxel_size=0.01)
+                    src_idx, tgt_idx = self.find_correspondences(
+                        src_fpfh, tgt_fpfh, source, target
+                    )
 
-                # Use FPFH features to find correspondences
-                src_fpfh = self.compute_fpfh(source, voxel_size=0.01)
-                tgt_fpfh = self.compute_fpfh(target, voxel_size=0.01)
-                src_idx, tgt_idx = self.find_correspondences(src_fpfh, tgt_fpfh, source, target)
+                    if len(src_idx) < 4:
+                        raise ValueError(
+                            "Not enough correspondences for Teaser++ registration"
+                        )
 
-                if len(src_idx) < 4:
-                    raise ValueError("Not enough correspondences for Teaser++ registration")
+                    src_corr = src_pts[:, src_idx]
+                    tgt_corr = tgt_pts[:, tgt_idx]
 
-                src_corr = src_pts[:, src_idx]
-                tgt_corr = tgt_pts[:, tgt_idx]
+                    # Setup Teaser++ solver
+                    solver_params = teaserpp_python.RobustRegistrationSolver.Params()
+                    solver_params.cbar2 = 1.0
+                    solver_params.noise_bound = 0.01
+                    solver_params.estimate_scaling = False
+                    solver_params.rotation_estimation_algorithm = teaserpp_python.RobustRegistrationSolver.ROTATION_ESTIMATION_ALGORITHM.GNC_TLS
+                    solver_params.rotation_gnc_factor = 1.4
+                    solver_params.rotation_max_iterations = 100
 
-                # Setup Teaser++ solver
-                solver_params = teaserpp_python.RobustRegistrationSolver.Params()
-                solver_params.cbar2 = 1.0
-                solver_params.noise_bound = 0.01
-                solver_params.estimate_scaling = False
-                solver_params.rotation_estimation_algorithm = teaserpp_python.RobustRegistrationSolver.ROTATION_ESTIMATION_ALGORITHM.GNC_TLS
-                solver_params.rotation_gnc_factor = 1.4
-                solver_params.rotation_max_iterations = 100
+                    solver = teaserpp_python.RobustRegistrationSolver(solver_params)
+                    solver.solve(src_corr, tgt_corr)
+                    solution = solver.getSolution()
 
-                solver = teaserpp_python.RobustRegistrationSolver(solver_params)
-                solver.solve(src_corr, tgt_corr)
-                solution = solver.getSolution()
+                    # Build transformation matrix
+                    T_teaser = np.eye(4)
+                    T_teaser[:3, :3] = solution.rotation
+                    T_teaser[:3, 3] = solution.translation
+                    return T_teaser
 
-                # Build transformation matrix
-                T_teaser = np.eye(4)
-                T_teaser[:3, :3] = solution.rotation
-                T_teaser[:3, 3] = solution.translation
-                return T_teaser
+                transform_teaser = teaserpp_registration(model_moved, scene_cloud)
+                eval_teaser = o3d.pipelines.registration.evaluate_registration(
+                    model_moved, scene_cloud, 0.05, transform_teaser
+                )
+                registration_methods.append(("Teaser++", transform_teaser, eval_teaser))
+                reg_fitness = eval_teaser.fitness
+                pprint(f"Teaser++ fitness: {eval_teaser.fitness:.4f}")
+            except Exception as e:
+                pprint(f"Teaser++ registration failed: {str(e)}")
 
-            transform_teaser = teaserpp_registration(model_moved, scene_cloud)
-            eval_teaser = o3d.pipelines.registration.evaluate_registration(
-            model_moved, scene_cloud, 0.05, transform_teaser
-            )
-            registration_methods.append(("Teaser++", transform_teaser, eval_teaser))
-            pprint(f"Teaser++ fitness: {eval_teaser.fitness:.4f}")
-        except Exception as e:
-            pprint(f"Teaser++ registration failed: {str(e)}")
-            
+            # Method 2: RANSAC with smaller voxel size for finer features
+            if reg_fitness < 0.5:
+                try:
+                    transform_ransac_fine = self.ransac_global_registration(
+                        model_moved, scene_cloud, voxel_size=0.005
+                    )
+                    eval_ransac_fine = o3d.pipelines.registration.evaluate_registration(
+                        model_moved, scene_cloud, 0.05, transform_ransac_fine
+                    )
+                    registration_methods.append(
+                        ("RANSAC_Fine", transform_ransac_fine, eval_ransac_fine)
+                    )
+                    pprint(f"RANSAC Fine fitness: {eval_ransac_fine.fitness:.4f}")
+                except Exception as e:
+                    pprint(f"RANSAC Fine failed: {str(e)}")
+
         # Method 3: PCA alignment as fallback
-        if not registration_methods:
+        if not registration_methods or reg_fitness < 0.5:
             try:
                 transform_pca = self.pca_alignment(model_moved, scene_cloud)
                 eval_pca = o3d.pipelines.registration.evaluate_registration(
                     model_moved, scene_cloud, 0.05, transform_pca
                 )
-                
+
                 def rotate_matrix_along_x_axis(matrix, angle):
                     """Rotate the matrix along the z-axis.
                     Args:
@@ -891,7 +812,7 @@ class PoseEstimator:
                     )
                     new_matrix = matrix @ transform_matrix
                     return new_matrix
-                
+
                 # Rotate the PCA transform to align with the scene
                 z_p_camera = np.array([0, 0, 1])
                 z_p_scene = transform_pca[:3, 2]
