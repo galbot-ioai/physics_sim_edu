@@ -70,7 +70,7 @@ class IOAIRobotStateMachine:
         self.state_machine.grasp_pose = None
         self.state_machine.bin_pose = None
         self.state_machine.objects_processed = 0
-        self.state_machine.total_objects = 4  # cube, power_drill, extrusion, toy
+        self.state_machine.total_objects = 3  # cube, power_drill, extrusion
         self.state_machine.wait_start_time = None
         
         # Wire components to state machine
@@ -235,7 +235,7 @@ class IOAIRobotStateMachine:
     def _detect_table_objects_state(self):
         if self.state_machine.state_first_entry:
             # Simulate object detection
-            object_sequence = ["cube", "power_drill", "extrusion", "toy"]
+            object_sequence = ["cube", "power_drill", "extrusion"]
             if self.state_machine.objects_processed < len(object_sequence):
                 self.state_machine.object_name = object_sequence[self.state_machine.objects_processed]
             self.state_machine.state_first_entry = False
@@ -248,7 +248,7 @@ class IOAIRobotStateMachine:
             self.state_machine.object_pose = self.state_machine.pose_estimator.estimate_pose(self.state_machine.object_name)
             if self.state_machine.object_pose is None:
                 print(f"State: {self.state_machine.get_state_name()} - Object pose estimation failed for {self.state_machine.object_name}")
-                raise Exception(f"Object pose estimation failed for {self.state_machine.object_name}")
+                raise 
             combined_pose = np.concatenate([self.state_machine.object_pose[0], self.state_machine.object_pose[1]])
             self.state_machine.grasp_pose = self.state_machine.grasp_predictor.predict_grasp(self.state_machine.object_name, combined_pose)
             self.state_machine.state_first_entry = False
