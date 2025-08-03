@@ -69,7 +69,8 @@ def main():
     """
 
     # Initialize the simulation environment
-    env = IOAIEnv(headless=False)
+    # NOTE: `standard_scenario=True` will use the standard scenario.
+    env = IOAIEnv(headless=False, standard_scenario=True)
 
     # Initialize object pose estimator using ground truth data
     object_pose_estimator = GroundTruthObjectPoseEstimator(env)

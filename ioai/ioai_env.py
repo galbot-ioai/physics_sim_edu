@@ -57,6 +57,7 @@ from synthnova_config import (
     PhysicsSimulatorConfig,
     ScenarioConfig,
 )
+import random
 
 class IOAIEnv:
     """IOAI Environment for physics simulation and robot control.
@@ -94,11 +95,12 @@ class IOAIEnv:
         obstacle_radius: Radius of the obstacle for collision detection.
     """
     
-    def __init__(self, headless: bool = False) -> None:
+    def __init__(self, headless: bool = False, standard_scenario: bool = False) -> None:
         """Initialize the IOAI environment.
         
         Args:
             headless: Whether to run the simulator in headless mode.
+            standard_scenario: Whether to use the standard scenario.
             
         Raises:
             RuntimeError: If simulator initialization fails.
@@ -132,11 +134,11 @@ class IOAIEnv:
         self.left_wrist_depth_camera_path: Optional[str] = None
 
         # Setup components in order
-        self._setup_simulator(headless=headless)
+        self._setup_simulator(headless=headless, standard_scenario=standard_scenario)
         self._setup_interface()
         self._setup_mink()
 
-    def _setup_simulator(self, headless: bool = False) -> None:
+    def _setup_simulator(self, headless: bool = False, standard_scenario: bool = True) -> None:
         """Setup the physics simulator with robot and camera configuration.
         
         This method initializes the physics simulator, loads the scenario configuration,
@@ -154,10 +156,17 @@ class IOAIEnv:
             relative to this module's directory.
         """
         # Create simulator configuration
-        scenario_config_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 
-            "ioai_scenario.json"
-        )
+        if standard_scenario:
+            scenario_config_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 
+                f"ioai_scenarios/ioai_scenario_standard.json"
+            )
+        else:
+            index = random.randint(1, 200)
+            scenario_config_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 
+                f"ioai_scenarios/ioai_scenario_{index}.json"
+            )
         sim_config = PhysicsSimulatorConfig(
             mujoco_config=MujocoConfig(headless=headless),
             scenario_config=ScenarioConfig.load_from_file(scenario_config_path)
@@ -1143,7 +1152,7 @@ class IOAIEnv:
         self.simulator.loop()
 
 if __name__ == "__main__":
-    env = IOAIEnv(headless=False)
+    env = IOAIEnv(headless=False, standard_scenario=False)
     #TODO: Define your callbacks here
     # def demo_callback():
     #     print("demo callback")
