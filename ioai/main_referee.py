@@ -129,7 +129,9 @@ def main():
     finally:
         print("-" * 100)
         referee.save_results()
-        print(f"Total score: {referee.total_score}")
+        s1, s2 = referee.total_score
+        print(f"Total score: {s1}")
+        print(f"State-based score: {s2}")
         print(f"Task status:")
         for k, v in referee.task_status.items():
             print(f"  {k}: {v['status']} (sim_time: {v['sim_time']})")

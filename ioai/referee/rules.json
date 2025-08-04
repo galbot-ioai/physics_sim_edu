@@ -1,6 +1,7 @@
 {
     "成功移动到桌子面前": {
-        "task_index": 1,
+        "phase" : "Starting",
+        "description" : "Robot successfully navigated to Object Arrangement Zone",
         "score": 5,
         "type" : "in_2d_range",
         "range" : {
@@ -9,7 +10,8 @@
         }
     },
     "从出发区移动到桌子面前物体抓取区过程中没有碰撞行为" : {
-        "task_index": 2,
+        "phase" : "Starting",
+        "description" : "No collision incidents during navigation",
         "score": 5,
         "type" : "no_collision",
         "until" : "成功移动到桌子面前",
@@ -17,51 +19,22 @@
             [["galbot_one_foxtrot/omni_chassis_base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3", "cone_1", "cone_2", "cone_3", "cone_4", "cone_5", "cone_6"]]
         ]
     },
-    "成功抓取普通物品 power_drill" : {
-        "task_index": 3,
-        "score": 10,
-        "type" : "pick_up",
-        "prerequisite" : [
-            "成功移动到桌子面前"
-        ],
-        "object1_name" : "power_drill"
-    },
     "成功抓取普通物品 cube" : {
-        "task_index": 3,
+        "phase" : "Object Grasping",
+        "description" : "Successful grab of cubic part (state-based/vision-based object detection)",
         "score": 10,
+        "state_score": 1,
         "type" : "pick_up",
         "prerequisite" : [
             "成功移动到桌子面前"
         ],
         "object1_name" : "cube"
     },
-    "成功抓取普通物品 extrusion" : {
-        "task_index": 3,
-        "score": 10,
-        "type" : "pick_up",
-        "prerequisite" : [
-            "成功移动到桌子面前"
-        ],
-        "object1_name" : "extrusion"
-    },
-    "成功放置物品 power_drill" : {
-        "task_index": 4,
-        "score": 5,
-        "type" : "in_3d_range",
-        "prerequisite" : [
-            "成功抓取普通物品 power_drill"
-        ],
-        "object1_name" : "power_drill",
-        "object2_name" : "bin",
-        "range" : {
-            "x" : [-0.17, 0.17],
-            "y" : [-0.1, 0.1],
-            "z" : [ 0.0, 0.25]
-        }
-    },
     "成功放置物品 cube" : {
-        "task_index": 4,
+        "phase" : "Object Grasping",
+        "description" : "Successful placement of cubic part in container (state-based/vision-based container detection)",
         "score": 5,
+        "state_score": 1,
         "type" : "in_3d_range",
         "prerequisite" : [
             "成功抓取普通物品 cube"
@@ -74,9 +47,50 @@
             "z" : [ 0.0, 0.25]
         }
     },
-    "成功放置物品 extrusion" : {
-        "task_index": 4,
+    "成功抓取普通物品 power_drill" : {
+        "phase" : "Object Grasping",
+        "description" : "Successful grab of Electric drill (state-based/vision-based object detection)",
+        "score": 10,
+        "state_score": 1,
+        "type" : "pick_up",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "object1_name" : "power_drill"
+    },
+    "成功放置物品 power_drill" : {
+        "phase" : "Object Grasping",
+        "description" : "Successful placement of electric drill  in container (state-based/vision-based container detection)",
         "score": 5,
+        "state_score": 1,
+        "type" : "in_3d_range",
+        "prerequisite" : [
+            "成功抓取普通物品 power_drill"
+        ],
+        "object1_name" : "power_drill",
+        "object2_name" : "bin",
+        "range" : {
+            "x" : [-0.17, 0.17],
+            "y" : [-0.1, 0.1],
+            "z" : [ 0.0, 0.25]
+        }
+    },
+    "成功抓取普通物品 extrusion" : {
+        "phase" : "Object Grasping",
+        "description" : "Successful grab of extrusion (state-based/vision-based object detection)",
+        "score": 10,
+        "state_score": 1,
+        "type" : "pick_up",
+        "prerequisite" : [
+            "成功移动到桌子面前"
+        ],
+        "object1_name" : "extrusion"
+    },
+    "成功放置物品 extrusion" : {
+        "phase" : "Object Grasping",
+        "description" : "Successful placement of extrusion in container (state-based/vision-based container detection)",
+        "score": 5,
+        "state_score": 1,
         "type" : "in_3d_range",
         "prerequisite" : [
             "成功抓取普通物品 extrusion"
@@ -89,23 +103,11 @@
             "z" : [ 0.0, 0.25]
         }
     },
-    "抓取到放置中没有碰撞（桌子、料框、围挡、锥桶）" : {
-        "task_index": 5,
-        "score": 5,
-        "type" : "no_collision",
-        "prerequisite" : [
-            "成功抓取普通物品 power_drill",
-            "成功抓取普通物品 cube",
-            "成功抓取普通物品 extrusion"
-        ],
-        "until" : "成功移动到料框抓取区（桌子侧面）",
-        "collision_group" : [
-            [["galbot_one_foxtrot/omni_chassis_base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3", "cone_1", "cone_2", "cone_3", "cone_4", "cone_5", "cone_6"]]
-        ]
-    },
     "成功抓取神秘物体": {
-        "task_index": 6,
+        "phase" : "Object Grasping",
+        "description" : "Successful grab of galbot toy (state-based/vision-based object detection)",
         "score": 30,
+        "state_score": 1,
         "type" : "pick_up",
         "prerequisite" : [
             "成功移动到桌子面前"
@@ -113,8 +115,10 @@
         "object1_name" : "toy"
     },
     "成功把神秘物体放置到料框里" : {
-        "task_index": 7,
-        "score": 5,
+        "phase" : "Object Grasping",
+        "description" : "Successful placement of galbot toy in container (state-based/vision-based container detection)",
+        "score": 15,
+        "state_score": 3,
         "type" : "in_3d_range",
         "prerequisite" : [
             "成功抓取神秘物体"
@@ -127,12 +131,15 @@
             "z" : [ 0.0, 0.25]
         }
     },
-    "神秘物体放置到料框的过程中没有碰撞行为" : {
-        "task_index": 8,
-        "score": 5,
+    "抓取到放置中没有碰撞（桌子、料框、围挡、锥桶）" : {
+        "phase" : "Object Grasping",
+        "description" : "No collision incidents during manipulation",
+        "score": 10,
         "type" : "no_collision",
         "prerequisite" : [
-            "成功抓取神秘物体"
+            "成功抓取普通物品 power_drill",
+            "成功抓取普通物品 cube",
+            "成功抓取普通物品 extrusion"
         ],
         "until" : "成功移动到料框抓取区（桌子侧面）",
         "collision_group" : [
@@ -140,7 +147,8 @@
         ]
     },
     "成功移动到料框抓取区（桌子侧面）": {
-        "task_index": 9,
+        "phase" : "Collection",
+        "description" : "Robot successfully navigated  to Container Pickup Zone",
         "score": 5,
         "type" : "in_2d_range",
         "prerequisite" : [
@@ -152,8 +160,9 @@
         }
     },
     "从物体抓取区移动到料框抓取区过程中没有碰撞行为": {
-        "task_index": 10,
-        "score": 5,
+        "phase" : "Collection",
+        "description" : "No collision incidents during collection process",
+        "score": 10,
         "type" : "no_collision",
         "prerequisite" : [
             "成功移动到桌子面前"
@@ -164,7 +173,8 @@
         ]
     },
     "成功抓起料框" : {
-        "task_index": 11,
+        "phase" : "Collection",
+        "description" : "Successful grasp and lift of storage container",
         "score": 10,
         "type" : "pick_up_dual",
         "prerequisite" : [
@@ -172,20 +182,20 @@
         ],
         "object1_name" : "bin"
     },
-    "成功移动到货架面前" : {
-        "task_index": 13,
-        "score": 5,
-        "type" : "in_2d_range",
+    "成功双手抓起料框" : {
+        "phase" : "Collection",
+        "description" : "Successful dual-hand grasp of container",
+        "score": 30,
+        "type" : "hold_dual",
         "prerequisite" : [
-            "成功移动到料框抓取区（桌子侧面）"
+            "成功抓起料框"
         ],
-        "range" : {
-            "x" : [2.6, 3.4],
-            "y" : [3.5, 4.5]
-        }
+        "until" : "成功移动到货架面前",
+        "object1_name" : "bin"
     },
     "从料框抓取区移动到料框放置区（货架）过程中没有碰撞行为": {
-        "task_index": 14,
+        "phase" : "Placement",
+        "description" : "No collision incidents during navigation to container placement area",
         "score": 5,
         "type" : "no_collision",
         "prerequisite" : [
@@ -196,8 +206,22 @@
             [["galbot_one_foxtrot/omni_chassis_base_link"], ["table", "bin", "wall_1", "wall_2", "wall_3", "cone_1", "cone_2", "cone_3", "cone_4", "cone_5", "cone_6"]]
         ]
     },
+    "成功移动到货架面前" : {
+        "phase" : "Placement",
+        "description" : "Robot successfully navigated to Container Placement Zone",
+        "score": 5,
+        "type" : "in_2d_range",
+        "prerequisite" : [
+            "成功移动到料框抓取区（桌子侧面）"
+        ],
+        "range" : {
+            "x" : [2.6, 3.4],
+            "y" : [3.5, 4.5]
+        }
+    },
     "成功将箱子放置到货架上": {
-        "task_index": 15,
+        "phase" : "Placement",
+        "description" : "Successful Placement of the Container on any level of the Container Rack",
         "score": 10,
         "type" : "in_3d_range",
         "prerequisite" : [
@@ -212,7 +236,8 @@
         }
     },
     "将箱子放置到货架的过程中没有碰撞行为（桌子、料框、围挡、锥桶）" : {
-        "task_index": 16,
+        "phase" : "Placement",
+        "description" : "No collision incidents during container placement operation",
         "score": 10,
         "type" : "no_collision",
         "prerequisite" : [
@@ -224,8 +249,9 @@
         ]
     },
     "成功移动到任务结束点": {
+        "phase" : "Ending",
+        "description" : "Robot successfully navigated to end zone",
         "score": 5,
-        "task_index": 17,
         "type" : "in_2d_range",
         "prerequisite" : [
             "成功移动到货架面前"
@@ -236,7 +262,8 @@
         }
     },
     "从料框放置区移动到任务结束区过程中没有碰撞行为（桌子、料框、围挡、锥桶）": {
-        "task_index": 18,
+        "phase" : "Ending",
+        "description" : "No collision incidents during navigation to end zone",
         "score": 5,
         "type" : "no_collision",
         "prerequisite" : [

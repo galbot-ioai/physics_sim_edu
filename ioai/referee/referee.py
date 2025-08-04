@@ -43,7 +43,8 @@ class Referee:
                 if v['status'] is None:
                     v['sim_time'] = sim_time
                     v['status'] = "success"
-                    print(f">>>>>> {sim_time:5.2f}s: '{k}' succeeded, get score {self.rules[k]['score']}.")
+                    description = v['description']
+                    print(f">>>>>> {sim_time:5.2f}s: get score {v['score']:3}, '{k}' / '{description}' succeeded.")
                     continue
 
             if v['type'] == 'in_2d_range':
@@ -85,13 +86,22 @@ class Referee:
                    self.check_contact(f"{ROBOT_NAME}/right_gripper_r_finger_link", v['object1_name']) and \
                    self.check_contact(f"{ROBOT_NAME}/right_gripper_l_finger_link", v['object1_name']):
                     v['status'] = "success"
+            
+            elif v['type'] == 'hold_dual':
+                if not (self.check_contact(f"{ROBOT_NAME}/left_gripper_r_finger_link", v['object1_name']) and \
+                   self.check_contact(f"{ROBOT_NAME}/left_gripper_l_finger_link", v['object1_name']) and \
+                   self.check_contact(f"{ROBOT_NAME}/right_gripper_r_finger_link", v['object1_name']) and \
+                   self.check_contact(f"{ROBOT_NAME}/right_gripper_l_finger_link", v['object1_name'])):                
+                    v['status'] = "fail"
 
             if v['status'] == "fail":
                 self.rules[k]['sim_time'] = sim_time
-                print(f">>>>>> {sim_time:5.2f}s: '{k}' failed.")
+                description = v['description']
+                print(f">>>>>> {sim_time:5.2f}s: '{k}' / '{description}' failed.")
             elif v['status'] == "success":
                 self.rules[k]['sim_time'] = sim_time
-                print(f">>>>>> {sim_time:5.2f}s: '{k}' succeeded, get score {self.rules[k]['score']}.")
+                description = v['description']
+                print(f">>>>>> {sim_time:5.2f}s: get score {v['score']:3}, '{k}' / '{description}' succeeded.")
 
     def get_body_tmat(self, body_name):
         body_name += SUFFIX if not body_name.endswith(SUFFIX) else ""
@@ -141,21 +151,35 @@ class Referee:
 
     @property
     def total_score(self):
-        total_score = 0
+        score_sum = 0
+        score_sim_state_based = 0
         for k, v in self.rules.items():
-            if v['status']:
-                total_score += v['score']
-        return total_score
+            if v['status'] == "success":
+                score_sum += v['score']
+                if 'state_score' in v:
+                    score_sim_state_based += v['state_score']
+                else:
+                    score_sim_state_based += v['score']
+        return score_sum, score_sim_state_based
 
     @property
     def task_status(self):
         status = {}
         for k, v in self.rules.items():
-            status[k] = {
+            score = v['score'] if v['status'] == "success" else 0
+            status[v['description']] = {
+                "phase": v['phase'],
                 "status": v['status'],
                 "sim_time": v['sim_time'],
-                "score": v['score'] if v['status'] == "success" else 0
+                "score": score,
             }
+            if hasattr(v, 'state_score'):
+                if score > 0:
+                    status[v['description']]["state_score"] = v['state_score']
+                else:
+                    status[v['description']]["state_score"] = 0
+            else:
+                status[v['description']]["state_score"] = None
         return status
     
     def save_results(self, file_path=None):
@@ -165,7 +189,9 @@ class Referee:
             file_path = file_path.replace('.json', f'_{time.strftime("%Y_%m_%d-%H_%M_%S", time.localtime(self.time_stamp))}.json')
         with open(file_path, 'w', encoding='utf-8') as f:
             res = {}
-            res["total_score"] = self.total_score
+            s1, s2 = self.total_score
+            res["total_score"] = s1
+            res["state_based_score"] = s2
             res.update(self.task_status)
             json.dump(res, f, indent=4, ensure_ascii=False)
         print(f"Results saved to {file_path}")
