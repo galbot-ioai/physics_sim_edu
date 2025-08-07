@@ -11,7 +11,7 @@ SynthNova Physics Simulator Edu is a robotics simulation framework built on the 
 ```bash
 git clone https://github.com/galbot-ioai/physics_sim_edu.git
 cd physics_sim_edu
-pip install -e ./src/synthnova_config
+pip install -e src/synthnova_config
 pip install -e .
 ```
 

@@ -1,0 +1,72 @@
+<mujoco model="toy">
+  <default>
+    <default class="visual">
+      <geom group="1" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="0" type="mesh"/>
+    </default>
+  </default>
+  <asset>
+    <texture type="2d" name="material_0" file="material_0.png"/>
+    <material name="material_0" texture="material_0" specular="0.4000000000000001" shininess="0.000999999"/>
+    <mesh name="toy" file="toy.obj"/>
+    <mesh name="toy_collision_0" file="toy_collision_0.obj"/>
+    <mesh name="toy_collision_1" file="toy_collision_1.obj"/>
+    <mesh name="toy_collision_2" file="toy_collision_2.obj"/>
+    <mesh name="toy_collision_3" file="toy_collision_3.obj"/>
+    <mesh name="toy_collision_4" file="toy_collision_4.obj"/>
+    <mesh name="toy_collision_5" file="toy_collision_5.obj"/>
+    <mesh name="toy_collision_6" file="toy_collision_6.obj"/>
+    <mesh name="toy_collision_7" file="toy_collision_7.obj"/>
+    <mesh name="toy_collision_8" file="toy_collision_8.obj"/>
+    <mesh name="toy_collision_9" file="toy_collision_9.obj"/>
+    <mesh name="toy_collision_10" file="toy_collision_10.obj"/>
+    <mesh name="toy_collision_11" file="toy_collision_11.obj"/>
+    <mesh name="toy_collision_12" file="toy_collision_12.obj"/>
+    <mesh name="toy_collision_13" file="toy_collision_13.obj"/>
+    <mesh name="toy_collision_14" file="toy_collision_14.obj"/>
+    <mesh name="toy_collision_15" file="toy_collision_15.obj"/>
+    <mesh name="toy_collision_16" file="toy_collision_16.obj"/>
+    <mesh name="toy_collision_17" file="toy_collision_17.obj"/>
+    <mesh name="toy_collision_18" file="toy_collision_18.obj"/>
+    <mesh name="toy_collision_19" file="toy_collision_19.obj"/>
+    <mesh name="toy_collision_20" file="toy_collision_20.obj"/>
+    <mesh name="toy_collision_21" file="toy_collision_21.obj"/>
+    <mesh name="toy_collision_22" file="toy_collision_22.obj"/>
+    <mesh name="toy_collision_23" file="toy_collision_23.obj"/>
+    <mesh name="toy_collision_24" file="toy_collision_24.obj"/>
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom material="material_0" mesh="toy" class="visual"/>
+        <geom mesh="toy_collision_0" rgba="0.5020139159665998 0.3319515446450423 0.8390167144019891 1" class="collision"/>
+        <geom mesh="toy_collision_1" rgba="0.4291297812495112 0.9007862534603677 0.03190320683659198 1" class="collision"/>
+        <geom mesh="toy_collision_2" rgba="0.829271630338164 0.09651724390744043 0.6068686581446854 1" class="collision"/>
+        <geom mesh="toy_collision_3" rgba="0.14420602656946901 0.7944078039746498 0.8195196091266006 1" class="collision"/>
+        <geom mesh="toy_collision_4" rgba="0.5946917060076276 0.8382516303718303 0.38377675867901173 1" class="collision"/>
+        <geom mesh="toy_collision_5" rgba="0.24215959053397662 0.1131046755859797 0.7711383779570138 1" class="collision"/>
+        <geom mesh="toy_collision_6" rgba="0.7002718649989436 0.22963168009716617 0.7143937829308249 1" class="collision"/>
+        <geom mesh="toy_collision_7" rgba="0.5195126598880585 0.5286553635822594 0.5433065263167592 1" class="collision"/>
+        <geom mesh="toy_collision_8" rgba="0.606963270138753 0.8561768329875052 0.16558274996021294 1" class="collision"/>
+        <geom mesh="toy_collision_9" rgba="0.39801244251153434 0.818153782029801 0.8053302783598599 1" class="collision"/>
+        <geom mesh="toy_collision_10" rgba="0.41047016082648513 0.7146061556081419 0.26806619165381296 1" class="collision"/>
+        <geom mesh="toy_collision_11" rgba="0.8893546768344152 0.860120797369703 0.6011127851501291 1" class="collision"/>
+        <geom mesh="toy_collision_12" rgba="0.4272440765714759 0.6865286084683501 0.6612696056797175 1" class="collision"/>
+        <geom mesh="toy_collision_13" rgba="0.9836562391030396 0.9487098972040869 0.9020714529786158 1" class="collision"/>
+        <geom mesh="toy_collision_14" rgba="0.1684735028675668 0.3535135727175187 0.6766948890939016 1" class="collision"/>
+        <geom mesh="toy_collision_15" rgba="0.824281574544283 0.09199592453100314 0.7276231233909486 1" class="collision"/>
+        <geom mesh="toy_collision_16" rgba="0.0948734205774251 0.9625085144423667 0.11124069687940252 1" class="collision"/>
+        <geom mesh="toy_collision_17" rgba="0.12385115446292005 0.029866989689238288 0.5134655243248831 1" class="collision"/>
+        <geom mesh="toy_collision_18" rgba="0.45897225315674917 0.49692184312135834 0.05388461216421103 1" class="collision"/>
+        <geom mesh="toy_collision_19" rgba="0.9983745632237488 0.36968400655759937 0.9505480368551998 1" class="collision"/>
+        <geom mesh="toy_collision_20" rgba="0.06081343853509058 0.9477853764893204 0.3660007444321909 1" class="collision"/>
+        <geom mesh="toy_collision_21" rgba="0.008983703776340501 0.910234374810923 0.5964474800849736 1" class="collision"/>
+        <geom mesh="toy_collision_22" rgba="0.9859367515937568 0.5592296224142018 0.7672214647407579 1" class="collision"/>
+        <geom mesh="toy_collision_23" rgba="0.0620296859570858 0.10205001762489663 0.5556521819281155 1" class="collision"/>
+        <geom mesh="toy_collision_24" rgba="0.3162479224396656 0.4383572672360324 0.005431108685974628 1" class="collision"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

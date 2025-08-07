@@ -373,7 +373,7 @@
                                                     <geom name="left_gripper_l_finger_link_collision_3" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="l_link_3_zhitao_convex_decomposition_3.stl" class="collision" />
                                                     <geom name="left_gripper_l_finger_link_collision_4" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="l_link_3_zhitao_convex_decomposition_4.stl" class="collision" />
                                                     <geom name="left_gripper_l_finger_link_collision_5" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="l_link_3_zhitao_convex_decomposition_5.stl" class="collision" /> -->
-                                                    <geom name="left_gripper_l_finger_link_collision" pos=".035 0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1"/>
+                                                    <geom name="left_gripper_l_finger_link_collision" pos=".035 0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1" friction="10 10 10"/>
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="left_gripper_l_finger_link_visual_0" mesh="l_link_3_zhitao_0" material="l_link_2_light_silver" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="left_gripper_l_finger_link_visual_1" mesh="l_link_3_zhitao_1" material="l_link_2_metal_aluminum" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="left_gripper_l_finger_link_visual_2" mesh="l_link_3_zhitao_2" material="base_link_plastic_black" />
@@ -395,7 +395,7 @@
                                                     <geom name="left_gripper_r_finger_link_collision_3" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_3_zhitao_convex_decomposition_3.stl" class="collision" />
                                                     <geom name="left_gripper_r_finger_link_collision_4" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_3_zhitao_convex_decomposition_4.stl" class="collision" />
                                                     <geom name="left_gripper_r_finger_link_collision_5" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_3_zhitao_convex_decomposition_5.stl" class="collision" /> -->
-                                                    <geom name="left_gripper_r_finger_link_collision" pos=".035 -0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1"/>
+                                                    <geom name="left_gripper_r_finger_link_collision" pos=".035 -0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1" friction="10 10 10"/>
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="left_gripper_r_finger_link_visual_0" mesh="r_link_3_zhitao_0" material="l_link_2_light_silver" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="left_gripper_r_finger_link_visual_1" mesh="r_link_3_zhitao_1" material="l_link_2_metal_aluminum" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="left_gripper_r_finger_link_visual_2" mesh="r_link_3_zhitao_2" material="base_link_plastic_black" />
@@ -658,7 +658,7 @@
                                                     <geom name="right_gripper_l_finger_link_collision_3" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="l_link_3_zhitao_convex_decomposition_3.stl" class="collision" />
                                                     <geom name="right_gripper_l_finger_link_collision_4" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="l_link_3_zhitao_convex_decomposition_4.stl" class="collision" />
                                                     <geom name="right_gripper_l_finger_link_collision_5" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="l_link_3_zhitao_convex_decomposition_5.stl" class="collision" /> -->
-                                                    <geom name="right_gripper_l_finger_link_collision" pos=".035 0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1"/>
+                                                    <geom name="right_gripper_l_finger_link_collision" pos=".035 0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1" friction="10 10 10"/>
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="right_gripper_l_finger_link_visual_0" mesh="l_link_3_zhitao_0" material="l_link_2_light_silver" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="right_gripper_l_finger_link_visual_1" mesh="l_link_3_zhitao_1" material="l_link_2_metal_aluminum" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="right_gripper_l_finger_link_visual_2" mesh="l_link_3_zhitao_2" material="base_link_plastic_black" />
@@ -680,7 +680,7 @@
                                                     <geom name="right_gripper_r_finger_link_collision_3" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_3_zhitao_convex_decomposition_3.stl" class="collision" />
                                                     <geom name="right_gripper_r_finger_link_collision_4" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_3_zhitao_convex_decomposition_4.stl" class="collision" />
                                                     <geom name="right_gripper_r_finger_link_collision_5" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="r_link_3_zhitao_convex_decomposition_5.stl" class="collision" /> -->
-                                                    <geom name="right_gripper_r_finger_link_collision" pos=".035 -0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1"/>
+                                                    <geom name="right_gripper_r_finger_link_collision" pos=".035 -0.005 0" type="box" size=".03 .002 .008" class="collision" rgba="0 0 1 1" friction="10 10 10"/>
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="right_gripper_r_finger_link_visual_0" mesh="r_link_3_zhitao_0" material="l_link_2_light_silver" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="right_gripper_r_finger_link_visual_1" mesh="r_link_3_zhitao_1" material="l_link_2_metal_aluminum" />
                                                     <geom pos="0 0 0" quat="1 0 0 0" type="mesh" class="visual" name="right_gripper_r_finger_link_visual_2" mesh="r_link_3_zhitao_2" material="base_link_plastic_black" />

@@ -1,3 +1,7 @@
+pose_est_*
+pose_est_temp/
+pose_estimation_results/
+
 # ignore mjmodel.xml
 mjmodel.xml
 
@@ -5,7 +9,7 @@ mjmodel.xml
 MUJOCO_LOG.TXT
 
 # ignore asset: toy
-assets/synthnova_assets/objects/toy
+# assets/synthnova_assets/objects/toy
 
 .vscode/
 

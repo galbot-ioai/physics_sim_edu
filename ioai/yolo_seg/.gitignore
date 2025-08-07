@@ -1,0 +1,5 @@
+__pycache__/
+runs/
+
+output_with_masks.png
+best_mask_bin.png

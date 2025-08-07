@@ -1,6 +1,0 @@
-power_drill
-cube
-mug
-bin
-extrusion
-toy

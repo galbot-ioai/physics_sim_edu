@@ -1,0 +1,6 @@
+opencv-python 
+numpy 
+open3d
+pybind11
+sphinx
+scikit-learn
