@@ -17,11 +17,16 @@ pip install -e .
 
 ## 📖 Documentation
 
-Detailed documentation can be found at: [Online Documentation](https://galbot-ioai.github.io/physics_sim_edu/)
+Detailed documentation can be found at:
+
+- [Online Documentation](https://galbot-ioai.github.io/physics_sim_edu/)
 
 ## 🙏 Acknowledgements
 
-This project references the code framework from [robosuite](https://github.com/ARISE-Initiative/robosuite).
+This project references the code framework from:
+
+- [RoboSuite](https://github.com/ARISE-Initiative/robosuite): A Modular Simulation Framework and Benchmark for Robot Learning.
+- [IsaacSim](https://github.com/isaac-sim/IsaacSim.git): An open-source application on NVIDIA Omniverse for developing, simulating, and testing AI-driven robots in realistic virtual environments.
 
 ## 📜 License
 
