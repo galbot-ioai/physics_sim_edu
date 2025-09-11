@@ -6,6 +6,14 @@
 
 SynthNova Physics Simulator Edu is a robotics simulation framework built on the MuJoCo physics engine for educational purposes.
 
+
+> Entry Point of IOAI code: ioai/main.py
+>
+> Baseline video for sim phase of IOAI 2025 Team Challenge:
+> 
+> https://github.com/user-attachments/assets/b30c7978-577e-4e0c-96fe-1252cfe2a3ff
+
+
 ## ⚙️ Installation
 
 ```bash
